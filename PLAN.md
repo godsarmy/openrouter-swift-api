@@ -113,12 +113,12 @@ Goal: Reimplement the `go-openrouter` SDK in Swift as a reusable Swift Package f
 
 ## Phase 6 — Fallback Policy & Reliability
 
-- [ ] Add default fallbackable error codes:
-  - [ ] 402, 408, 429, 500, 502, 503, 504, 524, 529
-- [ ] Check both HTTP status and API error body code
-- [ ] Implement model retry order semantics
-- [ ] Ensure streaming fallback only occurs before stream establishment
-- [ ] Add configurable policy override support
+- [x] Add default fallbackable error codes:
+  - [x] 402, 408, 429, 500, 502, 503, 504, 524, 529
+- [x] Check both HTTP status and API error body code
+- [x] Implement model retry order semantics
+- [x] Ensure streaming fallback only occurs before stream establishment
+- [x] Add configurable policy override support
 
 **Exit criteria**
 - Fallback behavior matches documented Go client semantics.
@@ -214,10 +214,11 @@ Goal: Reimplement the `go-openrouter` SDK in Swift as a reusable Swift Package f
   - Completed Phase 5 streaming with SSE parser, [DONE] handling, and chunk decoding.
   - Added executable CLI examples for chat/stream/embed/complete with env-based API key.
   - Enhanced CLI with --system prompt support and --output json|text modes.
+  - Completed Phase 6 fallback policy with status/body-code checks and retry order logic.
 - In progress:
-  - Phase 6 fallback policy and reliability.
+  - Phase 7 testing.
 - Next:
-  - Implement fallback execution order and policy checks.
+  - Expand tests for fallback/transport/stream edge-cases and fixtures.
 
 Suggested update format:
 
