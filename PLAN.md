@@ -148,8 +148,8 @@ Goal: Reimplement the `go-openrouter` SDK in Swift as a reusable Swift Package f
 
 - [ ] Quick start in README
 - [ ] Examples:
-  - [ ] Basic chat
-  - [ ] Streaming chat
+  - [x] Basic chat
+  - [x] Streaming chat
   - [ ] Tool calling
   - [ ] Structured outputs
   - [ ] Fallback usage
@@ -212,6 +212,7 @@ Goal: Reimplement the `go-openrouter` SDK in Swift as a reusable Swift Package f
   - Completed Phase 3 models/serialization with multimodal content and polymorphic JSON decoding.
   - Completed Phase 4 transport layer with request builder, auth/custom headers, and API error mapping.
   - Completed Phase 5 streaming with SSE parser, [DONE] handling, and chunk decoding.
+  - Added executable CLI examples for chat/stream/embed/complete with env-based API key.
 - In progress:
   - Phase 6 fallback policy and reliability.
 - Next:

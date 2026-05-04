@@ -12,12 +12,29 @@ Track progress in:
 - `FEATURE_PARITY.md`
 - `COMPATIBILITY.md`
 
-## Quick Start (placeholder)
+## Quick Start
 
 ```swift
 import OpenRouter
 
-let client = OpenRouterClient()
+let client = OpenRouterClient(apiKey: "<OPENROUTER_API_KEY>")
 ```
 
-Detailed usage examples will be added as core endpoints are implemented.
+## Example CLI
+
+The `OpenRouterExamples` executable target can be used to test API features quickly.
+
+Set API key:
+
+```bash
+export OPENROUTER_API_KEY="<your-key>"
+```
+
+Run commands:
+
+```bash
+swift run OpenRouterExamples chat --model openai/gpt-4o-mini --prompt "hello"
+swift run OpenRouterExamples stream --model openai/gpt-4o-mini --prompt "give me 3 bullets"
+swift run OpenRouterExamples embed --model text-embedding-3-small --prompt "swift sdk"
+swift run OpenRouterExamples complete --model openai/gpt-3.5-turbo-instruct --prompt "hello"
+```
