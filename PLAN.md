@@ -23,17 +23,17 @@ Goal: Reimplement the `go-openrouter` SDK in Swift as a reusable Swift Package f
 
 ## Phase 1 — Package Foundation
 
-- [ ] Initialize Swift Package: `OpenRouterSwift`
-- [ ] Create targets:
-  - [ ] `OpenRouter` (library)
-  - [ ] `OpenRouterTests` (tests)
-  - [ ] Optional `OpenRouterExamples` (sample usage)
-- [ ] Add base module layout:
-  - [ ] `Sources/OpenRouter/Public`
-  - [ ] `Sources/OpenRouter/Internal/Transport`
-  - [ ] `Sources/OpenRouter/Internal/Streaming`
-  - [ ] `Sources/OpenRouter/Models`
-- [ ] Add README skeleton with Quick Start placeholder
+- [x] Initialize Swift Package: `OpenRouterSwift`
+- [x] Create targets:
+  - [x] `OpenRouter` (library)
+  - [x] `OpenRouterTests` (tests)
+  - [x] Optional `OpenRouterExamples` (sample usage)
+- [x] Add base module layout:
+  - [x] `Sources/OpenRouter/Public`
+  - [x] `Sources/OpenRouter/Internal/Transport`
+  - [x] `Sources/OpenRouter/Internal/Streaming`
+  - [x] `Sources/OpenRouter/Models`
+- [x] Add README skeleton with Quick Start placeholder
 
 **Exit criteria**
 - Package builds cleanly with placeholder client type.
@@ -207,10 +207,11 @@ Goal: Reimplement the `go-openrouter` SDK in Swift as a reusable Swift Package f
   - Added Phase 0 framing artifacts: `FEATURE_PARITY.md`, `COMPATIBILITY.md`.
   - Confirmed v1 compatibility targets and CI direction.
   - Marked all Phase 0 checklist items complete.
+  - Completed Phase 1 package foundation with library, tests, examples targets and base layout.
 - In progress:
-  - Phase 1 package foundation.
+  - Phase 2 public API design.
 - Next:
-  - Initialize Swift Package and base source layout.
+  - Define client configuration and v1 public method signatures.
 
 Suggested update format:
 
