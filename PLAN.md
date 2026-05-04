@@ -42,21 +42,21 @@ Goal: Reimplement the `go-openrouter` SDK in Swift as a reusable Swift Package f
 
 ## Phase 2 — Public API Design
 
-- [ ] Define `OpenRouterClient` initializer/config:
-  - [ ] `apiKey`
-  - [ ] optional `baseURL`
-  - [ ] optional `httpReferer`
-  - [ ] optional `xTitle`
-  - [ ] timeout/session injection
-- [ ] Define primary methods:
-  - [ ] `createChatCompletion(_:) async throws -> ChatCompletionResponse`
-  - [ ] `createChatCompletionStream(_:) -> AsyncThrowingStream<ChatCompletionChunk, Error>`
-  - [ ] `createEmbeddings(_:) async throws -> EmbeddingResponse`
-  - [ ] `createCompletion(_:) async throws -> CompletionResponse` (if in scope)
-- [ ] Define fallback APIs:
-  - [ ] `createChatCompletionWithFallback(...)`
-  - [ ] `createChatCompletionStreamWithFallback(...)`
-  - [ ] `ChatCompletionFallbackPolicy`
+- [x] Define `OpenRouterClient` initializer/config:
+  - [x] `apiKey`
+  - [x] optional `baseURL`
+  - [x] optional `httpReferer`
+  - [x] optional `xTitle`
+  - [x] timeout/session injection
+- [x] Define primary methods:
+  - [x] `createChatCompletion(_:) async throws -> ChatCompletionResponse`
+  - [x] `createChatCompletionStream(_:) -> AsyncThrowingStream<ChatCompletionChunk, Error>`
+  - [x] `createEmbeddings(_:) async throws -> EmbeddingResponse`
+  - [x] `createCompletion(_:) async throws -> CompletionResponse` (if in scope)
+- [x] Define fallback APIs:
+  - [x] `createChatCompletionWithFallback(...)`
+  - [x] `createChatCompletionStreamWithFallback(...)`
+  - [x] `ChatCompletionFallbackPolicy`
 
 **Exit criteria**
 - Public signatures stabilized for v1.
@@ -208,10 +208,11 @@ Goal: Reimplement the `go-openrouter` SDK in Swift as a reusable Swift Package f
   - Confirmed v1 compatibility targets and CI direction.
   - Marked all Phase 0 checklist items complete.
   - Completed Phase 1 package foundation with library, tests, examples targets and base layout.
+  - Completed Phase 2 public API signatures for client/config/endpoints/fallback policy.
 - In progress:
-  - Phase 2 public API design.
+  - Phase 3 models and serialization.
 - Next:
-  - Define client configuration and v1 public method signatures.
+  - Expand models to OpenRouter request/response parity.
 
 Suggested update format:
 

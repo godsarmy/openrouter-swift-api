@@ -4,6 +4,7 @@ import XCTest
 
 final class OpenRouterClientTests: XCTestCase {
   func testClientInitialization() {
-    _ = OpenRouterClient()
+    let client = OpenRouterClient(apiKey: "test-key")
+    XCTAssertEqual(client.configuration.baseURL.absoluteString, "https://openrouter.ai/api/v1")
   }
 }
