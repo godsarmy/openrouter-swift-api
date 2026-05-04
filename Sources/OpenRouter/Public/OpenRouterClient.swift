@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(FoundationNetworking)
+  import FoundationNetworking
+#endif
+
 public struct OpenRouterClient {
   public let configuration: Configuration
   private let transport: HTTPTransport
@@ -23,8 +27,46 @@ public struct OpenRouterClient {
   public func createChatCompletionStream(
     _ request: ChatCompletionRequest
   ) -> AsyncThrowingStream<ChatCompletionChunk, Error> {
-    AsyncThrowingStream { continuation in
-      continuation.finish(throwing: OpenRouterError.notImplemented("createChatCompletionStream"))
+    let transport = self.transport
+    return AsyncThrowingStream { continuation in
+      Task.detached {
+        do {
+          var streamRequest = request
+          streamRequest.stream = true
+          let urlRequest = try transport.buildRequest(path: "chat/completions", body: streamRequest)
+          let (data, response) = try await transport.session.data(for: urlRequest)
+
+          guard let http = response as? HTTPURLResponse else {
+            throw OpenRouterError.invalidResponse
+          }
+
+          guard (200..<300).contains(http.statusCode) else {
+            throw OpenRouterError.apiError(
+              statusCode: http.statusCode,
+              code: nil,
+              message: "Streaming request failed",
+              rawBody: nil
+            )
+          }
+
+          let raw = String(decoding: data, as: UTF8.self)
+          for line in raw.split(separator: "\n").map(String.init) {
+            guard let event = SSEParser.parse(line: line) else { continue }
+            switch event {
+            case .done:
+              continuation.finish()
+              return
+            case .data(let payload):
+              let data = Data(payload.utf8)
+              let chunk = try JSONDecoder().decode(ChatCompletionChunk.self, from: data)
+              continuation.yield(chunk)
+            }
+          }
+          continuation.finish()
+        } catch {
+          continuation.finish(throwing: error)
+        }
+      }
     }
   }
 

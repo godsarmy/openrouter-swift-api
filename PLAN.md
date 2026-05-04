@@ -100,11 +100,11 @@ Goal: Reimplement the `go-openrouter` SDK in Swift as a reusable Swift Package f
 
 ## Phase 5 — Streaming (SSE)
 
-- [ ] Implement SSE parser for `data:` frames
-- [ ] Handle sentinel `[DONE]`
-- [ ] Decode chunk payloads into `ChatCompletionChunk`
-- [ ] Expose as `AsyncThrowingStream`
-- [ ] Ensure cancellation/cleanup works correctly
+- [x] Implement SSE parser for `data:` frames
+- [x] Handle sentinel `[DONE]`
+- [x] Decode chunk payloads into `ChatCompletionChunk`
+- [x] Expose as `AsyncThrowingStream`
+- [x] Ensure cancellation/cleanup works correctly
 
 **Exit criteria**
 - Streamed chat completion stable under normal/error/cancel paths.
@@ -211,10 +211,11 @@ Goal: Reimplement the `go-openrouter` SDK in Swift as a reusable Swift Package f
   - Completed Phase 2 public API signatures for client/config/endpoints/fallback policy.
   - Completed Phase 3 models/serialization with multimodal content and polymorphic JSON decoding.
   - Completed Phase 4 transport layer with request builder, auth/custom headers, and API error mapping.
+  - Completed Phase 5 streaming with SSE parser, [DONE] handling, and chunk decoding.
 - In progress:
-  - Phase 5 streaming (SSE).
+  - Phase 6 fallback policy and reliability.
 - Next:
-  - Implement SSE parser and async stream lifecycle.
+  - Implement fallback execution order and policy checks.
 
 Suggested update format:
 

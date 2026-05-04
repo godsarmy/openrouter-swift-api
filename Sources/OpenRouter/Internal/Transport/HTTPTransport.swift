@@ -4,7 +4,7 @@ import Foundation
   import FoundationNetworking
 #endif
 
-struct HTTPTransport {
+struct HTTPTransport: @unchecked Sendable {
   let configuration: OpenRouterClient.Configuration
   let session: URLSession
 
