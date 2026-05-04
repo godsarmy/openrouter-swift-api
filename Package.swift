@@ -24,7 +24,10 @@ let package = Package(
     ),
     .testTarget(
       name: "OpenRouterTests",
-      dependencies: ["OpenRouter"]
+      dependencies: ["OpenRouter"],
+      resources: [
+        .process("Fixtures")
+      ]
     ),
   ]
 )

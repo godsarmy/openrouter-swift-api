@@ -8,10 +8,14 @@ public struct OpenRouterClient {
   public let configuration: Configuration
   private let transport: HTTPTransport
 
-  public init(apiKey: String, configuration: Configuration = .init()) {
+  public init(
+    apiKey: String,
+    configuration: Configuration = .init(),
+    session: URLSession = .shared
+  ) {
     let resolved = configuration.withAPIKey(apiKey)
     self.configuration = resolved
-    transport = HTTPTransport(configuration: resolved)
+    transport = HTTPTransport(configuration: resolved, session: session)
   }
 
   public func createChatCompletion(_ request: ChatCompletionRequest) async throws

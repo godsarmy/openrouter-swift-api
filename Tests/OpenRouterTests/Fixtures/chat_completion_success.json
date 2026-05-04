@@ -1,0 +1,19 @@
+{
+  "id": "chatcmpl-test-1",
+  "model": "openai/gpt-4o-mini",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Hello from fixture"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 5,
+    "completion_tokens": 3,
+    "total_tokens": 8
+  }
+}

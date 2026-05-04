@@ -127,17 +127,17 @@ Goal: Reimplement the `go-openrouter` SDK in Swift as a reusable Swift Package f
 
 ## Phase 7 — Testing
 
-- [ ] Unit tests:
-  - [ ] Model encoding/decoding
-  - [ ] Error mapping
-  - [ ] Fallback policy decisions
-  - [ ] SSE parser edge cases
-- [ ] Transport tests with mocked `URLProtocol`
-- [ ] Integration tests (opt-in via `OPENROUTER_API_KEY`):
-  - [ ] Chat completion
-  - [ ] Streaming chat completion
-  - [ ] Embeddings
-- [ ] Add deterministic fixtures for CI
+- [x] Unit tests:
+  - [x] Model encoding/decoding
+  - [x] Error mapping
+  - [x] Fallback policy decisions
+  - [x] SSE parser edge cases
+- [x] Transport tests with mocked `URLProtocol`
+- [x] Integration tests (opt-in via `OPENROUTER_API_KEY`):
+  - [x] Chat completion
+  - [x] Streaming chat completion
+  - [x] Embeddings
+- [x] Add deterministic fixtures for CI
 
 **Exit criteria**
 - Reliable CI passing without requiring live API for core suite.
@@ -215,10 +215,11 @@ Goal: Reimplement the `go-openrouter` SDK in Swift as a reusable Swift Package f
   - Added executable CLI examples for chat/stream/embed/complete with env-based API key.
   - Enhanced CLI with --system prompt support and --output json|text modes.
   - Completed Phase 6 fallback policy with status/body-code checks and retry order logic.
+  - Completed Phase 7 testing with mocked transport, integration test scaffolding, and fixtures.
 - In progress:
-  - Phase 7 testing.
+  - Phase 8 docs/examples/developer experience.
 - Next:
-  - Expand tests for fallback/transport/stream edge-cases and fixtures.
+  - Add tool-calling, structured-output, and fallback-focused usage examples.
 
 Suggested update format:
 
