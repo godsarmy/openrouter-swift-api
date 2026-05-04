@@ -37,4 +37,10 @@ swift run OpenRouterExamples chat --model openai/gpt-4o-mini --prompt "hello"
 swift run OpenRouterExamples stream --model openai/gpt-4o-mini --prompt "give me 3 bullets"
 swift run OpenRouterExamples embed --model text-embedding-3-small --prompt "swift sdk"
 swift run OpenRouterExamples complete --model openai/gpt-3.5-turbo-instruct --prompt "hello"
+swift run OpenRouterExamples chat --model openai/gpt-4o-mini --system "You are concise" --prompt "hello" --output text
 ```
+
+Options:
+
+- `--system <text>` adds a system message before the user prompt
+- `--output json|text` controls output format (default: `json`)

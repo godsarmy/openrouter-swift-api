@@ -32,12 +32,19 @@ private struct CLI {
   struct ParsedArgs {
     var model: String
     var prompt: String
+    var system: String?
     var baseURL: URL?
+    var output: OutputMode
+  }
+
+  enum OutputMode: String {
+    case json
+    case text
   }
 
   static let usage = """
     Usage:
-      swift run OpenRouterExamples <command> --model <model> --prompt <text> [--base-url <url>]
+      swift run OpenRouterExamples <command> --model <model> --prompt <text> [--system <text>] [--base-url <url>] [--output json|text]
 
     Commands:
       chat      Run non-streaming chat completion
@@ -74,24 +81,33 @@ private struct CLI {
 
     switch command {
     case .chat:
-      let request = ChatCompletionRequest(model: args.model, messages: [.user(args.prompt)])
+      let request = ChatCompletionRequest(model: args.model, messages: buildMessages())
       let response = try await client.createChatCompletion(request)
-      printJSON(response)
+      printChatResponse(response)
     case .stream:
       let request = ChatCompletionRequest(
-        model: args.model, messages: [.user(args.prompt)], stream: true)
+        model: args.model, messages: buildMessages(), stream: true)
       for try await chunk in client.createChatCompletionStream(request) {
-        printJSON(chunk)
+        printChatChunk(chunk)
       }
     case .embed:
       let request = EmbeddingRequest(model: args.model, input: .string(args.prompt))
       let response = try await client.createEmbeddings(request)
-      printJSON(response)
+      printEncoded(response)
     case .complete:
       let request = CompletionRequest(model: args.model, prompt: args.prompt)
       let response = try await client.createCompletion(request)
-      printJSON(response)
+      printCompletionResponse(response)
     }
+  }
+
+  private func buildMessages() -> [ChatMessage] {
+    var messages: [ChatMessage] = []
+    if let system = args.system, !system.isEmpty {
+      messages.append(.system(system))
+    }
+    messages.append(.user(args.prompt))
+    return messages
   }
 
   private static func parseArgs(_ tokens: [String]) throws -> ParsedArgs {
@@ -104,6 +120,7 @@ private struct CLI {
     guard let prompt = value(for: "--prompt"), !prompt.isEmpty else {
       throw CLIError.missingPrompt
     }
+    let system = value(for: "--system")
 
     let baseURL: URL?
     if let raw = value(for: "--base-url") {
@@ -113,10 +130,16 @@ private struct CLI {
       baseURL = nil
     }
 
-    return ParsedArgs(model: model, prompt: prompt, baseURL: baseURL)
+    let outputRaw = value(for: "--output") ?? OutputMode.json.rawValue
+    guard let output = OutputMode(rawValue: outputRaw) else {
+      throw CLIError.invalidOutput(outputRaw)
+    }
+
+    return ParsedArgs(
+      model: model, prompt: prompt, system: system, baseURL: baseURL, output: output)
   }
 
-  private func printJSON<T: Encodable>(_ value: T) {
+  private func printEncoded<T: Encodable>(_ value: T) {
     let encoder = JSONEncoder()
     encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
     if let data = try? encoder.encode(value), let text = String(data: data, encoding: .utf8) {
@@ -124,6 +147,50 @@ private struct CLI {
       return
     }
     print(String(describing: value))
+  }
+
+  private func printChatResponse(_ response: ChatCompletionResponse) {
+    switch args.output {
+    case .json:
+      printEncoded(response)
+    case .text:
+      if let first = response.choices.first {
+        switch first.message.content {
+        case .text(let text):
+          print(text)
+        case .parts(let parts):
+          let text = parts.compactMap {
+            if case .text(let value) = $0 { return value }
+            return nil
+          }.joined(separator: "\n")
+          print(text)
+        }
+      }
+    }
+  }
+
+  private func printChatChunk(_ chunk: ChatCompletionChunk) {
+    switch args.output {
+    case .json:
+      printEncoded(chunk)
+    case .text:
+      for choice in chunk.choices {
+        if let content = choice.delta?.content {
+          print(content, terminator: "")
+        }
+      }
+    }
+  }
+
+  private func printCompletionResponse(_ response: CompletionResponse) {
+    switch args.output {
+    case .json:
+      printEncoded(response)
+    case .text:
+      if let first = response.choices.first {
+        print(first.text)
+      }
+    }
   }
 }
 
@@ -133,6 +200,7 @@ private enum CLIError: Error, LocalizedError {
   case missingModel
   case missingPrompt
   case invalidBaseURL(String)
+  case invalidOutput(String)
 
   var errorDescription: String? {
     switch self {
@@ -146,6 +214,8 @@ private enum CLIError: Error, LocalizedError {
       return "missing --prompt argument"
     case .invalidBaseURL(let value):
       return "invalid --base-url: \(value)"
+    case .invalidOutput(let value):
+      return "invalid --output value: \(value). Use 'json' or 'text'."
     }
   }
 }
