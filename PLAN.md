@@ -11,10 +11,10 @@ Goal: Reimplement the `go-openrouter` SDK in Swift as a reusable Swift Package f
 
 ## Phase 0 — Project Framing
 
-- [ ] Confirm target platform/version (recommended: iOS 15+)
-- [ ] Confirm Swift tools version and CI macOS/Xcode matrix
-- [ ] Define parity scope with `revrost/go-openrouter`
-- [ ] Produce `FEATURE_PARITY.md` mapping Go API → Swift API
+- [x] Confirm target platform/version (recommended: iOS 15+)
+- [x] Confirm Swift tools version and CI macOS/Xcode matrix
+- [x] Define parity scope with `revrost/go-openrouter`
+- [x] Produce `FEATURE_PARITY.md` mapping Go API → Swift API
 
 **Exit criteria**
 - Clear, frozen v1 feature scope and compatibility targets.
@@ -196,11 +196,21 @@ Goal: Reimplement the `go-openrouter` SDK in Swift as a reusable Swift Package f
 ## Session Tracking
 
 ### Current focus
-- [ ] Set current task at session start
+- [x] Set current task at session start
 
 ### Activity log
 - [x] Initial plan drafted and committed to `PLAN.md`
-- [ ] Add dated updates per session
+- [x] Add dated updates per session
+
+### 2026-05-03
+- Completed:
+  - Added Phase 0 framing artifacts: `FEATURE_PARITY.md`, `COMPATIBILITY.md`.
+  - Confirmed v1 compatibility targets and CI direction.
+  - Marked all Phase 0 checklist items complete.
+- In progress:
+  - Phase 1 package foundation.
+- Next:
+  - Initialize Swift Package and base source layout.
 
 Suggested update format:
 
