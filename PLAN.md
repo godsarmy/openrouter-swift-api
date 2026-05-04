@@ -87,11 +87,11 @@ Goal: Reimplement the `go-openrouter` SDK in Swift as a reusable Swift Package f
 
 ## Phase 4 — Transport Layer
 
-- [ ] Build request factory (method/path/headers/body)
-- [ ] Inject auth (`Authorization: Bearer ...`)
-- [ ] Inject optional OpenRouter headers (`HTTP-Referer`, `X-Title`)
-- [ ] Implement JSON response decoding and error decoding
-- [ ] Map HTTP + API errors to Swift error enum
+- [x] Build request factory (method/path/headers/body)
+- [x] Inject auth (`Authorization: Bearer ...`)
+- [x] Inject optional OpenRouter headers (`HTTP-Referer`, `X-Title`)
+- [x] Implement JSON response decoding and error decoding
+- [x] Map HTTP + API errors to Swift error enum
 
 **Exit criteria**
 - Non-streaming endpoints function through a single shared transport.
@@ -210,10 +210,11 @@ Goal: Reimplement the `go-openrouter` SDK in Swift as a reusable Swift Package f
   - Completed Phase 1 package foundation with library, tests, examples targets and base layout.
   - Completed Phase 2 public API signatures for client/config/endpoints/fallback policy.
   - Completed Phase 3 models/serialization with multimodal content and polymorphic JSON decoding.
+  - Completed Phase 4 transport layer with request builder, auth/custom headers, and API error mapping.
 - In progress:
-  - Phase 4 transport layer.
+  - Phase 5 streaming (SSE).
 - Next:
-  - Implement request factory, headers, and non-streaming HTTP execution.
+  - Implement SSE parser and async stream lifecycle.
 
 Suggested update format:
 

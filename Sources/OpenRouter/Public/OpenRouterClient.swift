@@ -2,15 +2,22 @@ import Foundation
 
 public struct OpenRouterClient {
   public let configuration: Configuration
+  private let transport: HTTPTransport
 
   public init(apiKey: String, configuration: Configuration = .init()) {
-    self.configuration = configuration.withAPIKey(apiKey)
+    let resolved = configuration.withAPIKey(apiKey)
+    self.configuration = resolved
+    transport = HTTPTransport(configuration: resolved)
   }
 
   public func createChatCompletion(_ request: ChatCompletionRequest) async throws
     -> ChatCompletionResponse
   {
-    throw OpenRouterError.notImplemented("createChatCompletion")
+    try await transport.post(
+      path: "chat/completions",
+      requestBody: request,
+      responseType: ChatCompletionResponse.self
+    )
   }
 
   public func createChatCompletionStream(
@@ -22,11 +29,19 @@ public struct OpenRouterClient {
   }
 
   public func createEmbeddings(_ request: EmbeddingRequest) async throws -> EmbeddingResponse {
-    throw OpenRouterError.notImplemented("createEmbeddings")
+    try await transport.post(
+      path: "embeddings",
+      requestBody: request,
+      responseType: EmbeddingResponse.self
+    )
   }
 
   public func createCompletion(_ request: CompletionRequest) async throws -> CompletionResponse {
-    throw OpenRouterError.notImplemented("createCompletion")
+    try await transport.post(
+      path: "completions",
+      requestBody: request,
+      responseType: CompletionResponse.self
+    )
   }
 
   public func createChatCompletionWithFallback(
@@ -111,4 +126,39 @@ public struct ChatCompletionFallbackPolicy: Sendable, Equatable {
 
 public enum OpenRouterError: Error, Equatable {
   case notImplemented(String)
+  case missingAPIKey
+  case invalidURL(String)
+  case invalidResponse
+  case decodingFailed(statusCode: Int, underlying: String)
+  case apiError(statusCode: Int, code: Int?, message: String?, rawBody: String?)
+
+  public static func == (lhs: OpenRouterError, rhs: OpenRouterError) -> Bool {
+    switch (lhs, rhs) {
+    case (.notImplemented(let a), .notImplemented(let b)):
+      a == b
+    case (.missingAPIKey, .missingAPIKey):
+      true
+    case (.invalidURL(let a), .invalidURL(let b)):
+      a == b
+    case (.invalidResponse, .invalidResponse):
+      true
+    case (
+      .decodingFailed(let aStatus, let aUnderlying), .decodingFailed(let bStatus, let bUnderlying)
+    ):
+      aStatus == bStatus && aUnderlying == bUnderlying
+    case (
+      .apiError(let aStatus, let aCode, let aMessage, let aRaw),
+      .apiError(let bStatus, let bCode, let bMessage, let bRaw)
+    ):
+      aStatus == bStatus && aCode == bCode && aMessage == bMessage && aRaw == bRaw
+    default:
+      false
+    }
+  }
+}
+
+extension OpenRouterError {
+  static func decodingFailed(statusCode: Int, underlying: Error) -> Self {
+    .decodingFailed(statusCode: statusCode, underlying: String(describing: underlying))
+  }
 }
