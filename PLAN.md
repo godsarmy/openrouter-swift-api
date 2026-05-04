@@ -65,20 +65,20 @@ Goal: Reimplement the `go-openrouter` SDK in Swift as a reusable Swift Package f
 
 ## Phase 3 — Models & Serialization
 
-- [ ] Implement Codable request/response models:
-  - [ ] Chat completion request/response
-  - [ ] Message roles and content parts
-  - [ ] Tool/function calling schema types
-  - [ ] Structured output / response_format JSON schema
-  - [ ] Embedding request/response
-  - [ ] Completion request/response (if in scope)
-  - [ ] Usage/token accounting fields
-- [ ] Support multimodal content:
-  - [ ] text
-  - [ ] image
-  - [ ] pdf
-  - [ ] audio
-- [ ] Add robust decoding for polymorphic fields
+- [x] Implement Codable request/response models:
+  - [x] Chat completion request/response
+  - [x] Message roles and content parts
+  - [x] Tool/function calling schema types
+  - [x] Structured output / response_format JSON schema
+  - [x] Embedding request/response
+  - [x] Completion request/response (if in scope)
+  - [x] Usage/token accounting fields
+- [x] Support multimodal content:
+  - [x] text
+  - [x] image
+  - [x] pdf
+  - [x] audio
+- [x] Add robust decoding for polymorphic fields
 
 **Exit criteria**
 - Model round-trip encode/decode tests passing.
@@ -209,10 +209,11 @@ Goal: Reimplement the `go-openrouter` SDK in Swift as a reusable Swift Package f
   - Marked all Phase 0 checklist items complete.
   - Completed Phase 1 package foundation with library, tests, examples targets and base layout.
   - Completed Phase 2 public API signatures for client/config/endpoints/fallback policy.
+  - Completed Phase 3 models/serialization with multimodal content and polymorphic JSON decoding.
 - In progress:
-  - Phase 3 models and serialization.
+  - Phase 4 transport layer.
 - Next:
-  - Expand models to OpenRouter request/response parity.
+  - Implement request factory, headers, and non-streaming HTTP execution.
 
 Suggested update format:
 
