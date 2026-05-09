@@ -34,13 +34,20 @@ Run commands:
 
 ```bash
 swift run OpenRouterExamples chat --model openai/gpt-4o-mini --prompt "hello"
+swift run OpenRouterExamples chatFallback --model deepseek/deepseek-chat --fallback-models "openai/gpt-4o-mini,anthropic/claude-sonnet-4.5" --prompt "hello"
 swift run OpenRouterExamples stream --model openai/gpt-4o-mini --prompt "give me 3 bullets"
 swift run OpenRouterExamples embed --model text-embedding-3-small --prompt "swift sdk"
 swift run OpenRouterExamples complete --model openai/gpt-3.5-turbo-instruct --prompt "hello"
 swift run OpenRouterExamples chat --model openai/gpt-4o-mini --system "You are concise" --prompt "hello" --output text
+swift run OpenRouterExamples chat --model openai/gpt-4o-mini --prompt "summarize" --reasoning-effort high --web-search-context-size medium
+swift run OpenRouterExamples chat --model openai/gpt-4o-mini --prompt "summarize" --cache-enabled true --cache-ttl 300
 ```
 
 Options:
 
 - `--system <text>` adds a system message before the user prompt
 - `--output json|text` controls output format (default: `json`)
+- `--fallback-models <m1,m2,...>` enables fallback routing for `chatFallback`
+- `--reasoning-effort <xhigh|high|medium|low|minimal|none>` sets reasoning effort
+- `--web-search-context-size <low|medium|high>` enables web search context controls
+- `--cache-enabled true|false`, `--cache-ttl <seconds>`, `--cache-clear true|false` control response caching headers

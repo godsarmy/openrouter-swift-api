@@ -24,6 +24,7 @@ struct OpenRouterExamplesMain {
 private struct CLI {
   enum Command: String {
     case chat
+    case chatFallback
     case stream
     case embed
     case complete
@@ -35,6 +36,12 @@ private struct CLI {
     var system: String?
     var baseURL: URL?
     var output: OutputMode
+    var fallbackModels: [String]
+    var reasoningEffort: String?
+    var webSearchContextSize: String?
+    var cacheEnabled: Bool?
+    var cacheTTLSeconds: Int?
+    var cacheClear: Bool?
   }
 
   enum OutputMode: String {
@@ -44,13 +51,17 @@ private struct CLI {
 
   static let usage = """
     Usage:
-      swift run OpenRouterExamples <command> --model <model> --prompt <text> [--system <text>] [--base-url <url>] [--output json|text]
+      swift run OpenRouterExamples <command> --model <model> --prompt <text> [--system <text>] [--base-url <url>] [--output json|text] [--reasoning-effort <level>] [--web-search-context-size <low|medium|high>] [--cache-enabled true|false] [--cache-ttl <seconds>] [--cache-clear true|false]
 
     Commands:
       chat      Run non-streaming chat completion
+      chatFallback Run chat completion with fallback models
       stream    Run streaming chat completion (prints chunks as JSON)
       embed     Run embeddings request for prompt text
       complete  Run legacy completion request
+
+    Fallback:
+      --fallback-models <model1,model2,...>
 
     Environment:
       OPENROUTER_API_KEY  Required API key
@@ -81,24 +92,73 @@ private struct CLI {
 
     switch command {
     case .chat:
-      let request = ChatCompletionRequest(model: args.model, messages: buildMessages())
+      let request = buildChatRequest(stream: false)
       let response = try await client.createChatCompletion(request)
       printChatResponse(response)
+    case .chatFallback:
+      guard !args.fallbackModels.isEmpty else {
+        throw CLIError.missingFallbackModels
+      }
+      let request = buildChatRequest(stream: false)
+      let response = try await client.createChatCompletionWithFallback(
+        request,
+        fallbackModels: args.fallbackModels
+      )
+      printChatResponse(response)
     case .stream:
-      let request = ChatCompletionRequest(
-        model: args.model, messages: buildMessages(), stream: true)
+      let request = buildChatRequest(stream: true)
       for try await chunk in client.createChatCompletionStream(request) {
         printChatChunk(chunk)
       }
     case .embed:
-      let request = EmbeddingRequest(model: args.model, input: .string(args.prompt))
+      let request = EmbeddingRequest(
+        model: args.model,
+        input: .string(args.prompt),
+        responseCache: buildResponseCacheConfig()
+      )
       let response = try await client.createEmbeddings(request)
       printEncoded(response)
     case .complete:
-      let request = CompletionRequest(model: args.model, prompt: args.prompt)
+      let request = CompletionRequest(
+        model: args.model,
+        prompt: args.prompt,
+        responseCache: buildResponseCacheConfig()
+      )
       let response = try await client.createCompletion(request)
       printCompletionResponse(response)
     }
+  }
+
+  private func buildChatRequest(stream: Bool) -> ChatCompletionRequest {
+    ChatCompletionRequest(
+      model: args.model,
+      messages: buildMessages(),
+      stream: stream,
+      reasoning: buildReasoningConfig(),
+      webSearchOptions: buildWebSearchOptions(),
+      responseCache: buildResponseCacheConfig()
+    )
+  }
+
+  private func buildReasoningConfig() -> ChatCompletionReasoning? {
+    guard let effort = args.reasoningEffort, !effort.isEmpty else { return nil }
+    return ChatCompletionReasoning(effort: effort)
+  }
+
+  private func buildWebSearchOptions() -> WebSearchOptions? {
+    guard let size = args.webSearchContextSize, !size.isEmpty else { return nil }
+    return WebSearchOptions(searchContextSize: size)
+  }
+
+  private func buildResponseCacheConfig() -> ResponseCacheConfig? {
+    if args.cacheEnabled == nil && args.cacheTTLSeconds == nil && args.cacheClear == nil {
+      return nil
+    }
+    return ResponseCacheConfig(
+      enabled: args.cacheEnabled,
+      ttlSeconds: args.cacheTTLSeconds,
+      clear: args.cacheClear
+    )
   }
 
   private func buildMessages() -> [ChatMessage] {
@@ -121,6 +181,18 @@ private struct CLI {
       throw CLIError.missingPrompt
     }
     let system = value(for: "--system")
+    let fallbackModels =
+      value(for: "--fallback-models")?
+      .split(separator: ",")
+      .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+      .filter { !$0.isEmpty } ?? []
+
+    let reasoningEffort = value(for: "--reasoning-effort")
+    let webSearchContextSize = value(for: "--web-search-context-size")
+
+    let cacheEnabled = parseBool(value(for: "--cache-enabled"))
+    let cacheClear = parseBool(value(for: "--cache-clear"))
+    let cacheTTL = parseInt(value(for: "--cache-ttl"))
 
     let baseURL: URL?
     if let raw = value(for: "--base-url") {
@@ -136,7 +208,32 @@ private struct CLI {
     }
 
     return ParsedArgs(
-      model: model, prompt: prompt, system: system, baseURL: baseURL, output: output)
+      model: model,
+      prompt: prompt,
+      system: system,
+      baseURL: baseURL,
+      output: output,
+      fallbackModels: fallbackModels,
+      reasoningEffort: reasoningEffort,
+      webSearchContextSize: webSearchContextSize,
+      cacheEnabled: cacheEnabled,
+      cacheTTLSeconds: cacheTTL,
+      cacheClear: cacheClear
+    )
+  }
+
+  private static func parseBool(_ value: String?) -> Bool? {
+    guard let value else { return nil }
+    switch value.lowercased() {
+    case "true": return true
+    case "false": return false
+    default: return nil
+    }
+  }
+
+  private static func parseInt(_ value: String?) -> Int? {
+    guard let value else { return nil }
+    return Int(value)
   }
 
   private func printEncoded<T: Encodable>(_ value: T) {
@@ -199,6 +296,7 @@ private enum CLIError: Error, LocalizedError {
   case missingAPIKey
   case missingModel
   case missingPrompt
+  case missingFallbackModels
   case invalidBaseURL(String)
   case invalidOutput(String)
 
@@ -212,6 +310,8 @@ private enum CLIError: Error, LocalizedError {
       return "missing --model argument"
     case .missingPrompt:
       return "missing --prompt argument"
+    case .missingFallbackModels:
+      return "missing --fallback-models for chatFallback command"
     case .invalidBaseURL(let value):
       return "invalid --base-url: \(value)"
     case .invalidOutput(let value):

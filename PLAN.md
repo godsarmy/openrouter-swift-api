@@ -152,7 +152,7 @@ Goal: Reimplement the `go-openrouter` SDK in Swift as a reusable Swift Package f
   - [x] Streaming chat
   - [ ] Tool calling
   - [ ] Structured outputs
-  - [ ] Fallback usage
+  - [x] Fallback usage
 - [ ] Add convenience builders (optional):
   - [ ] `.user("...")`, `.system("...")`
 - [ ] Add migration notes and known limitations
@@ -185,33 +185,33 @@ Source reference: `https://github.com/revrost/go-openrouter`
 - [x] Completion
 - [x] Streaming *(needs reliability upgrade to true incremental streaming path)*
 - [x] Embeddings
-- [ ] Reasoning
+- [x] Reasoning
 - [x] Tool calling
 - [x] Structured outputs
-- [ ] Prompt caching
-- [ ] Response caching
-- [ ] Web search
+- [x] Prompt caching
+- [x] Response caching
+- [x] Web search
 - [~] Multimodal [Images, PDFs, Audio] *(base support in place; tighten payload parity + fixtures)*
 - [x] Usage fields
 
-- [ ] Reasoning support parity:
-  - [ ] Add request reasoning options in `ChatCompletionRequest`
-  - [ ] Add response/chunk reasoning fields where returned
-  - [ ] Add model round-trip tests for reasoning fields
-- [ ] Prompt caching parity:
-  - [ ] Add prompt-caching request fields
-  - [ ] Verify field names/shape against OpenRouter docs
-  - [ ] Add encode/decode tests
-- [ ] Response caching parity:
-  - [ ] Add `ResponseCacheConfig` on supported requests
-  - [ ] Map cache config to transport headers (enable/ttl/clear)
-  - [ ] Parse cache metadata from response headers
-  - [ ] Expose cache metadata for streaming responses
-  - [ ] Add unit tests for header emission + metadata parsing
-- [ ] Web search parity:
-  - [ ] Add web-search request options to chat request models
+- [x] Reasoning support parity:
+  - [x] Add request reasoning options in `ChatCompletionRequest`
+  - [x] Add response/chunk reasoning fields where returned
+  - [x] Add model round-trip tests for reasoning fields
+- [x] Prompt caching parity:
+  - [x] Add prompt-caching request fields
+  - [x] Verify field names/shape against OpenRouter docs
+  - [x] Add encode/decode tests
+- [x] Response caching parity:
+  - [x] Add `ResponseCacheConfig` on supported requests
+  - [x] Map cache config to transport headers (enable/ttl/clear)
+  - [x] Parse cache metadata from response headers
+  - [x] Expose cache metadata for streaming responses
+  - [x] Add unit tests for header emission + metadata parsing
+- [x] Web search parity:
+  - [x] Add web-search request options to chat request models
   - [ ] Add typed response fields for search-related annotations (if present)
-  - [ ] Add request/response tests
+  - [x] Add request/response tests
 - [ ] Multimodal tightening parity:
   - [ ] Validate image/pdf/audio payload object shapes
   - [ ] Add multimodal fixture tests (image/pdf/audio variants)
