@@ -175,12 +175,53 @@ Goal: Reimplement the `go-openrouter` SDK in Swift as a reusable Swift Package f
 
 ---
 
+## Phase 10 — Go Parity Gap Closure
+
+Source reference: `https://github.com/revrost/go-openrouter`
+
+- [ ] Reasoning support parity:
+  - [ ] Add request reasoning options in `ChatCompletionRequest`
+  - [ ] Add response/chunk reasoning fields where returned
+  - [ ] Add model round-trip tests for reasoning fields
+- [ ] Prompt caching parity:
+  - [ ] Add prompt-caching request fields
+  - [ ] Verify field names/shape against OpenRouter docs
+  - [ ] Add encode/decode tests
+- [ ] Response caching parity:
+  - [ ] Add `ResponseCacheConfig` on supported requests
+  - [ ] Map cache config to transport headers (enable/ttl/clear)
+  - [ ] Parse cache metadata from response headers
+  - [ ] Expose cache metadata for streaming responses
+  - [ ] Add unit tests for header emission + metadata parsing
+- [ ] Web search parity:
+  - [ ] Add web-search request options to chat request models
+  - [ ] Add typed response fields for search-related annotations (if present)
+  - [ ] Add request/response tests
+- [ ] Multimodal tightening parity:
+  - [ ] Validate image/pdf/audio payload object shapes
+  - [ ] Add multimodal fixture tests (image/pdf/audio variants)
+  - [ ] Document accepted multimodal formats in README
+- [ ] Streaming reliability upgrade:
+  - [ ] Replace buffered stream read with true incremental streaming where available
+  - [ ] Keep SSE parser `[DONE]` behavior consistent
+  - [ ] Add tests for incremental chunk delivery behavior
+
+**Exit criteria**
+- Feature parity checklist aligns with Go SDK claims for:
+  - Chat completion, completion, streaming, embeddings
+  - reasoning, tool calling, structured outputs
+  - prompt caching, response caching, web search
+  - multimodal input and usage fields
+
+---
+
 ## Milestones
 
 - [ ] **M1**: Package + non-streaming chat working end-to-end
 - [ ] **M2**: Streaming + fallback policy complete
 - [ ] **M3**: Embeddings/tools/structured outputs + docs/tests
 - [ ] **M4**: CI green + first release tag
+- [ ] **M5**: Reasoning/caching/web-search parity complete
 
 ---
 
