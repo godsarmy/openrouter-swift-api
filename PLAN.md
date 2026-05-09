@@ -210,11 +210,11 @@ Source reference: `https://github.com/revrost/go-openrouter`
   - [x] Add unit tests for header emission + metadata parsing
 - [x] Web search parity:
   - [x] Add web-search request options to chat request models
-  - [ ] Add typed response fields for search-related annotations (if present)
+  - [x] Add typed response fields for search-related annotations (if present)
   - [x] Add request/response tests
 - [ ] Multimodal tightening parity:
-  - [ ] Validate image/pdf/audio payload object shapes
-  - [ ] Add multimodal fixture tests (image/pdf/audio variants)
+  - [x] Validate image/pdf/audio payload object shapes
+  - [x] Add multimodal fixture tests (image/pdf/audio variants)
   - [ ] Document accepted multimodal formats in README
 - [ ] Streaming reliability upgrade:
   - [ ] Replace buffered stream read with true incremental streaming where available

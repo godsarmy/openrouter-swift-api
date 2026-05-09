@@ -102,4 +102,54 @@ final class OpenRouterModelsTests: XCTestCase {
     XCTAssertTrue(json.contains("\"cache_control\""))
     XCTAssertFalse(json.contains("\"responseCache\""))
   }
+
+  func testDecodesWebSearchAnnotationsOnAssistantMessage() throws {
+    let json =
+      #"{"id":"chat-1","model":"m","choices":[{"index":0,"message":{"role":"assistant","content":"answer","annotations":[{"type":"url_citation","url_citation":{"start_index":0,"end_index":6,"title":"Doc","content":"snippet","url":"https://example.com"}}]},"finish_reason":"stop"}]}"#
+      .data(using: .utf8)!
+
+    let decoded = try JSONDecoder().decode(ChatCompletionResponse.self, from: json)
+    let citation = decoded.choices.first?.message.annotations?.first?.urlCitation
+    XCTAssertEqual(citation?.title, "Doc")
+    XCTAssertEqual(citation?.url, "https://example.com")
+  }
+
+  func testMultimodalImageAndFileObjectRoundTrip() throws {
+    let request = ChatCompletionRequest(
+      model: "m",
+      messages: [
+        .init(
+          role: .user,
+          content: .parts([
+            .image(.init(url: "https://example.com/img.png", detail: "high")),
+            .file(.init(filename: "paper.pdf", fileData: "base64-pdf")),
+            .inputAudio(.init(data: "base64-audio", format: "wav")),
+          ])
+        )
+      ]
+    )
+
+    let data = try JSONEncoder().encode(request)
+    let decoded = try JSONDecoder().decode(ChatCompletionRequest.self, from: data)
+    XCTAssertEqual(decoded.messages.count, 1)
+
+    guard case .parts(let parts) = decoded.messages[0].content else {
+      return XCTFail("Expected multipart content")
+    }
+
+    XCTAssertEqual(parts.count, 3)
+    if case .image(let image) = parts[0] {
+      XCTAssertEqual(image.url, "https://example.com/img.png")
+      XCTAssertEqual(image.detail, "high")
+    } else {
+      XCTFail("Expected image object part")
+    }
+
+    if case .file(let file) = parts[1] {
+      XCTAssertEqual(file.filename, "paper.pdf")
+      XCTAssertEqual(file.fileData, "base64-pdf")
+    } else {
+      XCTFail("Expected file object part")
+    }
+  }
 }
