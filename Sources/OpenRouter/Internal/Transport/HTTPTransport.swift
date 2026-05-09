@@ -103,8 +103,7 @@ struct HTTPTransport: @unchecked Sendable {
     }
   }
 
-  private func parseResponseCacheMetadata(from response: HTTPURLResponse) -> ResponseCacheMetadata?
-  {
+  func parseResponseCacheMetadata(from response: HTTPURLResponse) -> ResponseCacheMetadata? {
     let status = response.value(forHTTPHeaderField: "X-OpenRouter-Cache-Status")
     let age = response.value(forHTTPHeaderField: "X-OpenRouter-Cache-Age").flatMap(Int.init)
     let ttl = response.value(forHTTPHeaderField: "X-OpenRouter-Cache-TTL").flatMap(Int.init)

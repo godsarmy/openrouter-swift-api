@@ -33,45 +33,108 @@ public struct OpenRouterClient {
   ) -> AsyncThrowingStream<ChatCompletionChunk, Error> {
     let transport = self.transport
     return AsyncThrowingStream { continuation in
-      Task.detached {
-        do {
-          var streamRequest = request
-          streamRequest.stream = true
-          let urlRequest = try transport.buildRequest(path: "chat/completions", body: streamRequest)
-          let (data, response) = try await transport.session.data(for: urlRequest)
+      do {
+        var streamRequest = request
+        streamRequest.stream = true
+        let urlRequest = try transport.buildRequest(path: "chat/completions", body: streamRequest)
+
+        let task = transport.session.dataTask(with: urlRequest) { data, response, error in
+          if let error {
+            continuation.finish(throwing: error)
+            return
+          }
+
+          guard let response, let data else {
+            continuation.finish(throwing: OpenRouterError.invalidResponse)
+            return
+          }
 
           guard let http = response as? HTTPURLResponse else {
-            throw OpenRouterError.invalidResponse
+            continuation.finish(throwing: OpenRouterError.invalidResponse)
+            return
           }
 
           guard (200..<300).contains(http.statusCode) else {
-            throw OpenRouterError.apiError(
-              statusCode: http.statusCode,
-              code: nil,
-              message: "Streaming request failed",
-              rawBody: nil
-            )
+            continuation.finish(
+              throwing: OpenRouterError.apiError(
+                statusCode: http.statusCode,
+                code: nil,
+                message: "Streaming request failed",
+                rawBody: nil
+              ))
+            return
           }
 
-          let raw = String(decoding: data, as: UTF8.self)
-          for line in raw.split(separator: "\n").map(String.init) {
-            guard let event = SSEParser.parse(line: line) else { continue }
-            switch event {
-            case .done:
-              continuation.finish()
-              return
-            case .data(let payload):
-              let data = Data(payload.utf8)
-              let chunk = try JSONDecoder().decode(ChatCompletionChunk.self, from: data)
+          do {
+            let chunks = try Self.decodeStreamChunks(from: data)
+            for chunk in chunks {
               continuation.yield(chunk)
             }
+            continuation.finish()
+          } catch {
+            continuation.finish(throwing: error)
           }
-          continuation.finish()
-        } catch {
-          continuation.finish(throwing: error)
         }
+
+        continuation.onTermination = { _ in task.cancel() }
+        task.resume()
+      } catch {
+        continuation.finish(throwing: error)
       }
     }
+  }
+
+  public func createChatCompletionStreamSession(
+    _ request: ChatCompletionRequest
+  ) async throws -> ChatCompletionStreamSession {
+    let transport = self.transport
+    var streamRequest = request
+    streamRequest.stream = true
+    let urlRequest = try transport.buildRequest(path: "chat/completions", body: streamRequest)
+    let (data, response) = try await transport.session.data(for: urlRequest)
+
+    guard let http = response as? HTTPURLResponse else {
+      throw OpenRouterError.invalidResponse
+    }
+
+    guard (200..<300).contains(http.statusCode) else {
+      throw OpenRouterError.apiError(
+        statusCode: http.statusCode,
+        code: nil,
+        message: "Streaming request failed",
+        rawBody: nil
+      )
+    }
+
+    let chunks = try Self.decodeStreamChunks(from: data)
+    let stream = AsyncThrowingStream<ChatCompletionChunk, Error> { continuation in
+      for chunk in chunks {
+        continuation.yield(chunk)
+      }
+      continuation.finish()
+    }
+
+    return ChatCompletionStreamSession(
+      stream: stream,
+      responseCacheMetadata: transport.parseResponseCacheMetadata(from: http)
+    )
+  }
+
+  private static func decodeStreamChunks(from data: Data) throws -> [ChatCompletionChunk] {
+    let raw = String(decoding: data, as: UTF8.self)
+    var chunks: [ChatCompletionChunk] = []
+    for line in raw.split(separator: "\n").map(String.init) {
+      guard let event = SSEParser.parse(line: line) else { continue }
+      switch event {
+      case .done:
+        return chunks
+      case .data(let payload):
+        let payloadData = Data(payload.utf8)
+        let chunk = try JSONDecoder().decode(ChatCompletionChunk.self, from: payloadData)
+        chunks.append(chunk)
+      }
+    }
+    return chunks
   }
 
   public func createEmbeddings(_ request: EmbeddingRequest) async throws -> EmbeddingResponse {
@@ -113,67 +176,67 @@ public struct OpenRouterClient {
     let transport = self.transport
     let modelsToTry = [request.model] + policy.models
 
-    return AsyncThrowingStream { continuation in
-      Task.detached {
-        var lastError: Error?
+    let (stream, continuation) = AsyncThrowingStream.makeStream(of: ChatCompletionChunk.self)
+    Task {
+      var lastError: Error?
 
-        for (index, model) in modelsToTry.enumerated() {
-          do {
-            var candidate = request
-            candidate.model = model
-            var streamRequest = candidate
-            streamRequest.stream = true
+      for (index, model) in modelsToTry.enumerated() {
+        do {
+          var candidate = request
+          candidate.model = model
+          var streamRequest = candidate
+          streamRequest.stream = true
 
-            let urlRequest = try transport.buildRequest(
-              path: "chat/completions", body: streamRequest)
-            let (data, response) = try await transport.session.data(for: urlRequest)
+          let urlRequest = try transport.buildRequest(
+            path: "chat/completions", body: streamRequest)
+          let (data, response) = try await transport.session.data(for: urlRequest)
 
-            guard let http = response as? HTTPURLResponse else {
-              throw OpenRouterError.invalidResponse
-            }
-
-            guard (200..<300).contains(http.statusCode) else {
-              let apiError = try? JSONDecoder().decode(OpenRouterAPIErrorEnvelope.self, from: data)
-              throw OpenRouterError.apiError(
-                statusCode: http.statusCode,
-                code: apiError?.error.code,
-                message: apiError?.error.message,
-                rawBody: String(data: data, encoding: .utf8)
-              )
-            }
-
-            let raw = String(decoding: data, as: UTF8.self)
-            for line in raw.split(separator: "\n").map(String.init) {
-              guard let event = SSEParser.parse(line: line) else { continue }
-              switch event {
-              case .done:
-                continuation.finish()
-                return
-              case .data(let payload):
-                let payloadData = Data(payload.utf8)
-                let chunk = try JSONDecoder().decode(ChatCompletionChunk.self, from: payloadData)
-                continuation.yield(chunk)
-              }
-            }
-            continuation.finish()
-            return
-          } catch {
-            lastError = error
-            let hasMoreModels = index < modelsToTry.count - 1
-            if hasMoreModels,
-              OpenRouterClient.shouldFallback(for: error, policy: policy)
-            {
-              continue
-            }
-            continuation.finish(throwing: error)
-            return
+          guard let http = response as? HTTPURLResponse else {
+            throw OpenRouterError.invalidResponse
           }
-        }
 
-        continuation.finish(
-          throwing: lastError ?? OpenRouterError.notImplemented("stream fallback exhausted"))
+          guard (200..<300).contains(http.statusCode) else {
+            let apiError = try? JSONDecoder().decode(OpenRouterAPIErrorEnvelope.self, from: data)
+            throw OpenRouterError.apiError(
+              statusCode: http.statusCode,
+              code: apiError?.error.code,
+              message: apiError?.error.message,
+              rawBody: String(data: data, encoding: .utf8)
+            )
+          }
+
+          let raw = String(decoding: data, as: UTF8.self)
+          for line in raw.split(separator: "\n").map(String.init) {
+            guard let event = SSEParser.parse(line: line) else { continue }
+            switch event {
+            case .done:
+              continuation.finish()
+              return
+            case .data(let payload):
+              let payloadData = Data(payload.utf8)
+              let chunk = try JSONDecoder().decode(ChatCompletionChunk.self, from: payloadData)
+              continuation.yield(chunk)
+            }
+          }
+          continuation.finish()
+          return
+        } catch {
+          lastError = error
+          let hasMoreModels = index < modelsToTry.count - 1
+          if hasMoreModels,
+            OpenRouterClient.shouldFallback(for: error, policy: policy)
+          {
+            continue
+          }
+          continuation.finish(throwing: error)
+          return
+        }
       }
+
+      continuation.finish(
+        throwing: lastError ?? OpenRouterError.notImplemented("stream fallback exhausted"))
     }
+    return stream
   }
 
   public func createChatCompletionWithFallbackPolicy(
@@ -213,6 +276,19 @@ public struct OpenRouterClient {
     }
 
     return policy.errorCodes.contains(statusCode)
+  }
+}
+
+public struct ChatCompletionStreamSession {
+  public let stream: AsyncThrowingStream<ChatCompletionChunk, Error>
+  public let responseCacheMetadata: ResponseCacheMetadata?
+
+  public init(
+    stream: AsyncThrowingStream<ChatCompletionChunk, Error>,
+    responseCacheMetadata: ResponseCacheMetadata?
+  ) {
+    self.stream = stream
+    self.responseCacheMetadata = responseCacheMetadata
   }
 }
 

@@ -67,6 +67,45 @@ final class OpenRouterClientMockedTests: XCTestCase {
     }
   }
 
+  func testCreateChatCompletionStreamSessionIncludesCacheMetadata() async throws {
+    let streamBody = """
+      data: {"id":"chunk-1","model":"openai/gpt-4o-mini","choices":[{"index":0,"delta":{"content":"hello"},"finish_reason":null}]}
+      data: [DONE]
+      """.data(using: .utf8)!
+
+    URLProtocolStub.handler = { request in
+      let response = HTTPURLResponse(
+        url: request.url!,
+        statusCode: 200,
+        httpVersion: nil,
+        headerFields: [
+          "Content-Type": "text/event-stream",
+          "X-OpenRouter-Cache-Status": "HIT",
+          "X-OpenRouter-Cache-Age": "3",
+          "X-OpenRouter-Cache-TTL": "297",
+          "X-Generation-Id": "gen_stream_1",
+        ]
+      )!
+      return (response, streamBody)
+    }
+
+    let client = makeClient()
+    let session = try await client.createChatCompletionStreamSession(
+      ChatCompletionRequest(model: "openai/gpt-4o-mini", messages: [.user("hi")], stream: true)
+    )
+
+    XCTAssertEqual(session.responseCacheMetadata?.status, "HIT")
+    XCTAssertEqual(session.responseCacheMetadata?.ageSeconds, 3)
+    XCTAssertEqual(session.responseCacheMetadata?.ttlSeconds, 297)
+    XCTAssertEqual(session.responseCacheMetadata?.generationID, "gen_stream_1")
+
+    var got = ""
+    for try await chunk in session.stream {
+      got += chunk.choices.first?.delta?.content ?? ""
+    }
+    XCTAssertEqual(got, "hello")
+  }
+
   private func makeClient() -> OpenRouterClient {
     let config = URLSessionConfiguration.ephemeral
     config.protocolClasses = [URLProtocolStub.self]
