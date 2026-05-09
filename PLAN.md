@@ -179,6 +179,21 @@ Goal: Reimplement the `go-openrouter` SDK in Swift as a reusable Swift Package f
 
 Source reference: `https://github.com/revrost/go-openrouter`
 
+### Parity Snapshot vs Go SDK (feature list)
+
+- [x] Chat Completion
+- [x] Completion
+- [x] Streaming *(needs reliability upgrade to true incremental streaming path)*
+- [x] Embeddings
+- [ ] Reasoning
+- [x] Tool calling
+- [x] Structured outputs
+- [ ] Prompt caching
+- [ ] Response caching
+- [ ] Web search
+- [~] Multimodal [Images, PDFs, Audio] *(base support in place; tighten payload parity + fixtures)*
+- [x] Usage fields
+
 - [ ] Reasoning support parity:
   - [ ] Add request reasoning options in `ChatCompletionRequest`
   - [ ] Add response/chunk reasoning fields where returned

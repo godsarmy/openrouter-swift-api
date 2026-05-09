@@ -46,6 +46,12 @@ struct HTTPTransport: @unchecked Sendable {
       request.setValue(title, forHTTPHeaderField: "X-Title")
     }
 
+    if let body = body as? ResponseCacheConfigProviding,
+      let responseCache = body.responseCacheConfig
+    {
+      applyResponseCacheHeaders(responseCache, to: &request)
+    }
+
     request.httpBody = try JSONEncoder().encode(body)
     return request
   }
@@ -61,7 +67,14 @@ struct HTTPTransport: @unchecked Sendable {
 
     if (200..<300).contains(http.statusCode) {
       do {
-        return try JSONDecoder().decode(responseType, from: data)
+        var decoded = try JSONDecoder().decode(responseType, from: data)
+        if var attachable = decoded as? ResponseCacheMetadataAttachable {
+          attachable.attachResponseCacheMetadata(parseResponseCacheMetadata(from: http))
+          if let value = attachable as? Response {
+            decoded = value
+          }
+        }
+        return decoded
       } catch {
         throw OpenRouterError.decodingFailed(statusCode: http.statusCode, underlying: error)
       }
@@ -75,6 +88,47 @@ struct HTTPTransport: @unchecked Sendable {
       rawBody: String(data: data, encoding: .utf8)
     )
   }
+
+  private func applyResponseCacheHeaders(
+    _ config: ResponseCacheConfig, to request: inout URLRequest
+  ) {
+    if let enabled = config.enabled {
+      request.setValue(enabled ? "true" : "false", forHTTPHeaderField: "X-OpenRouter-Cache")
+    }
+    if let ttlSeconds = config.ttlSeconds {
+      request.setValue(String(ttlSeconds), forHTTPHeaderField: "X-OpenRouter-Cache-TTL")
+    }
+    if let clear = config.clear {
+      request.setValue(clear ? "true" : "false", forHTTPHeaderField: "X-OpenRouter-Cache-Clear")
+    }
+  }
+
+  private func parseResponseCacheMetadata(from response: HTTPURLResponse) -> ResponseCacheMetadata?
+  {
+    let status = response.value(forHTTPHeaderField: "X-OpenRouter-Cache-Status")
+    let age = response.value(forHTTPHeaderField: "X-OpenRouter-Cache-Age").flatMap(Int.init)
+    let ttl = response.value(forHTTPHeaderField: "X-OpenRouter-Cache-TTL").flatMap(Int.init)
+    let generationID = response.value(forHTTPHeaderField: "X-Generation-Id")
+
+    if status == nil, age == nil, ttl == nil, generationID == nil {
+      return nil
+    }
+
+    return ResponseCacheMetadata(
+      status: status,
+      ageSeconds: age,
+      ttlSeconds: ttl,
+      generationID: generationID
+    )
+  }
+}
+
+protocol ResponseCacheConfigProviding {
+  var responseCacheConfig: ResponseCacheConfig? { get }
+}
+
+protocol ResponseCacheMetadataAttachable {
+  mutating func attachResponseCacheMetadata(_ metadata: ResponseCacheMetadata?)
 }
 
 struct OpenRouterAPIErrorEnvelope: Codable, Equatable, Sendable {
@@ -84,4 +138,34 @@ struct OpenRouterAPIErrorEnvelope: Codable, Equatable, Sendable {
 struct OpenRouterAPIErrorBody: Codable, Equatable, Sendable {
   let code: Int?
   let message: String?
+}
+
+extension ChatCompletionRequest: ResponseCacheConfigProviding {
+  var responseCacheConfig: ResponseCacheConfig? { responseCache }
+}
+
+extension EmbeddingRequest: ResponseCacheConfigProviding {
+  var responseCacheConfig: ResponseCacheConfig? { responseCache }
+}
+
+extension CompletionRequest: ResponseCacheConfigProviding {
+  var responseCacheConfig: ResponseCacheConfig? { responseCache }
+}
+
+extension ChatCompletionResponse: ResponseCacheMetadataAttachable {
+  mutating func attachResponseCacheMetadata(_ metadata: ResponseCacheMetadata?) {
+    responseCache = metadata
+  }
+}
+
+extension EmbeddingResponse: ResponseCacheMetadataAttachable {
+  mutating func attachResponseCacheMetadata(_ metadata: ResponseCacheMetadata?) {
+    responseCache = metadata
+  }
+}
+
+extension CompletionResponse: ResponseCacheMetadataAttachable {
+  mutating func attachResponseCacheMetadata(_ metadata: ResponseCacheMetadata?) {
+    responseCache = metadata
+  }
 }

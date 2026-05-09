@@ -70,4 +70,36 @@ final class OpenRouterModelsTests: XCTestCase {
     let decoded = try JSONDecoder().decode(EmbeddingRequest.self, from: data)
     XCTAssertEqual(decoded, request)
   }
+
+  func testReasoningPromptCachingAndWebSearchRoundTrip() throws {
+    let request = ChatCompletionRequest(
+      model: "openai/gpt-4o-mini",
+      messages: [
+        .init(
+          role: .user,
+          content: .parts([
+            .textWithCache(
+              text: "Long reusable context", cacheControl: .init(type: "ephemeral", ttl: "5m"))
+          ])
+        )
+      ],
+      reasoning: .init(effort: "high", maxTokens: 256, exclude: false, enabled: true),
+      webSearchOptions: .init(searchContextSize: "high"),
+      responseCache: .init(enabled: true, ttlSeconds: 300, clear: false)
+    )
+
+    let data = try JSONEncoder().encode(request)
+    let decoded = try JSONDecoder().decode(ChatCompletionRequest.self, from: data)
+
+    XCTAssertEqual(decoded.reasoning?.effort, "high")
+    XCTAssertEqual(decoded.reasoning?.maxTokens, 256)
+    XCTAssertEqual(decoded.webSearchOptions?.searchContextSize, "high")
+    XCTAssertNil(decoded.responseCache)
+
+    let json = try XCTUnwrap(String(data: data, encoding: .utf8))
+    XCTAssertTrue(json.contains("\"reasoning\""))
+    XCTAssertTrue(json.contains("\"web_search_options\""))
+    XCTAssertTrue(json.contains("\"cache_control\""))
+    XCTAssertFalse(json.contains("\"responseCache\""))
+  }
 }

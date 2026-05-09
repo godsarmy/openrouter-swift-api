@@ -7,6 +7,9 @@ public struct ChatCompletionRequest: Codable, Sendable, Equatable {
   public var tools: [ChatTool]?
   public var toolChoice: ToolChoice?
   public var responseFormat: ChatResponseFormat?
+  public var reasoning: ChatCompletionReasoning?
+  public var webSearchOptions: WebSearchOptions?
+  public var responseCache: ResponseCacheConfig?
 
   enum CodingKeys: String, CodingKey {
     case model
@@ -15,6 +18,8 @@ public struct ChatCompletionRequest: Codable, Sendable, Equatable {
     case tools
     case toolChoice = "tool_choice"
     case responseFormat = "response_format"
+    case reasoning
+    case webSearchOptions = "web_search_options"
   }
 
   public init(
@@ -23,7 +28,10 @@ public struct ChatCompletionRequest: Codable, Sendable, Equatable {
     stream: Bool? = nil,
     tools: [ChatTool]? = nil,
     toolChoice: ToolChoice? = nil,
-    responseFormat: ChatResponseFormat? = nil
+    responseFormat: ChatResponseFormat? = nil,
+    reasoning: ChatCompletionReasoning? = nil,
+    webSearchOptions: WebSearchOptions? = nil,
+    responseCache: ResponseCacheConfig? = nil
   ) {
     self.model = model
     self.messages = messages
@@ -31,6 +39,9 @@ public struct ChatCompletionRequest: Codable, Sendable, Equatable {
     self.tools = tools
     self.toolChoice = toolChoice
     self.responseFormat = responseFormat
+    self.reasoning = reasoning
+    self.webSearchOptions = webSearchOptions
+    self.responseCache = responseCache
   }
 }
 
@@ -39,29 +50,56 @@ public struct ChatCompletionResponse: Codable, Sendable, Equatable {
   public var model: String?
   public var choices: [Choice]
   public var usage: Usage?
+  public var responseCache: ResponseCacheMetadata?
 
-  public init(id: String? = nil, model: String? = nil, choices: [Choice], usage: Usage? = nil) {
+  enum CodingKeys: String, CodingKey {
+    case id
+    case model
+    case choices
+    case usage
+  }
+
+  public init(
+    id: String? = nil,
+    model: String? = nil,
+    choices: [Choice],
+    usage: Usage? = nil,
+    responseCache: ResponseCacheMetadata? = nil
+  ) {
     self.id = id
     self.model = model
     self.choices = choices
     self.usage = usage
+    self.responseCache = responseCache
   }
 
   public struct Choice: Codable, Sendable, Equatable {
     public var index: Int?
     public var message: ChatMessage
     public var finishReason: String?
+    public var reasoning: String?
+    public var reasoningDetails: [ReasoningDetail]?
 
     enum CodingKeys: String, CodingKey {
       case index
       case message
       case finishReason = "finish_reason"
+      case reasoning
+      case reasoningDetails = "reasoning_details"
     }
 
-    public init(index: Int? = nil, message: ChatMessage, finishReason: String? = nil) {
+    public init(
+      index: Int? = nil,
+      message: ChatMessage,
+      finishReason: String? = nil,
+      reasoning: String? = nil,
+      reasoningDetails: [ReasoningDetail]? = nil
+    ) {
       self.index = index
       self.message = message
       self.finishReason = finishReason
+      self.reasoning = reasoning
+      self.reasoningDetails = reasoningDetails
     }
   }
 }
@@ -81,17 +119,29 @@ public struct ChatCompletionChunk: Codable, Sendable, Equatable {
     public var index: Int?
     public var delta: Delta?
     public var finishReason: String?
+    public var reasoning: String?
+    public var reasoningDetails: [ReasoningDetail]?
 
     enum CodingKeys: String, CodingKey {
       case index
       case delta
       case finishReason = "finish_reason"
+      case reasoning
+      case reasoningDetails = "reasoning_details"
     }
 
-    public init(index: Int? = nil, delta: Delta? = nil, finishReason: String? = nil) {
+    public init(
+      index: Int? = nil,
+      delta: Delta? = nil,
+      finishReason: String? = nil,
+      reasoning: String? = nil,
+      reasoningDetails: [ReasoningDetail]? = nil
+    ) {
       self.index = index
       self.delta = delta
       self.finishReason = finishReason
+      self.reasoning = reasoning
+      self.reasoningDetails = reasoningDetails
     }
   }
 
@@ -184,6 +234,7 @@ public enum Content: Codable, Sendable, Equatable {
 
 public enum ContentPart: Codable, Sendable, Equatable {
   case text(String)
+  case textWithCache(text: String, cacheControl: CacheControl)
   case imageURL(String)
   case fileURL(String)
   case inputAudio(InputAudio)
@@ -192,6 +243,7 @@ public enum ContentPart: Codable, Sendable, Equatable {
   private enum CodingKeys: String, CodingKey {
     case type
     case text
+    case cacheControl = "cache_control"
     case imageURL = "image_url"
     case fileURL = "file_url"
     case inputAudio = "input_audio"
@@ -202,7 +254,13 @@ public enum ContentPart: Codable, Sendable, Equatable {
     let type = try container.decode(String.self, forKey: .type)
     switch type {
     case "text":
-      self = .text(try container.decode(String.self, forKey: .text))
+      let text = try container.decode(String.self, forKey: .text)
+      if let cacheControl = try container.decodeIfPresent(CacheControl.self, forKey: .cacheControl)
+      {
+        self = .textWithCache(text: text, cacheControl: cacheControl)
+      } else {
+        self = .text(text)
+      }
     case "image_url":
       self = .imageURL(try container.decode(String.self, forKey: .imageURL))
     case "file_url":
@@ -221,6 +279,11 @@ public enum ContentPart: Codable, Sendable, Equatable {
       var container = encoder.container(keyedBy: CodingKeys.self)
       try container.encode("text", forKey: .type)
       try container.encode(text, forKey: .text)
+    case .textWithCache(let text, let cacheControl):
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode("text", forKey: .type)
+      try container.encode(text, forKey: .text)
+      try container.encode(cacheControl, forKey: .cacheControl)
     case .imageURL(let url):
       var container = encoder.container(keyedBy: CodingKeys.self)
       try container.encode("image_url", forKey: .type)
@@ -274,10 +337,17 @@ public struct ToolFunctionCall: Codable, Sendable, Equatable {
 public struct EmbeddingRequest: Codable, Sendable, Equatable {
   public var model: String
   public var input: EmbeddingInput
+  public var responseCache: ResponseCacheConfig?
 
-  public init(model: String, input: EmbeddingInput) {
+  enum CodingKeys: String, CodingKey {
+    case model
+    case input
+  }
+
+  public init(model: String, input: EmbeddingInput, responseCache: ResponseCacheConfig? = nil) {
     self.model = model
     self.input = input
+    self.responseCache = responseCache
   }
 }
 
@@ -285,11 +355,24 @@ public struct EmbeddingResponse: Codable, Sendable, Equatable {
   public var model: String?
   public var data: [EmbeddingData]
   public var usage: Usage?
+  public var responseCache: ResponseCacheMetadata?
 
-  public init(model: String? = nil, data: [EmbeddingData], usage: Usage? = nil) {
+  enum CodingKeys: String, CodingKey {
+    case model
+    case data
+    case usage
+  }
+
+  public init(
+    model: String? = nil,
+    data: [EmbeddingData],
+    usage: Usage? = nil,
+    responseCache: ResponseCacheMetadata? = nil
+  ) {
     self.model = model
     self.data = data
     self.usage = usage
+    self.responseCache = responseCache
   }
 }
 
@@ -307,6 +390,7 @@ public struct CompletionRequest: Codable, Sendable, Equatable {
   public var model: String
   public var prompt: String
   public var maxTokens: Int?
+  public var responseCache: ResponseCacheConfig?
 
   enum CodingKeys: String, CodingKey {
     case model
@@ -314,10 +398,16 @@ public struct CompletionRequest: Codable, Sendable, Equatable {
     case maxTokens = "max_tokens"
   }
 
-  public init(model: String, prompt: String, maxTokens: Int? = nil) {
+  public init(
+    model: String,
+    prompt: String,
+    maxTokens: Int? = nil,
+    responseCache: ResponseCacheConfig? = nil
+  ) {
     self.model = model
     self.prompt = prompt
     self.maxTokens = maxTokens
+    self.responseCache = responseCache
   }
 }
 
@@ -326,12 +416,27 @@ public struct CompletionResponse: Codable, Sendable, Equatable {
   public var model: String?
   public var choices: [Choice]
   public var usage: Usage?
+  public var responseCache: ResponseCacheMetadata?
 
-  public init(id: String? = nil, model: String? = nil, choices: [Choice], usage: Usage? = nil) {
+  enum CodingKeys: String, CodingKey {
+    case id
+    case model
+    case choices
+    case usage
+  }
+
+  public init(
+    id: String? = nil,
+    model: String? = nil,
+    choices: [Choice],
+    usage: Usage? = nil,
+    responseCache: ResponseCacheMetadata? = nil
+  ) {
     self.id = id
     self.model = model
     self.choices = choices
     self.usage = usage
+    self.responseCache = responseCache
   }
 
   public struct Choice: Codable, Sendable, Equatable {
@@ -455,17 +560,143 @@ public struct Usage: Codable, Sendable, Equatable {
   public var promptTokens: Int?
   public var completionTokens: Int?
   public var totalTokens: Int?
+  public var promptTokensDetails: TokenDetails?
+  public var completionTokensDetails: TokenDetails?
 
   enum CodingKeys: String, CodingKey {
     case promptTokens = "prompt_tokens"
     case completionTokens = "completion_tokens"
     case totalTokens = "total_tokens"
+    case promptTokensDetails = "prompt_tokens_details"
+    case completionTokensDetails = "completion_tokens_details"
   }
 
-  public init(promptTokens: Int? = nil, completionTokens: Int? = nil, totalTokens: Int? = nil) {
+  public init(
+    promptTokens: Int? = nil,
+    completionTokens: Int? = nil,
+    totalTokens: Int? = nil,
+    promptTokensDetails: TokenDetails? = nil,
+    completionTokensDetails: TokenDetails? = nil
+  ) {
     self.promptTokens = promptTokens
     self.completionTokens = completionTokens
     self.totalTokens = totalTokens
+    self.promptTokensDetails = promptTokensDetails
+    self.completionTokensDetails = completionTokensDetails
+  }
+}
+
+public struct ChatCompletionReasoning: Codable, Sendable, Equatable {
+  public var effort: String?
+  public var maxTokens: Int?
+  public var exclude: Bool?
+  public var enabled: Bool?
+
+  enum CodingKeys: String, CodingKey {
+    case effort
+    case maxTokens = "max_tokens"
+    case exclude
+    case enabled
+  }
+
+  public init(
+    effort: String? = nil, maxTokens: Int? = nil, exclude: Bool? = nil, enabled: Bool? = nil
+  ) {
+    self.effort = effort
+    self.maxTokens = maxTokens
+    self.exclude = exclude
+    self.enabled = enabled
+  }
+}
+
+public struct WebSearchOptions: Codable, Sendable, Equatable {
+  public var searchContextSize: String
+
+  enum CodingKeys: String, CodingKey {
+    case searchContextSize = "search_context_size"
+  }
+
+  public init(searchContextSize: String) {
+    self.searchContextSize = searchContextSize
+  }
+}
+
+public struct CacheControl: Codable, Sendable, Equatable {
+  public var type: String
+  public var ttl: String?
+
+  public init(type: String = "ephemeral", ttl: String? = nil) {
+    self.type = type
+    self.ttl = ttl
+  }
+}
+
+public struct ResponseCacheConfig: Sendable, Equatable {
+  public var enabled: Bool?
+  public var ttlSeconds: Int?
+  public var clear: Bool?
+
+  public init(enabled: Bool? = nil, ttlSeconds: Int? = nil, clear: Bool? = nil) {
+    self.enabled = enabled
+    self.ttlSeconds = ttlSeconds
+    self.clear = clear
+  }
+}
+
+public struct ResponseCacheMetadata: Codable, Sendable, Equatable {
+  public var status: String?
+  public var ageSeconds: Int?
+  public var ttlSeconds: Int?
+  public var generationID: String?
+
+  public init(
+    status: String? = nil, ageSeconds: Int? = nil, ttlSeconds: Int? = nil,
+    generationID: String? = nil
+  ) {
+    self.status = status
+    self.ageSeconds = ageSeconds
+    self.ttlSeconds = ttlSeconds
+    self.generationID = generationID
+  }
+}
+
+public struct TokenDetails: Codable, Sendable, Equatable {
+  public var cachedTokens: Int?
+
+  enum CodingKeys: String, CodingKey {
+    case cachedTokens = "cached_tokens"
+  }
+
+  public init(cachedTokens: Int? = nil) {
+    self.cachedTokens = cachedTokens
+  }
+}
+
+public struct ReasoningDetail: Codable, Sendable, Equatable {
+  public var id: String?
+  public var index: Int?
+  public var type: String?
+  public var text: String?
+  public var summary: String?
+  public var data: String?
+  public var format: String?
+
+  public init(
+    id: String? = nil,
+    index: Int? = nil,
+    type: String? = nil,
+    text: String? = nil,
+    summary: String? = nil,
+    data: String? = nil,
+    format: String? = nil
+  ) {
+    self.id = id
+    self.index = index
+    self.type = type
+    self.text = text
+    self.summary = summary
+    self.data = data
+    self.format = format
   }
 }
 

@@ -29,6 +29,23 @@ final class OpenRouterTransportTests: XCTestCase {
     XCTAssertEqual(req.httpMethod, "POST")
   }
 
+  func testBuildRequestIncludesResponseCacheHeadersWhenConfigured() throws {
+    let config = OpenRouterClient.Configuration().withAPIKeyForTests("abc123")
+    let transport = HTTPTransport(configuration: config)
+    let req = try transport.buildRequest(
+      path: "chat/completions",
+      body: ChatCompletionRequest(
+        model: "m",
+        messages: [.user("hi")],
+        responseCache: .init(enabled: true, ttlSeconds: 600, clear: true)
+      )
+    )
+
+    XCTAssertEqual(req.value(forHTTPHeaderField: "X-OpenRouter-Cache"), "true")
+    XCTAssertEqual(req.value(forHTTPHeaderField: "X-OpenRouter-Cache-TTL"), "600")
+    XCTAssertEqual(req.value(forHTTPHeaderField: "X-OpenRouter-Cache-Clear"), "true")
+  }
+
   func testDecodeResponseMapsAPIErrorEnvelope() throws {
     let config = OpenRouterClient.Configuration().withAPIKeyForTests("abc123")
     let transport = HTTPTransport(configuration: config)
@@ -55,6 +72,37 @@ final class OpenRouterTransportTests: XCTestCase {
       XCTAssertEqual(code, 429)
       XCTAssertEqual(message, "rate limited")
     }
+  }
+
+  func testDecodeResponseAttachesResponseCacheMetadataFromHeaders() throws {
+    let config = OpenRouterClient.Configuration().withAPIKeyForTests("abc123")
+    let transport = HTTPTransport(configuration: config)
+
+    let body =
+      #"{"id":"x","model":"m","choices":[{"index":0,"message":{"role":"assistant","content":"ok"},"finish_reason":"stop"}]}"#
+      .data(using: .utf8)!
+    let response = HTTPURLResponse(
+      url: URL(string: "https://openrouter.ai/api/v1/chat/completions")!,
+      statusCode: 200,
+      httpVersion: nil,
+      headerFields: [
+        "X-OpenRouter-Cache-Status": "HIT",
+        "X-OpenRouter-Cache-Age": "12",
+        "X-OpenRouter-Cache-TTL": "288",
+        "X-Generation-Id": "gen_123",
+      ]
+    )!
+
+    let decoded = try transport.decodeResponse(
+      data: body,
+      response: response,
+      responseType: ChatCompletionResponse.self
+    )
+
+    XCTAssertEqual(decoded.responseCache?.status, "HIT")
+    XCTAssertEqual(decoded.responseCache?.ageSeconds, 12)
+    XCTAssertEqual(decoded.responseCache?.ttlSeconds, 288)
+    XCTAssertEqual(decoded.responseCache?.generationID, "gen_123")
   }
 }
 
