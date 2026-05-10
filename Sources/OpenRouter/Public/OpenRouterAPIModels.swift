@@ -2,6 +2,7 @@ import Foundation
 
 public struct ChatCompletionRequest: Codable, Sendable, Equatable {
   public var model: String
+  public var models: [String]?
   public var messages: [ChatMessage]
   public var stream: Bool?
   public var tools: [ChatTool]?
@@ -10,9 +11,15 @@ public struct ChatCompletionRequest: Codable, Sendable, Equatable {
   public var reasoning: ChatCompletionReasoning?
   public var webSearchOptions: WebSearchOptions?
   public var responseCache: ResponseCacheConfig?
+  public var provider: ProviderPreferences?
+  public var streamOptions: StreamOptions?
+  public var serviceTier: String?
+  public var sessionID: String?
+  public var parallelToolCalls: Bool?
 
   enum CodingKeys: String, CodingKey {
     case model
+    case models
     case messages
     case stream
     case tools
@@ -20,10 +27,16 @@ public struct ChatCompletionRequest: Codable, Sendable, Equatable {
     case responseFormat = "response_format"
     case reasoning
     case webSearchOptions = "web_search_options"
+    case provider
+    case streamOptions = "stream_options"
+    case serviceTier = "service_tier"
+    case sessionID = "session_id"
+    case parallelToolCalls = "parallel_tool_calls"
   }
 
   public init(
     model: String,
+    models: [String]? = nil,
     messages: [ChatMessage],
     stream: Bool? = nil,
     tools: [ChatTool]? = nil,
@@ -31,9 +44,15 @@ public struct ChatCompletionRequest: Codable, Sendable, Equatable {
     responseFormat: ChatResponseFormat? = nil,
     reasoning: ChatCompletionReasoning? = nil,
     webSearchOptions: WebSearchOptions? = nil,
-    responseCache: ResponseCacheConfig? = nil
+    responseCache: ResponseCacheConfig? = nil,
+    provider: ProviderPreferences? = nil,
+    streamOptions: StreamOptions? = nil,
+    serviceTier: String? = nil,
+    sessionID: String? = nil,
+    parallelToolCalls: Bool? = nil
   ) {
     self.model = model
+    self.models = models
     self.messages = messages
     self.stream = stream
     self.tools = tools
@@ -42,6 +61,11 @@ public struct ChatCompletionRequest: Codable, Sendable, Equatable {
     self.reasoning = reasoning
     self.webSearchOptions = webSearchOptions
     self.responseCache = responseCache
+    self.provider = provider
+    self.streamOptions = streamOptions
+    self.serviceTier = serviceTier
+    self.sessionID = sessionID
+    self.parallelToolCalls = parallelToolCalls
   }
 }
 
@@ -106,13 +130,47 @@ public struct ChatCompletionResponse: Codable, Sendable, Equatable {
 
 public struct ChatCompletionChunk: Codable, Sendable, Equatable {
   public var id: String?
+  public var object: String?
+  public var created: Int?
   public var model: String?
   public var choices: [Choice]
+  public var usage: Usage?
+  public var error: ChatStreamError?
+  public var serviceTier: String?
+  public var systemFingerprint: String?
 
-  public init(id: String? = nil, model: String? = nil, choices: [Choice]) {
+  enum CodingKeys: String, CodingKey {
+    case id
+    case object
+    case created
+    case model
+    case choices
+    case usage
+    case error
+    case serviceTier = "service_tier"
+    case systemFingerprint = "system_fingerprint"
+  }
+
+  public init(
+    id: String? = nil,
+    object: String? = nil,
+    created: Int? = nil,
+    model: String? = nil,
+    choices: [Choice],
+    usage: Usage? = nil,
+    error: ChatStreamError? = nil,
+    serviceTier: String? = nil,
+    systemFingerprint: String? = nil
+  ) {
     self.id = id
+    self.object = object
+    self.created = created
     self.model = model
     self.choices = choices
+    self.usage = usage
+    self.error = error
+    self.serviceTier = serviceTier
+    self.systemFingerprint = systemFingerprint
   }
 
   public struct Choice: Codable, Sendable, Equatable {
@@ -687,8 +745,11 @@ public struct Usage: Codable, Sendable, Equatable {
   public var promptTokens: Int?
   public var completionTokens: Int?
   public var totalTokens: Int?
-  public var promptTokensDetails: TokenDetails?
-  public var completionTokensDetails: TokenDetails?
+  public var promptTokensDetails: PromptTokenDetails?
+  public var completionTokensDetails: CompletionTokenDetails?
+  public var cost: Double?
+  public var costDetails: UsageCostDetails?
+  public var isByok: Bool?
 
   enum CodingKeys: String, CodingKey {
     case promptTokens = "prompt_tokens"
@@ -696,20 +757,41 @@ public struct Usage: Codable, Sendable, Equatable {
     case totalTokens = "total_tokens"
     case promptTokensDetails = "prompt_tokens_details"
     case completionTokensDetails = "completion_tokens_details"
+    case cost
+    case costDetails = "cost_details"
+    case isByok = "is_byok"
   }
 
   public init(
     promptTokens: Int? = nil,
     completionTokens: Int? = nil,
     totalTokens: Int? = nil,
-    promptTokensDetails: TokenDetails? = nil,
-    completionTokensDetails: TokenDetails? = nil
+    promptTokensDetails: PromptTokenDetails? = nil,
+    completionTokensDetails: CompletionTokenDetails? = nil,
+    cost: Double? = nil,
+    costDetails: UsageCostDetails? = nil,
+    isByok: Bool? = nil
   ) {
     self.promptTokens = promptTokens
     self.completionTokens = completionTokens
     self.totalTokens = totalTokens
     self.promptTokensDetails = promptTokensDetails
     self.completionTokensDetails = completionTokensDetails
+    self.cost = cost
+    self.costDetails = costDetails
+    self.isByok = isByok
+  }
+}
+
+public struct UsageCostDetails: Codable, Sendable, Equatable {
+  public var upstreamInferenceCost: Double?
+
+  enum CodingKeys: String, CodingKey {
+    case upstreamInferenceCost = "upstream_inference_cost"
+  }
+
+  public init(upstreamInferenceCost: Double? = nil) {
+    self.upstreamInferenceCost = upstreamInferenceCost
   }
 }
 
@@ -789,13 +871,102 @@ public struct ResponseCacheMetadata: Codable, Sendable, Equatable {
 
 public struct TokenDetails: Codable, Sendable, Equatable {
   public var cachedTokens: Int?
+  public var audioTokens: Int?
+  public var cacheWriteTokens: Int?
+  public var videoTokens: Int?
+  public var acceptedPredictionTokens: Int?
+  public var reasoningTokens: Int?
+  public var rejectedPredictionTokens: Int?
 
   enum CodingKeys: String, CodingKey {
     case cachedTokens = "cached_tokens"
+    case audioTokens = "audio_tokens"
+    case cacheWriteTokens = "cache_write_tokens"
+    case videoTokens = "video_tokens"
+    case acceptedPredictionTokens = "accepted_prediction_tokens"
+    case reasoningTokens = "reasoning_tokens"
+    case rejectedPredictionTokens = "rejected_prediction_tokens"
   }
 
-  public init(cachedTokens: Int? = nil) {
+  public init(
+    cachedTokens: Int? = nil,
+    audioTokens: Int? = nil,
+    cacheWriteTokens: Int? = nil,
+    videoTokens: Int? = nil,
+    acceptedPredictionTokens: Int? = nil,
+    reasoningTokens: Int? = nil,
+    rejectedPredictionTokens: Int? = nil
+  ) {
     self.cachedTokens = cachedTokens
+    self.audioTokens = audioTokens
+    self.cacheWriteTokens = cacheWriteTokens
+    self.videoTokens = videoTokens
+    self.acceptedPredictionTokens = acceptedPredictionTokens
+    self.reasoningTokens = reasoningTokens
+    self.rejectedPredictionTokens = rejectedPredictionTokens
+  }
+}
+
+public typealias PromptTokenDetails = TokenDetails
+public typealias CompletionTokenDetails = TokenDetails
+
+public struct ProviderPreferences: Codable, Sendable, Equatable {
+  public var allowFallbacks: Bool?
+  public var order: [String]?
+  public var only: [String]?
+  public var ignore: [String]?
+  public var requireParameters: Bool?
+  public var sort: String?
+  public var zdr: Bool?
+
+  enum CodingKeys: String, CodingKey {
+    case allowFallbacks = "allow_fallbacks"
+    case order
+    case only
+    case ignore
+    case requireParameters = "require_parameters"
+    case sort
+    case zdr
+  }
+
+  public init(
+    allowFallbacks: Bool? = nil,
+    order: [String]? = nil,
+    only: [String]? = nil,
+    ignore: [String]? = nil,
+    requireParameters: Bool? = nil,
+    sort: String? = nil,
+    zdr: Bool? = nil
+  ) {
+    self.allowFallbacks = allowFallbacks
+    self.order = order
+    self.only = only
+    self.ignore = ignore
+    self.requireParameters = requireParameters
+    self.sort = sort
+    self.zdr = zdr
+  }
+}
+
+public struct StreamOptions: Codable, Sendable, Equatable {
+  public var includeUsage: Bool?
+
+  enum CodingKeys: String, CodingKey {
+    case includeUsage = "include_usage"
+  }
+
+  public init(includeUsage: Bool? = nil) {
+    self.includeUsage = includeUsage
+  }
+}
+
+public struct ChatStreamError: Codable, Sendable, Equatable {
+  public var code: Int?
+  public var message: String?
+
+  public init(code: Int? = nil, message: String? = nil) {
+    self.code = code
+    self.message = message
   }
 }
 
