@@ -217,9 +217,9 @@ Source reference: `https://github.com/revrost/go-openrouter`
   - [x] Add multimodal fixture tests (image/pdf/audio variants)
   - [ ] Document accepted multimodal formats in README
 - [ ] Streaming reliability upgrade:
-  - [ ] Replace buffered stream read with true incremental streaming where available
-  - [ ] Keep SSE parser `[DONE]` behavior consistent
-  - [ ] Add tests for incremental chunk delivery behavior
+  - [x] Replace buffered stream read with true incremental streaming where available
+  - [x] Keep SSE parser `[DONE]` behavior consistent
+  - [x] Add tests for incremental chunk delivery behavior
 
 **Exit criteria**
 - Feature parity checklist aligns with Go SDK claims for:

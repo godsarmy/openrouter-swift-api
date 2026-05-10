@@ -106,6 +106,50 @@ final class OpenRouterClientMockedTests: XCTestCase {
     XCTAssertEqual(got, "hello")
   }
 
+  func testStreamFallbackUsesNextModelOnFallbackableError() async throws {
+    let streamBody = """
+      data: {"id":"chunk-1","model":"fallback-model","choices":[{"index":0,"delta":{"content":"ok"},"finish_reason":null}]}
+      data: [DONE]
+      """.data(using: .utf8)!
+
+    URLProtocolStub.handler = { request in
+      let payload = try XCTUnwrap(request.httpBody)
+      let json = try XCTUnwrap(JSONSerialization.jsonObject(with: payload) as? [String: Any])
+      let model = try XCTUnwrap(json["model"] as? String)
+
+      if model == "primary-model" {
+        let errorData = #"{"error":{"code":429,"message":"rate limited"}}"#.data(using: .utf8)!
+        let response = HTTPURLResponse(
+          url: request.url!,
+          statusCode: 429,
+          httpVersion: nil,
+          headerFields: ["Content-Type": "application/json"]
+        )!
+        return (response, errorData)
+      }
+
+      let response = HTTPURLResponse(
+        url: request.url!,
+        statusCode: 200,
+        httpVersion: nil,
+        headerFields: ["Content-Type": "text/event-stream"]
+      )!
+      return (response, streamBody)
+    }
+
+    let client = makeClient()
+    let stream = client.createChatCompletionStreamWithFallback(
+      ChatCompletionRequest(model: "primary-model", messages: [.user("hi")]),
+      fallbackModels: ["fallback-model"]
+    )
+
+    var output = ""
+    for try await chunk in stream {
+      output += chunk.choices.first?.delta?.content ?? ""
+    }
+    XCTAssertEqual(output, "ok")
+  }
+
   private func makeClient() -> OpenRouterClient {
     let config = URLSessionConfiguration.ephemeral
     config.protocolClasses = [URLProtocolStub.self]

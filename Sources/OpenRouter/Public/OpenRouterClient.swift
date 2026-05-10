@@ -4,7 +4,7 @@ import Foundation
   import FoundationNetworking
 #endif
 
-public struct OpenRouterClient {
+public struct OpenRouterClient: Sendable {
   public let configuration: Configuration
   private let transport: HTTPTransport
 
@@ -158,7 +158,6 @@ public struct OpenRouterClient {
       errorCodes: ChatCompletionFallbackPolicy.defaultErrorCodes
     )
 
-    let transport = self.transport
     let modelsToTry = [request.model] + policy.models
 
     let (stream, continuation) = AsyncThrowingStream.makeStream(of: ChatCompletionChunk.self)
@@ -169,39 +168,9 @@ public struct OpenRouterClient {
         do {
           var candidate = request
           candidate.model = model
-          var streamRequest = candidate
-          streamRequest.stream = true
-
-          let urlRequest = try transport.buildRequest(
-            path: "chat/completions", body: streamRequest)
-          let (data, response) = try await transport.session.data(for: urlRequest)
-
-          guard let http = response as? HTTPURLResponse else {
-            throw OpenRouterError.invalidResponse
-          }
-
-          guard (200..<300).contains(http.statusCode) else {
-            let apiError = try? JSONDecoder().decode(OpenRouterAPIErrorEnvelope.self, from: data)
-            throw OpenRouterError.apiError(
-              statusCode: http.statusCode,
-              code: apiError?.error.code,
-              message: apiError?.error.message,
-              rawBody: String(data: data, encoding: .utf8)
-            )
-          }
-
-          let raw = String(decoding: data, as: UTF8.self)
-          for line in raw.split(separator: "\n").map(String.init) {
-            guard let event = SSEParser.parse(line: line) else { continue }
-            switch event {
-            case .done:
-              continuation.finish()
-              return
-            case .data(let payload):
-              let payloadData = Data(payload.utf8)
-              let chunk = try JSONDecoder().decode(ChatCompletionChunk.self, from: payloadData)
-              continuation.yield(chunk)
-            }
+          let session = try await createChatCompletionStreamSession(candidate)
+          for try await chunk in session.stream {
+            continuation.yield(chunk)
           }
           continuation.finish()
           return
