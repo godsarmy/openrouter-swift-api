@@ -257,7 +257,7 @@ extension OpenRouterClient {
     var apiKey: String?
 
     public init(
-      baseURL: URL = URL(string: "https://openrouter.ai/api/v1")!,
+      baseURL: URL = URL(string: "https://openrouter.ai/api/v1/")!,
       timeout: TimeInterval = 60,
       httpReferer: String? = nil,
       xTitle: String? = nil

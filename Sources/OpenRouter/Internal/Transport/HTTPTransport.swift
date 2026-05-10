@@ -28,9 +28,7 @@ struct HTTPTransport: @unchecked Sendable {
       throw OpenRouterError.missingAPIKey
     }
 
-    guard let url = URL(string: path, relativeTo: configuration.baseURL) else {
-      throw OpenRouterError.invalidURL(path)
-    }
+    let url = configuration.baseURL.appendingPathComponent(path)
 
     var request = URLRequest(url: url)
     request.httpMethod = "POST"

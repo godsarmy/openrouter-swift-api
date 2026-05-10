@@ -4,11 +4,21 @@ import XCTest
 @testable import OpenRouter
 
 final class OpenRouterIntegrationTests: XCTestCase {
-  func testIntegrationChatCompletion() async throws {
-    guard let apiKey = ProcessInfo.processInfo.environment["OPENROUTER_API_KEY"], !apiKey.isEmpty
-    else {
+  private func requireIntegrationOptInAndAPIKey() throws -> String {
+    let env = ProcessInfo.processInfo.environment
+    let runIntegration = env["OPENROUTER_RUN_INTEGRATION"]?.lowercased()
+    guard runIntegration == "1" || runIntegration == "true" || runIntegration == "yes" else {
+      throw XCTSkip("Set OPENROUTER_RUN_INTEGRATION=true to run live integration tests")
+    }
+
+    guard let apiKey = env["OPENROUTER_API_KEY"], !apiKey.isEmpty else {
       throw XCTSkip("OPENROUTER_API_KEY not set")
     }
+    return apiKey
+  }
+
+  func testIntegrationChatCompletion() async throws {
+    let apiKey = try requireIntegrationOptInAndAPIKey()
 
     let client = OpenRouterClient(apiKey: apiKey)
     let request = ChatCompletionRequest(
@@ -20,10 +30,7 @@ final class OpenRouterIntegrationTests: XCTestCase {
   }
 
   func testIntegrationEmbeddings() async throws {
-    guard let apiKey = ProcessInfo.processInfo.environment["OPENROUTER_API_KEY"], !apiKey.isEmpty
-    else {
-      throw XCTSkip("OPENROUTER_API_KEY not set")
-    }
+    let apiKey = try requireIntegrationOptInAndAPIKey()
 
     let client = OpenRouterClient(apiKey: apiKey)
     let request = EmbeddingRequest(model: "text-embedding-3-small", input: .string("hello"))
@@ -32,10 +39,7 @@ final class OpenRouterIntegrationTests: XCTestCase {
   }
 
   func testIntegrationStreamingChatCompletion() async throws {
-    guard let apiKey = ProcessInfo.processInfo.environment["OPENROUTER_API_KEY"], !apiKey.isEmpty
-    else {
-      throw XCTSkip("OPENROUTER_API_KEY not set")
-    }
+    let apiKey = try requireIntegrationOptInAndAPIKey()
 
     let client = OpenRouterClient(apiKey: apiKey)
     let request = ChatCompletionRequest(

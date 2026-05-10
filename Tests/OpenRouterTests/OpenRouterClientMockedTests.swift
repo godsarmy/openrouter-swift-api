@@ -21,7 +21,7 @@ final class OpenRouterClientMockedTests: XCTestCase {
   func testCreateChatCompletionUsesMockedTransport() async throws {
     let fixture = try fixtureData(named: "chat_completion_success.json")
     URLProtocolStub.handler = { request in
-      XCTAssertEqual(request.url?.path, "/api/chat/completions")
+      XCTAssertEqual(request.url?.path, "/api/v1/chat/completions")
       let response = HTTPURLResponse(
         url: request.url!,
         statusCode: 200,
