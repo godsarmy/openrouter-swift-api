@@ -138,6 +138,22 @@ public struct OpenRouterClient: Sendable {
     )
   }
 
+  public func getGeneration(id: String) async throws -> JSONValue {
+    try await transport.get(
+      path: "generation",
+      queryItems: [URLQueryItem(name: "id", value: id)],
+      responseType: JSONValue.self
+    )
+  }
+
+  public func listGenerationContent(id: String) async throws -> JSONValue {
+    try await transport.get(
+      path: "generation/content",
+      queryItems: [URLQueryItem(name: "id", value: id)],
+      responseType: JSONValue.self
+    )
+  }
+
   public func createChatCompletionWithFallback(
     _ request: ChatCompletionRequest,
     fallbackModels: [String]

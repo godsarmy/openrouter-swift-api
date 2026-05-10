@@ -23,6 +23,16 @@ struct HTTPTransport: @unchecked Sendable {
     return try decodeResponse(data: data, response: response, responseType: responseType)
   }
 
+  func get<Response: Decodable>(
+    path: String,
+    queryItems: [URLQueryItem] = [],
+    responseType: Response.Type
+  ) async throws -> Response {
+    let request = try buildGetRequest(path: path, queryItems: queryItems)
+    let (data, response) = try await session.data(for: request)
+    return try decodeResponse(data: data, response: response, responseType: responseType)
+  }
+
   func buildRequest<Body: Encodable>(path: String, body: Body) throws -> URLRequest {
     guard let apiKey = configuration.apiKey, !apiKey.isEmpty else {
       throw OpenRouterError.missingAPIKey
@@ -51,6 +61,36 @@ struct HTTPTransport: @unchecked Sendable {
     }
 
     request.httpBody = try JSONEncoder().encode(body)
+    return request
+  }
+
+  func buildGetRequest(path: String, queryItems: [URLQueryItem] = []) throws -> URLRequest {
+    guard let apiKey = configuration.apiKey, !apiKey.isEmpty else {
+      throw OpenRouterError.missingAPIKey
+    }
+
+    var components = URLComponents(
+      url: configuration.baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false)
+    if !queryItems.isEmpty {
+      components?.queryItems = queryItems
+    }
+    guard let url = components?.url else {
+      throw OpenRouterError.invalidURL(path)
+    }
+
+    var request = URLRequest(url: url)
+    request.httpMethod = "GET"
+    request.timeoutInterval = configuration.timeout
+    request.setValue("application/json", forHTTPHeaderField: "Accept")
+    request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+
+    if let referer = configuration.httpReferer {
+      request.setValue(referer, forHTTPHeaderField: "HTTP-Referer")
+    }
+    if let title = configuration.xTitle {
+      request.setValue(title, forHTTPHeaderField: "X-Title")
+    }
+
     return request
   }
 
