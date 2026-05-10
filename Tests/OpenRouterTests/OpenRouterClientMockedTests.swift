@@ -266,6 +266,97 @@ final class OpenRouterClientMockedTests: XCTestCase {
     XCTAssertEqual(chunks[0].systemFingerprint, "fp_1")
   }
 
+  func testCreateChatCompletionStreamMalformedJSONChunkFailsStream() async throws {
+    let streamBody = """
+      data: {"id":"chunk-1","choices":[{"index":0,"delta":{"content":"ok"},"finish_reason":null}]}
+      data: {"id":"bad",
+      data: [DONE]
+      """.data(using: .utf8)!
+
+    URLProtocolStub.handler = { request in
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil,
+        headerFields: ["Content-Type": "text/event-stream"]
+      )!
+      return (response, streamBody)
+    }
+
+    let client = makeClient()
+    let stream = try await client.createChatCompletionStream(
+      ChatCompletionRequest(model: "m", messages: [.user("hi")], stream: true)
+    )
+
+    do {
+      for try await _ in stream {}
+      XCTFail("Expected decoding failure")
+    } catch {
+      XCTAssertTrue(error is DecodingError, "Expected DecodingError, got \(error)")
+    }
+  }
+
+  func testCreateChatCompletionStreamFinishesWhenTransportCompletesWithoutDone() async throws {
+    let streamBody = """
+      data: {"id":"chunk-1","choices":[{"index":0,"delta":{"content":"hello"},"finish_reason":null}]}
+
+      """.data(using: .utf8)!
+
+    URLProtocolStub.handler = { request in
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil,
+        headerFields: ["Content-Type": "text/event-stream"]
+      )!
+      return (response, streamBody)
+    }
+
+    let client = makeClient()
+    let stream = try await client.createChatCompletionStream(
+      ChatCompletionRequest(model: "m", messages: [.user("hi")], stream: true)
+    )
+
+    var chunks: [ChatCompletionChunk] = []
+    for try await chunk in stream { chunks.append(chunk) }
+    XCTAssertEqual(chunks.count, 1)
+    XCTAssertEqual(chunks[0].choices.first?.delta?.content, "hello")
+  }
+
+  func testCreateChatCompletionStreamIncludeUsageEncodesRequestAndYieldsUsageChunk() async throws {
+    let streamBody = """
+      data: {"id":"chunk-1","choices":[{"index":0,"delta":{"content":"hi"},"finish_reason":null}]}
+      data: {"id":"chunk-usage","choices":[],"usage":{"total_tokens":15,"cost":0.000123}}
+      data: [DONE]
+      """.data(using: .utf8)!
+
+    URLProtocolStub.handler = { request in
+      URLProtocolStub.lastRequest = request
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil,
+        headerFields: ["Content-Type": "text/event-stream"]
+      )!
+      return (response, streamBody)
+    }
+
+    let client = makeClient()
+    let stream = try await client.createChatCompletionStream(
+      ChatCompletionRequest(
+        model: "m",
+        messages: [.user("hi")],
+        stream: true,
+        streamOptions: .init(includeUsage: true)
+      )
+    )
+
+    var chunks: [ChatCompletionChunk] = []
+    for try await chunk in stream { chunks.append(chunk) }
+
+    let body = try XCTUnwrap(URLProtocolStub.lastRequest?.httpBody)
+    let object = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
+    let streamOptions = try XCTUnwrap(object["stream_options"] as? [String: Any])
+    XCTAssertEqual(streamOptions["include_usage"] as? Bool, true)
+
+    XCTAssertEqual(chunks.last?.usage?.totalTokens, 15)
+    XCTAssertEqual(chunks.last?.usage?.cost, 0.000123)
+  }
+
   private func makeClient() -> OpenRouterClient {
     let config = URLSessionConfiguration.ephemeral
     config.protocolClasses = [URLProtocolStub.self]
@@ -289,6 +380,7 @@ final class OpenRouterClientMockedTests: XCTestCase {
 private final class URLProtocolStub: URLProtocol {
   static nonisolated(unsafe) var handler:
     (@Sendable (URLRequest) throws -> (HTTPURLResponse, Data))?
+  static nonisolated(unsafe) var lastRequest: URLRequest?
 
   static func register() {
     _ = URLProtocol.registerClass(URLProtocolStub.self)
@@ -297,6 +389,7 @@ private final class URLProtocolStub: URLProtocol {
   static func unregister() {
     URLProtocol.unregisterClass(URLProtocolStub.self)
     handler = nil
+    lastRequest = nil
   }
 
   override class func canInit(with request: URLRequest) -> Bool { true }
@@ -310,6 +403,7 @@ private final class URLProtocolStub: URLProtocol {
     }
 
     do {
+      Self.lastRequest = request
       let (response, data) = try handler(request)
       client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
       client?.urlProtocol(self, didLoad: data)

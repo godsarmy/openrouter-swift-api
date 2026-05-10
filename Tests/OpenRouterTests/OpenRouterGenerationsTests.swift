@@ -104,6 +104,63 @@ final class OpenRouterGenerationsTests: XCTestCase {
     }
   }
 
+  func testGenerationMethodsMapNonJSONErrorBodyToAPIErrorWithRawBody() async throws {
+    URLProtocolGenerationsStub.handler = { request in
+      let body = "gateway timeout".data(using: .utf8)!
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 504, httpVersion: nil,
+        headerFields: ["Content-Type": "text/plain"])!
+      return (response, body)
+    }
+
+    do {
+      _ = try await makeClient().getGeneration(id: "gen_timeout")
+      XCTFail("Expected apiError")
+    } catch let error as OpenRouterError {
+      guard case .apiError(let status, let code, let message, let rawBody) = error else {
+        return XCTFail("Unexpected error: \(error)")
+      }
+      XCTAssertEqual(status, 504)
+      XCTAssertNil(code)
+      XCTAssertNil(message)
+      XCTAssertEqual(rawBody, "gateway timeout")
+    }
+  }
+
+  func testGenerationMethodsMap200InvalidJSONToDecodingFailed() async throws {
+    URLProtocolGenerationsStub.handler = { request in
+      let body = "{not-json}".data(using: .utf8)!
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil,
+        headerFields: ["Content-Type": "application/json"])!
+      return (response, body)
+    }
+
+    do {
+      _ = try await makeClient().getGeneration(id: "gen_bad_json")
+      XCTFail("Expected decodingFailed")
+    } catch let error as OpenRouterError {
+      guard case .decodingFailed(let statusCode, let underlying) = error else {
+        return XCTFail("Unexpected error: \(error)")
+      }
+      XCTAssertEqual(statusCode, 200)
+      XCTAssertFalse(underlying.isEmpty)
+    }
+  }
+
+  func testGenerationMethodsBubbleTransportFailure() async throws {
+    URLProtocolGenerationsStub.handler = { _ in
+      throw URLError(.notConnectedToInternet)
+    }
+
+    do {
+      _ = try await makeClient().getGeneration(id: "gen_network")
+      XCTFail("Expected URLError")
+    } catch let error as URLError {
+      XCTAssertEqual(error.code, .notConnectedToInternet)
+    }
+  }
+
   private func makeClient() -> OpenRouterClient {
     let config = URLSessionConfiguration.ephemeral
     config.protocolClasses = [URLProtocolGenerationsStub.self]

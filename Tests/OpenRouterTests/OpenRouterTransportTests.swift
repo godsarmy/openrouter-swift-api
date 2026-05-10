@@ -8,6 +8,27 @@ import XCTest
 #endif
 
 final class OpenRouterTransportTests: XCTestCase {
+  func testDecodeResponseThrowsInvalidResponseForNonHTTPURLResponse() throws {
+    let config = OpenRouterClient.Configuration().withAPIKeyForTests("abc123")
+    let transport = HTTPTransport(configuration: config)
+    let nonHTTPResponse = URLResponse(
+      url: URL(string: "https://openrouter.ai/api/v1/chat/completions")!,
+      mimeType: "application/json",
+      expectedContentLength: 0,
+      textEncodingName: nil
+    )
+
+    XCTAssertThrowsError(
+      try transport.decodeResponse(
+        data: Data("{}".utf8),
+        response: nonHTTPResponse,
+        responseType: ChatCompletionResponse.self
+      )
+    ) { error in
+      XCTAssertEqual(error as? OpenRouterError, .invalidResponse)
+    }
+  }
+
   func testBuildRequestIncludesAuthAndOptionalHeaders() throws {
     let config = OpenRouterClient.Configuration(
       baseURL: URL(string: "https://openrouter.ai/api/v1")!,

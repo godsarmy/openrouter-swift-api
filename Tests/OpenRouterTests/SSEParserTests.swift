@@ -17,4 +17,14 @@ final class SSEParserTests: XCTestCase {
     XCTAssertNil(SSEParser.parse(line: "event: ping"))
     XCTAssertNil(SSEParser.parse(line: ""))
   }
+
+  func testParserIgnoresBlankAndCommentLines() {
+    XCTAssertNil(SSEParser.parse(line: "   "))
+    XCTAssertNil(SSEParser.parse(line: ": keepalive"))
+  }
+
+  func testParserTreatsEachDataLineAsIndependentEvent() {
+    XCTAssertEqual(SSEParser.parse(line: "data: first"), .data("first"))
+    XCTAssertEqual(SSEParser.parse(line: "data: second"), .data("second"))
+  }
 }

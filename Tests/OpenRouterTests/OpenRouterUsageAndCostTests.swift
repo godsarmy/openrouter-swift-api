@@ -60,4 +60,25 @@ final class OpenRouterUsageAndCostTests: XCTestCase {
 
     XCTAssertEqual(decoded, usage)
   }
+
+  func testUsageDecodesPartialPayloadWithOnlyTotalTokens() throws {
+    let json = #"{"total_tokens":42}"#.data(using: .utf8)!
+    let usage = try JSONDecoder().decode(Usage.self, from: json)
+
+    XCTAssertNil(usage.promptTokens)
+    XCTAssertNil(usage.completionTokens)
+    XCTAssertEqual(usage.totalTokens, 42)
+    XCTAssertNil(usage.cost)
+  }
+
+  func testUsageDecodesZeroAndTinyPrecisionCostValues() throws {
+    let zeroJSON = #"{"total_tokens":1,"cost":0}"#.data(using: .utf8)!
+    let tinyJSON = #"{"total_tokens":1,"cost":0.000000123}"#.data(using: .utf8)!
+
+    let zeroUsage = try JSONDecoder().decode(Usage.self, from: zeroJSON)
+    let tinyUsage = try JSONDecoder().decode(Usage.self, from: tinyJSON)
+
+    XCTAssertEqual(zeroUsage.cost, 0)
+    XCTAssertEqual(tinyUsage.cost ?? -1, 0.000000123, accuracy: 1e-15)
+  }
 }
