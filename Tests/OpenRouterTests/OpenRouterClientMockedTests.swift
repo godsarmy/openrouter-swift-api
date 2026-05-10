@@ -150,6 +150,122 @@ final class OpenRouterClientMockedTests: XCTestCase {
     XCTAssertEqual(output, "ok")
   }
 
+  func testStreamIncludesTerminalUsageChunkWithCost() async throws {
+    let streamBody = """
+      data: {"id":"chunk-1","choices":[{"index":0,"delta":{"content":"hi"},"finish_reason":null}]}
+      data: {"id":"chunk-2","choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}
+      data: {"id":"chunk-3","choices":[],"usage":{"prompt_tokens":10,"completion_tokens":5,"total_tokens":15,"cost":0.003}}
+      data: [DONE]
+      """.data(using: .utf8)!
+
+    URLProtocolStub.handler = { request in
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil,
+        headerFields: ["Content-Type": "text/event-stream"]
+      )!
+      return (response, streamBody)
+    }
+
+    let client = makeClient()
+    let stream = try await client.createChatCompletionStream(
+      ChatCompletionRequest(model: "m", messages: [.user("hi")], stream: true)
+    )
+
+    var chunks: [ChatCompletionChunk] = []
+    for try await chunk in stream { chunks.append(chunk) }
+
+    XCTAssertEqual(chunks.count, 3)
+    XCTAssertEqual(chunks.last?.usage?.cost, 0.003)
+    XCTAssertEqual(chunks.last?.usage?.totalTokens, 15)
+  }
+
+  func testStreamDoesNotTerminateBeforeDoneWhenFinishReasonArrives() async throws {
+    let streamBody = """
+      data: {"id":"chunk-1","choices":[{"index":0,"delta":{"content":"a"},"finish_reason":null}]}
+      data: {"id":"chunk-2","choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}
+      data: {"id":"chunk-3","choices":[],"usage":{"total_tokens":9,"cost":0.009}}
+      data: [DONE]
+      """.data(using: .utf8)!
+
+    URLProtocolStub.handler = { request in
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil,
+        headerFields: ["Content-Type": "text/event-stream"]
+      )!
+      return (response, streamBody)
+    }
+
+    let client = makeClient()
+    let stream = try await client.createChatCompletionStream(
+      ChatCompletionRequest(model: "m", messages: [.user("hi")], stream: true)
+    )
+
+    var sawFinishReason = false
+    var sawUsageAfterFinish = false
+    for try await chunk in stream {
+      if chunk.choices.first?.finishReason != nil { sawFinishReason = true }
+      if sawFinishReason, chunk.usage != nil { sawUsageAfterFinish = true }
+    }
+
+    XCTAssertTrue(sawFinishReason)
+    XCTAssertTrue(sawUsageAfterFinish)
+  }
+
+  func testStreamDecodesUsageOnlyChunk() async throws {
+    let streamBody = """
+      data: {"id":"chunk-usage","choices":[],"usage":{"prompt_tokens":3,"completion_tokens":2,"total_tokens":5,"cost":0.0005,"is_byok":false}}
+      data: [DONE]
+      """.data(using: .utf8)!
+
+    URLProtocolStub.handler = { request in
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil,
+        headerFields: ["Content-Type": "text/event-stream"]
+      )!
+      return (response, streamBody)
+    }
+
+    let client = makeClient()
+    let stream = try await client.createChatCompletionStream(
+      ChatCompletionRequest(model: "m", messages: [.user("hi")], stream: true)
+    )
+
+    var chunks: [ChatCompletionChunk] = []
+    for try await chunk in stream { chunks.append(chunk) }
+    XCTAssertEqual(chunks.count, 1)
+    XCTAssertEqual(chunks[0].usage?.promptTokens, 3)
+    XCTAssertEqual(chunks[0].usage?.cost, 0.0005)
+    XCTAssertEqual(chunks[0].usage?.isByok, false)
+  }
+
+  func testStreamYieldsChunkWithErrorFieldWithoutDecoderFailure() async throws {
+    let streamBody = """
+      data: {"id":"chunk-err","object":"chat.completion.chunk","created":1710000000,"model":"m","service_tier":"default","system_fingerprint":"fp_1","choices":[],"error":{"code":499,"message":"stream warning"}}
+      data: [DONE]
+      """.data(using: .utf8)!
+
+    URLProtocolStub.handler = { request in
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil,
+        headerFields: ["Content-Type": "text/event-stream"]
+      )!
+      return (response, streamBody)
+    }
+
+    let client = makeClient()
+    let stream = try await client.createChatCompletionStream(
+      ChatCompletionRequest(model: "m", messages: [.user("hi")], stream: true)
+    )
+
+    var chunks: [ChatCompletionChunk] = []
+    for try await chunk in stream { chunks.append(chunk) }
+    XCTAssertEqual(chunks.count, 1)
+    XCTAssertEqual(chunks[0].error?.code, 499)
+    XCTAssertEqual(chunks[0].error?.message, "stream warning")
+    XCTAssertEqual(chunks[0].serviceTier, "default")
+    XCTAssertEqual(chunks[0].systemFingerprint, "fp_1")
+  }
+
   private func makeClient() -> OpenRouterClient {
     let config = URLSessionConfiguration.ephemeral
     config.protocolClasses = [URLProtocolStub.self]

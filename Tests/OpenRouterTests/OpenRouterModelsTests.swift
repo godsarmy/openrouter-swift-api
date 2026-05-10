@@ -152,4 +152,77 @@ final class OpenRouterModelsTests: XCTestCase {
       XCTFail("Expected file object part")
     }
   }
+
+  func testChatCompletionRequestEncodesModelsArray() throws {
+    let request = ChatCompletionRequest(
+      model: "primary",
+      models: ["fallback-1", "fallback-2"],
+      messages: [.user("hi")]
+    )
+
+    let data = try JSONEncoder().encode(request)
+    let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+    XCTAssertEqual(object["models"] as? [String], ["fallback-1", "fallback-2"])
+  }
+
+  func testChatCompletionRequestEncodesProviderPreferences() throws {
+    let request = ChatCompletionRequest(
+      model: "m",
+      messages: [.user("hi")],
+      provider: .init(
+        allowFallbacks: true,
+        order: ["openai"],
+        only: ["anthropic"],
+        ignore: ["meta"],
+        requireParameters: true,
+        sort: "throughput",
+        zdr: false
+      )
+    )
+
+    let data = try JSONEncoder().encode(request)
+    let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+    let provider = try XCTUnwrap(object["provider"] as? [String: Any])
+    XCTAssertEqual(provider["allow_fallbacks"] as? Bool, true)
+    XCTAssertEqual(provider["order"] as? [String], ["openai"])
+    XCTAssertEqual(provider["only"] as? [String], ["anthropic"])
+    XCTAssertEqual(provider["ignore"] as? [String], ["meta"])
+    XCTAssertEqual(provider["require_parameters"] as? Bool, true)
+    XCTAssertEqual(provider["sort"] as? String, "throughput")
+    XCTAssertEqual(provider["zdr"] as? Bool, false)
+  }
+
+  func testChatCompletionRequestEncodesStreamOptionsServiceTierSessionAndParallelToolCalls() throws
+  {
+    let request = ChatCompletionRequest(
+      model: "m",
+      messages: [.user("hi")],
+      streamOptions: .init(includeUsage: true),
+      serviceTier: "default",
+      sessionID: "session-1",
+      parallelToolCalls: true
+    )
+
+    let data = try JSONEncoder().encode(request)
+    let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+    let streamOptions = try XCTUnwrap(object["stream_options"] as? [String: Any])
+    XCTAssertEqual(streamOptions["include_usage"] as? Bool, true)
+    XCTAssertEqual(object["service_tier"] as? String, "default")
+    XCTAssertEqual(object["session_id"] as? String, "session-1")
+    XCTAssertEqual(object["parallel_tool_calls"] as? Bool, true)
+  }
+
+  func testChatCompletionChunkDecodesErrorPayload() throws {
+    let json =
+      #"{"id":"chunk-err","object":"chat.completion.chunk","created":1710000000,"model":"m","service_tier":"default","system_fingerprint":"fp_123","choices":[],"error":{"code":400,"message":"invalid request"}}"#
+      .data(using: .utf8)!
+
+    let decoded = try JSONDecoder().decode(ChatCompletionChunk.self, from: json)
+    XCTAssertEqual(decoded.error?.code, 400)
+    XCTAssertEqual(decoded.error?.message, "invalid request")
+    XCTAssertEqual(decoded.object, "chat.completion.chunk")
+    XCTAssertEqual(decoded.created, 1_710_000_000)
+    XCTAssertEqual(decoded.serviceTier, "default")
+    XCTAssertEqual(decoded.systemFingerprint, "fp_123")
+  }
 }
