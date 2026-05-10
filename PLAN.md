@@ -215,7 +215,7 @@ Source reference: `https://github.com/revrost/go-openrouter`
 - [ ] Multimodal tightening parity:
   - [x] Validate image/pdf/audio payload object shapes
   - [x] Add multimodal fixture tests (image/pdf/audio variants)
-  - [ ] Document accepted multimodal formats in README
+  - [x] Document accepted multimodal formats in README
 - [ ] Streaming reliability upgrade:
   - [x] Replace buffered stream read with true incremental streaming where available
   - [x] Keep SSE parser `[DONE]` behavior consistent

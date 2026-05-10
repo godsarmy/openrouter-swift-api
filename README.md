@@ -51,3 +51,49 @@ Options:
 - `--reasoning-effort <xhigh|high|medium|low|minimal|none>` sets reasoning effort
 - `--web-search-context-size <low|medium|high>` enables web search context controls
 - `--cache-enabled true|false`, `--cache-ttl <seconds>`, `--cache-clear true|false` control response caching headers
+
+## Multimodal Content Formats
+
+The SDK supports both simple and object-based multimodal payloads in chat message parts.
+
+### Text
+
+- Simple text content:
+  - `Content.text("hello")`
+- Multipart text part:
+  - `.text("hello")`
+- Prompt-cached text part:
+  - `.textWithCache(text: "long context", cacheControl: .init(type: "ephemeral", ttl: "5m"))`
+
+### Images
+
+- URL string form:
+  - `.imageURL("https://example.com/image.png")`
+- Object form (detail-aware):
+  - `.image(.init(url: "https://example.com/image.png", detail: "high"))`
+
+### PDFs / Files
+
+- URL string form:
+  - `.fileURL("https://example.com/file.pdf")`
+- Object form (file parser style):
+  - `.file(.init(filename: "paper.pdf", fileData: "<base64>"))`
+
+### Audio Input
+
+- Object form:
+  - `.inputAudio(.init(data: "<base64>", format: "wav"))`
+
+### Example (multipart)
+
+```swift
+let message = ChatMessage(
+  role: .user,
+  content: .parts([
+    .text("Describe this image and PDF"),
+    .image(.init(url: "https://example.com/image.png", detail: "high")),
+    .file(.init(filename: "paper.pdf", fileData: "<base64>")),
+    .inputAudio(.init(data: "<base64>", format: "wav")),
+  ])
+)
+```
