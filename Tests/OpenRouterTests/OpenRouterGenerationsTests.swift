@@ -30,8 +30,8 @@ final class OpenRouterGenerationsTests: XCTestCase {
         "gen_1")
       XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-key")
       XCTAssertEqual(request.value(forHTTPHeaderField: "HTTP-Referer"), "https://example.com")
-      XCTAssertEqual(request.value(forHTTPHeaderField: "X-Title"), "Test App")
-      let body = #"{"id":"gen_1","status":"ok"}"#.data(using: .utf8)!
+      XCTAssertEqual(request.value(forHTTPHeaderField: "X-OpenRouter-Title"), "Test App")
+      let body = #"{"data":{"id":"gen_1","status":"ok"}}"#.data(using: .utf8)!
       let response = HTTPURLResponse(
         url: request.url!, statusCode: 200, httpVersion: nil,
         headerFields: ["Content-Type": "application/json"])!
@@ -39,8 +39,13 @@ final class OpenRouterGenerationsTests: XCTestCase {
     }
 
     let value = try await makeClient().getGeneration(id: "gen_1")
-    guard case .object(let obj) = value else { return XCTFail("Expected object") }
-    XCTAssertEqual(obj["id"], .string("gen_1"))
+    guard case .object(let obj) = value,
+      case .object(let data)? = obj["data"],
+      case .string(let id)? = data["id"]
+    else {
+      return XCTFail("Expected JSON object payload with data.id")
+    }
+    XCTAssertEqual(id, "gen_1")
   }
 
   func testListGenerationContentBuildsGETWithIdQueryAndHeaders() async throws {
@@ -55,8 +60,10 @@ final class OpenRouterGenerationsTests: XCTestCase {
         "gen_2")
       XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-key")
       XCTAssertEqual(request.value(forHTTPHeaderField: "HTTP-Referer"), "https://example.com")
-      XCTAssertEqual(request.value(forHTTPHeaderField: "X-Title"), "Test App")
-      let body = #"{"items":[{"type":"text","text":"hello"}]}"#.data(using: .utf8)!
+      XCTAssertEqual(request.value(forHTTPHeaderField: "X-OpenRouter-Title"), "Test App")
+      let body =
+        #"{"data":{"id":"gen_2","raw_content":{"items":[{"type":"text","text":"hello"}]}}}"#.data(
+          using: .utf8)!
       let response = HTTPURLResponse(
         url: request.url!, statusCode: 200, httpVersion: nil,
         headerFields: ["Content-Type": "application/json"])!
@@ -64,11 +71,48 @@ final class OpenRouterGenerationsTests: XCTestCase {
     }
 
     let value = try await makeClient().listGenerationContent(id: "gen_2")
-    guard case .object(let obj) = value else { return XCTFail("Expected object") }
-    XCTAssertNotNil(obj["items"])
+    guard case .object(let obj) = value,
+      case .object(let data)? = obj["data"],
+      case .string(let id)? = data["id"]
+    else {
+      return XCTFail("Expected JSON object payload with data.id")
+    }
+    XCTAssertEqual(id, "gen_2")
   }
 
-  func testGenerationMethodsDecodeJSONValueObject() async throws {
+  func testGenerationMethodsDecodeTypedObject() async throws {
+    URLProtocolGenerationsStub.handler = { request in
+      let body = #"{"data":{"id":"gen_typed","provider_name":"openai","tokens_prompt":7}}"#.data(
+        using: .utf8)!
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil,
+        headerFields: ["Content-Type": "application/json"])!
+      return (response, body)
+    }
+
+    let value = try await makeClient().getGenerationResponse(id: "any")
+    XCTAssertEqual(value.data?.id, "gen_typed")
+    XCTAssertEqual(value.data?.providerName, "openai")
+    XCTAssertEqual(value.data?.tokensPrompt, 7)
+  }
+
+  func testListGenerationContentResponseDecodesTypedObject() async throws {
+    URLProtocolGenerationsStub.handler = { request in
+      let body =
+        #"{"data":{"id":"gen_typed_content","raw_content":{"items":[{"type":"text","text":"hello"}]}}}"#
+        .data(using: .utf8)!
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil,
+        headerFields: ["Content-Type": "application/json"])!
+      return (response, body)
+    }
+
+    let value = try await makeClient().listGenerationContentResponse(id: "any")
+    XCTAssertEqual(value.data?.id, "gen_typed_content")
+    XCTAssertNotNil(value.data?.rawContent)
+  }
+
+  func testGenerationRawMethodsDecodeJSONValueObject() async throws {
     URLProtocolGenerationsStub.handler = { request in
       let body = #"{"nested":{"count":2},"ok":true}"#.data(using: .utf8)!
       let response = HTTPURLResponse(
@@ -78,6 +122,21 @@ final class OpenRouterGenerationsTests: XCTestCase {
     }
 
     let value = try await makeClient().getGeneration(id: "any")
+    guard case .object(let obj) = value else { return XCTFail("Expected object") }
+    XCTAssertEqual(obj["ok"], .bool(true))
+  }
+
+  func testListGenerationContentRawMethodDecodeJSONValueObject() async throws {
+    URLProtocolGenerationsStub.handler = { request in
+      XCTAssertEqual(request.url?.path, "/api/v1/generation/content")
+      let body = #"{"items":[{"type":"text","text":"hello"}],"ok":true}"#.data(using: .utf8)!
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil,
+        headerFields: ["Content-Type": "application/json"])!
+      return (response, body)
+    }
+
+    let value = try await makeClient().listGenerationContent(id: "any")
     guard case .object(let obj) = value else { return XCTFail("Expected object") }
     XCTAssertEqual(obj["ok"], .bool(true))
   }
@@ -168,7 +227,7 @@ final class OpenRouterGenerationsTests: XCTestCase {
       apiKey: "test-key",
       configuration: .init(
         baseURL: URL(string: "https://openrouter.ai/api/v1")!, httpReferer: "https://example.com",
-        xTitle: "Test App"),
+        appTitle: "Test App"),
       session: URLSession(configuration: config)
     )
   }

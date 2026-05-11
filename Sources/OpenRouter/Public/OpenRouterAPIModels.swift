@@ -1029,6 +1029,161 @@ public enum EmbeddingInput: Codable, Sendable, Equatable {
   }
 }
 
+public struct GenerationResponse: Codable, Sendable, Equatable {
+  public var data: Generation?
+
+  public init(data: Generation? = nil) {
+    self.data = data
+  }
+}
+
+public struct Generation: Codable, Sendable, Equatable {
+  public var id: String?
+  public var model: String?
+  public var providerName: String?
+  public var createdAt: String?
+  public var updatedAt: String?
+  public var status: String?
+  public var totalCost: Double?
+  public var usage: Usage?
+  public var nativeFinishReason: String?
+  public var finishReason: String?
+  public var tokensPrompt: Int?
+  public var tokensCompletion: Int?
+  public var metadata: JSONValue?
+
+  enum CodingKeys: String, CodingKey {
+    case id
+    case model
+    case providerName = "provider_name"
+    case createdAt = "created_at"
+    case updatedAt = "updated_at"
+    case status
+    case totalCost = "total_cost"
+    case usage
+    case nativeFinishReason = "native_finish_reason"
+    case finishReason = "finish_reason"
+    case tokensPrompt = "tokens_prompt"
+    case tokensCompletion = "tokens_completion"
+    case metadata
+  }
+}
+
+public struct GenerationContentResponse: Codable, Sendable, Equatable {
+  public var data: GenerationContent?
+
+  public init(data: GenerationContent? = nil) {
+    self.data = data
+  }
+}
+
+public struct GenerationContent: Codable, Sendable, Equatable {
+  public var id: String?
+  public var input: JSONValue?
+  public var output: JSONValue?
+  public var prompt: JSONValue?
+  public var completion: JSONValue?
+  public var messages: JSONValue?
+  public var rawContent: JSONValue?
+
+  enum CodingKeys: String, CodingKey {
+    case id
+    case input
+    case output
+    case prompt
+    case completion
+    case messages
+    case rawContent = "raw_content"
+  }
+}
+
+public struct ModelsResponse: Codable, Sendable, Equatable {
+  public var data: [OpenRouterModel]
+
+  public init(data: [OpenRouterModel]) {
+    self.data = data
+  }
+}
+
+public struct OpenRouterModel: Codable, Sendable, Equatable {
+  public var id: String
+  public var name: String?
+  public var description: String?
+  public var contextLength: Int?
+  public var architecture: JSONValue?
+  public var pricing: ModelPricing?
+  public var topProvider: JSONValue?
+  public var perRequestLimits: JSONValue?
+  public var supportedParameters: [String]?
+
+  enum CodingKeys: String, CodingKey {
+    case id
+    case name
+    case description
+    case contextLength = "context_length"
+    case architecture
+    case pricing
+    case topProvider = "top_provider"
+    case perRequestLimits = "per_request_limits"
+    case supportedParameters = "supported_parameters"
+  }
+}
+
+public struct ModelPricing: Codable, Sendable, Equatable {
+  public var prompt: String?
+  public var completion: String?
+  public var image: String?
+  public var request: String?
+  public var inputCacheRead: String?
+  public var inputCacheWrite: String?
+  public var webSearch: String?
+  public var internalReasoning: String?
+
+  enum CodingKeys: String, CodingKey {
+    case prompt
+    case completion
+    case image
+    case request
+    case inputCacheRead = "input_cache_read"
+    case inputCacheWrite = "input_cache_write"
+    case webSearch = "web_search"
+    case internalReasoning = "internal_reasoning"
+  }
+}
+
+public struct CreditsResponse: Codable, Sendable, Equatable {
+  public var data: Credits?
+  public var totalCredits: Double?
+  public var totalUsage: Double?
+
+  enum CodingKeys: String, CodingKey {
+    case data
+    case totalCredits = "total_credits"
+    case totalUsage = "total_usage"
+  }
+
+  public init(data: Credits? = nil, totalCredits: Double? = nil, totalUsage: Double? = nil) {
+    self.data = data
+    self.totalCredits = totalCredits
+    self.totalUsage = totalUsage
+  }
+}
+
+public struct Credits: Codable, Sendable, Equatable {
+  public var totalCredits: Double?
+  public var totalUsage: Double?
+
+  enum CodingKeys: String, CodingKey {
+    case totalCredits = "total_credits"
+    case totalUsage = "total_usage"
+  }
+
+  public init(totalCredits: Double? = nil, totalUsage: Double? = nil) {
+    self.totalCredits = totalCredits
+    self.totalUsage = totalUsage
+  }
+}
+
 public enum JSONValue: Codable, Sendable, Equatable {
   case string(String)
   case number(Double)

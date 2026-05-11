@@ -146,12 +146,36 @@ public struct OpenRouterClient: Sendable {
     )
   }
 
+  public func getGenerationResponse(id: String) async throws -> GenerationResponse {
+    try await transport.get(
+      path: "generation",
+      queryItems: [URLQueryItem(name: "id", value: id)],
+      responseType: GenerationResponse.self
+    )
+  }
+
   public func listGenerationContent(id: String) async throws -> JSONValue {
     try await transport.get(
       path: "generation/content",
       queryItems: [URLQueryItem(name: "id", value: id)],
       responseType: JSONValue.self
     )
+  }
+
+  public func listGenerationContentResponse(id: String) async throws -> GenerationContentResponse {
+    try await transport.get(
+      path: "generation/content",
+      queryItems: [URLQueryItem(name: "id", value: id)],
+      responseType: GenerationContentResponse.self
+    )
+  }
+
+  public func listModels() async throws -> ModelsResponse {
+    try await transport.get(path: "models", responseType: ModelsResponse.self)
+  }
+
+  public func getCredits() async throws -> CreditsResponse {
+    try await transport.get(path: "credits", responseType: CreditsResponse.self)
   }
 
   public func createChatCompletionWithFallback(
@@ -267,6 +291,9 @@ extension OpenRouterClient {
     public var baseURL: URL
     public var timeout: TimeInterval
     public var httpReferer: String?
+    public var appTitle: String?
+    public var appCategories: [String]?
+    public var experimentalMetadata: String?
     public var xTitle: String?
 
     // Stored privately until transport layer is implemented.
@@ -276,11 +303,17 @@ extension OpenRouterClient {
       baseURL: URL = URL(string: "https://openrouter.ai/api/v1/")!,
       timeout: TimeInterval = 60,
       httpReferer: String? = nil,
+      appTitle: String? = nil,
+      appCategories: [String]? = nil,
+      experimentalMetadata: String? = nil,
       xTitle: String? = nil
     ) {
       self.baseURL = baseURL
       self.timeout = timeout
       self.httpReferer = httpReferer
+      self.appTitle = appTitle
+      self.appCategories = appCategories
+      self.experimentalMetadata = experimentalMetadata
       self.xTitle = xTitle
       self.apiKey = nil
     }

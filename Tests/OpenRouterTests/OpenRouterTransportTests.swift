@@ -34,6 +34,9 @@ final class OpenRouterTransportTests: XCTestCase {
       baseURL: URL(string: "https://openrouter.ai/api/v1")!,
       timeout: 10,
       httpReferer: "https://example.com",
+      appTitle: "Official App",
+      appCategories: ["devtools", "sdk"],
+      experimentalMetadata: "exp-v1",
       xTitle: "Example App"
     )
     .withAPIKeyForTests("abc123")
@@ -46,7 +49,10 @@ final class OpenRouterTransportTests: XCTestCase {
 
     XCTAssertEqual(req.value(forHTTPHeaderField: "Authorization"), "Bearer abc123")
     XCTAssertEqual(req.value(forHTTPHeaderField: "HTTP-Referer"), "https://example.com")
-    XCTAssertEqual(req.value(forHTTPHeaderField: "X-Title"), "Example App")
+    XCTAssertEqual(req.value(forHTTPHeaderField: "X-OpenRouter-Title"), "Official App")
+    XCTAssertNil(req.value(forHTTPHeaderField: "X-Title"))
+    XCTAssertEqual(req.value(forHTTPHeaderField: "X-OpenRouter-Categories"), "devtools,sdk")
+    XCTAssertEqual(req.value(forHTTPHeaderField: "X-OpenRouter-Experimental-Metadata"), "exp-v1")
     XCTAssertEqual(req.httpMethod, "POST")
   }
 
@@ -65,6 +71,23 @@ final class OpenRouterTransportTests: XCTestCase {
     XCTAssertEqual(req.value(forHTTPHeaderField: "X-OpenRouter-Cache"), "true")
     XCTAssertEqual(req.value(forHTTPHeaderField: "X-OpenRouter-Cache-TTL"), "600")
     XCTAssertEqual(req.value(forHTTPHeaderField: "X-OpenRouter-Cache-Clear"), "true")
+  }
+
+  func testBuildRequestUsesXTitleAsAliasForOpenRouterTitle() throws {
+    let config = OpenRouterClient.Configuration(
+      baseURL: URL(string: "https://openrouter.ai/api/v1")!,
+      xTitle: "Alias App"
+    )
+    .withAPIKeyForTests("abc123")
+
+    let transport = HTTPTransport(configuration: config)
+    let req = try transport.buildRequest(
+      path: "chat/completions",
+      body: ChatCompletionRequest(model: "m", messages: [.user("hi")])
+    )
+
+    XCTAssertEqual(req.value(forHTTPHeaderField: "X-OpenRouter-Title"), "Alias App")
+    XCTAssertNil(req.value(forHTTPHeaderField: "X-Title"))
   }
 
   func testDecodeResponseMapsAPIErrorEnvelope() throws {

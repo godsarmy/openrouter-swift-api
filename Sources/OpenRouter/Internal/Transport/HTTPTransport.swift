@@ -47,12 +47,7 @@ struct HTTPTransport: @unchecked Sendable {
     request.setValue("application/json", forHTTPHeaderField: "Accept")
     request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
 
-    if let referer = configuration.httpReferer {
-      request.setValue(referer, forHTTPHeaderField: "HTTP-Referer")
-    }
-    if let title = configuration.xTitle {
-      request.setValue(title, forHTTPHeaderField: "X-Title")
-    }
+    applyCommonHeaders(to: &request)
 
     if let body = body as? ResponseCacheConfigProviding,
       let responseCache = body.responseCacheConfig
@@ -84,12 +79,7 @@ struct HTTPTransport: @unchecked Sendable {
     request.setValue("application/json", forHTTPHeaderField: "Accept")
     request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
 
-    if let referer = configuration.httpReferer {
-      request.setValue(referer, forHTTPHeaderField: "HTTP-Referer")
-    }
-    if let title = configuration.xTitle {
-      request.setValue(title, forHTTPHeaderField: "X-Title")
-    }
+    applyCommonHeaders(to: &request)
 
     return request
   }
@@ -138,6 +128,30 @@ struct HTTPTransport: @unchecked Sendable {
     }
     if let clear = config.clear {
       request.setValue(clear ? "true" : "false", forHTTPHeaderField: "X-OpenRouter-Cache-Clear")
+    }
+  }
+
+  private func applyCommonHeaders(to request: inout URLRequest) {
+    if let referer = configuration.httpReferer {
+      request.setValue(referer, forHTTPHeaderField: "HTTP-Referer")
+    }
+
+    if let appTitle = configuration.appTitle {
+      request.setValue(appTitle, forHTTPHeaderField: "X-OpenRouter-Title")
+    } else if let title = configuration.xTitle {
+      request.setValue(title, forHTTPHeaderField: "X-OpenRouter-Title")
+    }
+
+    if let categories = configuration.appCategories, !categories.isEmpty {
+      request.setValue(
+        categories.joined(separator: ","), forHTTPHeaderField: "X-OpenRouter-Categories")
+    }
+
+    if let experimentalMetadata = configuration.experimentalMetadata {
+      request.setValue(
+        experimentalMetadata,
+        forHTTPHeaderField: "X-OpenRouter-Experimental-Metadata"
+      )
     }
   }
 
