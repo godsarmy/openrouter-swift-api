@@ -15,7 +15,6 @@ Core parity milestones are implemented, including:
 Track progress in:
 
 - `PLAN.md`
-- `FEATURE_PARITY.md`
 
 Current notable deferred item:
 
