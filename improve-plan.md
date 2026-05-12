@@ -2,9 +2,9 @@
 
 ## Status Snapshot (May 2026)
 
-- ✅ Done: models endpoint, credits endpoint, header/config parity (`appTitle`, `appCategories`, `experimentalMetadata`), typed generation model structs + tests
-- 🟡 Partial: typed generation APIs are available via `getGenerationResponse` / `listGenerationContentResponse`, while legacy `JSONValue` methods remain
-- ⏳ Pending: resource namespaces, stream/non-stream error parity, `RequestOptions`, retry policy, typed error conveniences, docs/examples refresh
+- ✅ Done: models endpoint, credits endpoint, header/config parity (`appTitle`, `appCategories`, `experimentalMetadata`), typed generation primary APIs + raw helpers, resource namespaces, stream/non-stream error parity, `RequestOptions`, retry policy, typed error conveniences, docs/examples refresh
+- 🟡 Partial: reduce `JSONValue` overuse beyond stable endpoints (responses API and schema helper typing still open)
+- ⏳ Pending: none in active scope
 - 🔒 Deferred: Responses API (until compatibility/priority is confirmed)
 
 ## Goal
@@ -26,7 +26,7 @@ Focus areas:
 
 ### 1) Add typed generation models
 
-**Status:** 🟡 Partial
+**Status:** ✅ Done
 
 **Current state**
 
@@ -192,7 +192,7 @@ Update:
 
 ### 4) Introduce resource namespaces
 
-**Status:** ⏳ Pending
+**Status:** ✅ Done
 
 Current Swift API is flat:
 
@@ -248,7 +248,7 @@ Keep existing flat methods as backwards-compatible wrappers during transition.
 
 ### 5) Unify stream and non-stream error handling
 
-**Status:** ⏳ Pending
+**Status:** ✅ Done
 
 **Current state**
 
@@ -288,7 +288,7 @@ Add streaming non-2xx tests asserting:
 
 ### 6) Add `RequestOptions`
 
-**Status:** ⏳ Pending
+**Status:** ✅ Done
 
 The TypeScript SDK supports per-request options such as timeout, retries, base URL override, and extra headers.
 
@@ -320,7 +320,7 @@ Apply similarly to embeddings, completions, generations, models, credits, and fu
 
 ### 7) Add retry policy
 
-**Status:** ⏳ Pending
+**Status:** ✅ Done
 
 The TypeScript SDK includes retry/backoff behavior.
 
@@ -358,7 +358,7 @@ Add tests for:
 
 ### 8) Add typed error conveniences
 
-**Status:** ⏳ Pending
+**Status:** ✅ Done
 
 Current `OpenRouterError.apiError` is usable, but callers need to inspect status manually.
 
@@ -388,7 +388,7 @@ Prefer convenience properties first to avoid breaking current API.
 
 ### 9) Reduce `JSONValue` overuse
 
-**Status:** ⏳ Pending
+**Status:** 🟡 Partial
 
 Keep `JSONValue` as an escape hatch, but avoid making it the primary result for stable endpoints.
 
@@ -407,7 +407,7 @@ Prioritize typed wrappers for:
 
 ### 10) Update README and examples
 
-**Status:** ⏳ Pending
+**Status:** ✅ Done
 
 Add examples for:
 - usage/cost from non-streaming chat

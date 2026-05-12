@@ -294,6 +294,62 @@ final class OpenRouterClientMockedTests: XCTestCase {
     }
   }
 
+  func testCreateChatCompletionStreamMapsNon2xxEnvelopeError() async throws {
+    URLProtocolStub.handler = { request in
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 429, httpVersion: nil,
+        headerFields: ["Content-Type": "application/json"]
+      )!
+      let body = #"{"error":{"code":429,"message":"rate limited"}}"#.data(using: .utf8)!
+      return (response, body)
+    }
+
+    let client = makeClient()
+    let stream = try await client.createChatCompletionStream(
+      ChatCompletionRequest(model: "m", messages: [.user("hi")], stream: true)
+    )
+
+    do {
+      for try await _ in stream {}
+      XCTFail("Expected apiError")
+    } catch let error as OpenRouterError {
+      guard case .apiError(let status, let code, let message, _) = error else {
+        return XCTFail("Unexpected error: \(error)")
+      }
+      XCTAssertEqual(status, 429)
+      XCTAssertEqual(code, 429)
+      XCTAssertEqual(message, "rate limited")
+    }
+  }
+
+  func testCreateChatCompletionStreamMapsNon2xxNonJSONErrorRawBody() async throws {
+    URLProtocolStub.handler = { request in
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 502, httpVersion: nil,
+        headerFields: ["Content-Type": "text/plain"]
+      )!
+      return (response, "bad gateway".data(using: .utf8)!)
+    }
+
+    let client = makeClient()
+    let stream = try await client.createChatCompletionStream(
+      ChatCompletionRequest(model: "m", messages: [.user("hi")], stream: true)
+    )
+
+    do {
+      for try await _ in stream {}
+      XCTFail("Expected apiError")
+    } catch let error as OpenRouterError {
+      guard case .apiError(let status, let code, let message, let rawBody) = error else {
+        return XCTFail("Unexpected error: \(error)")
+      }
+      XCTAssertEqual(status, 502)
+      XCTAssertNil(code)
+      XCTAssertNil(message)
+      XCTAssertEqual(rawBody, "bad gateway")
+    }
+  }
+
   func testCreateChatCompletionStreamFinishesWhenTransportCompletesWithoutDone() async throws {
     let streamBody = """
       data: {"id":"chunk-1","choices":[{"index":0,"delta":{"content":"hello"},"finish_reason":null}]}
@@ -355,6 +411,82 @@ final class OpenRouterClientMockedTests: XCTestCase {
 
     XCTAssertEqual(chunks.last?.usage?.totalTokens, 15)
     XCTAssertEqual(chunks.last?.usage?.cost, 0.000123)
+  }
+
+  func testCreateChatCompletionAppliesRequestOptionsHeadersAndTimeout() async throws {
+    URLProtocolStub.handler = { request in
+      XCTAssertEqual(request.value(forHTTPHeaderField: "X-Test"), "1")
+      XCTAssertEqual(request.timeoutInterval, 5)
+      XCTAssertEqual(request.url?.host, "example.org")
+
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil,
+        headerFields: ["Content-Type": "application/json"]
+      )!
+      let body =
+        #"{"id":"chatcmpl-1","choices":[{"index":0,"message":{"role":"assistant","content":"ok"}}]}"#
+        .data(using: .utf8)!
+      return (response, body)
+    }
+
+    let client = makeClient()
+    _ = try await client.createChatCompletion(
+      ChatCompletionRequest(model: "m", messages: [.user("hi")]),
+      options: RequestOptions(
+        timeout: 5,
+        baseURL: URL(string: "https://example.org/api/v1")!,
+        extraHeaders: ["X-Test": "1"]
+      )
+    )
+  }
+
+  func testCreateChatCompletionRetriesOnConfiguredStatusCode() async throws {
+    final class AttemptBox: @unchecked Sendable {
+      var value = 0
+      private let lock = NSLock()
+      func next() -> Int {
+        lock.lock()
+        defer { lock.unlock() }
+        value += 1
+        return value
+      }
+    }
+
+    let attempts = AttemptBox()
+    URLProtocolStub.handler = { request in
+      let attempt = attempts.next()
+      if attempt == 1 {
+        let response = HTTPURLResponse(
+          url: request.url!, statusCode: 503, httpVersion: nil,
+          headerFields: ["Retry-After": "0"]
+        )!
+        return (response, #"{"error":{"code":503,"message":"try again"}}"#.data(using: .utf8)!)
+      }
+
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      let body =
+        #"{"id":"chatcmpl-2","choices":[{"index":0,"message":{"role":"assistant","content":"ok"}}]}"#
+        .data(using: .utf8)!
+      return (response, body)
+    }
+
+    let client = makeClient()
+    let response = try await client.createChatCompletion(
+      ChatCompletionRequest(model: "m", messages: [.user("hi")]),
+      options: RequestOptions(
+        retries: .backoff(
+          maxAttempts: 2,
+          initialDelay: 0,
+          maxDelay: 0,
+          exponent: 1,
+          retryStatusCodes: [503],
+          retryConnectionErrors: false
+        )
+      )
+    )
+
+    XCTAssertEqual(response.id, "chatcmpl-2")
   }
 
   private func makeClient() -> OpenRouterClient {

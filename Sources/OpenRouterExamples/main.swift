@@ -28,12 +28,17 @@ private struct CLI {
     case stream
     case embed
     case complete
+    case models
+    case credits
+    case generation
+    case generationContent
   }
 
   struct ParsedArgs {
-    var model: String
-    var prompt: String
+    var model: String?
+    var prompt: String?
     var system: String?
+    var generationID: String?
     var baseURL: URL?
     var output: OutputMode
     var fallbackModels: [String]
@@ -59,6 +64,10 @@ private struct CLI {
       stream    Run streaming chat completion (prints chunks as JSON)
       embed     Run embeddings request for prompt text
       complete  Run legacy completion request
+      models    List models
+      credits   Get credits summary
+      generation Get generation by id
+      generationContent Get generation content by id
 
     Fallback:
       --fallback-models <model1,model2,...>
@@ -111,32 +120,53 @@ private struct CLI {
         printChatChunk(chunk)
       }
     case .embed:
+      guard let model = args.model, let prompt = args.prompt else {
+        throw CLIError.missingModelOrPrompt
+      }
       let request = EmbeddingRequest(
-        model: args.model,
-        input: .string(args.prompt),
+        model: model,
+        input: .string(prompt),
         responseCache: buildResponseCacheConfig()
       )
       let response = try await client.createEmbeddings(request)
       printEncoded(response)
     case .complete:
+      guard let model = args.model, let prompt = args.prompt else {
+        throw CLIError.missingModelOrPrompt
+      }
       let request = CompletionRequest(
-        model: args.model,
-        prompt: args.prompt,
+        model: model,
+        prompt: prompt,
         responseCache: buildResponseCacheConfig()
       )
       let response = try await client.createCompletion(request)
       printCompletionResponse(response)
+    case .models:
+      printEncoded(try await client.models.list())
+    case .credits:
+      printEncoded(try await client.credits.get())
+    case .generation:
+      guard let generationID = args.generationID else { throw CLIError.missingGenerationID }
+      printEncoded(try await client.generations.get(id: generationID))
+    case .generationContent:
+      guard let generationID = args.generationID else { throw CLIError.missingGenerationID }
+      printEncoded(try await client.generations.content(id: generationID))
     }
   }
 
   private func buildChatRequest(stream: Bool) -> ChatCompletionRequest {
-    ChatCompletionRequest(
-      model: args.model,
-      messages: buildMessages(),
+    let model = args.model ?? "openai/gpt-4o-mini"
+    let prompt = args.prompt ?? "hello"
+    return ChatCompletionRequest(
+      model: model,
+      models: command == .chatFallback && !args.fallbackModels.isEmpty
+        ? [model] + args.fallbackModels : nil,
+      messages: buildMessages(prompt: prompt),
       stream: stream,
       reasoning: buildReasoningConfig(),
       webSearchOptions: buildWebSearchOptions(),
-      responseCache: buildResponseCacheConfig()
+      responseCache: buildResponseCacheConfig(),
+      streamOptions: stream ? .init(includeUsage: true) : nil
     )
   }
 
@@ -161,12 +191,12 @@ private struct CLI {
     )
   }
 
-  private func buildMessages() -> [ChatMessage] {
+  private func buildMessages(prompt: String) -> [ChatMessage] {
     var messages: [ChatMessage] = []
     if let system = args.system, !system.isEmpty {
       messages.append(.system(system))
     }
-    messages.append(.user(args.prompt))
+    messages.append(.user(prompt))
     return messages
   }
 
@@ -176,11 +206,10 @@ private struct CLI {
       return tokens[i + 1]
     }
 
-    guard let model = value(for: "--model"), !model.isEmpty else { throw CLIError.missingModel }
-    guard let prompt = value(for: "--prompt"), !prompt.isEmpty else {
-      throw CLIError.missingPrompt
-    }
+    let model = value(for: "--model")
+    let prompt = value(for: "--prompt")
     let system = value(for: "--system")
+    let generationID = value(for: "--generation-id")
     let fallbackModels =
       value(for: "--fallback-models")?
       .split(separator: ",")
@@ -211,6 +240,7 @@ private struct CLI {
       model: model,
       prompt: prompt,
       system: system,
+      generationID: generationID,
       baseURL: baseURL,
       output: output,
       fallbackModels: fallbackModels,
@@ -296,7 +326,9 @@ private enum CLIError: Error, LocalizedError {
   case missingAPIKey
   case missingModel
   case missingPrompt
+  case missingModelOrPrompt
   case missingFallbackModels
+  case missingGenerationID
   case invalidBaseURL(String)
   case invalidOutput(String)
 
@@ -310,8 +342,12 @@ private enum CLIError: Error, LocalizedError {
       return "missing --model argument"
     case .missingPrompt:
       return "missing --prompt argument"
+    case .missingModelOrPrompt:
+      return "missing --model or --prompt argument"
     case .missingFallbackModels:
       return "missing --fallback-models for chatFallback command"
+    case .missingGenerationID:
+      return "missing --generation-id argument"
     case .invalidBaseURL(let value):
       return "invalid --base-url: \(value)"
     case .invalidOutput(let value):

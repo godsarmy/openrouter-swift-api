@@ -18,13 +18,17 @@ public struct OpenRouterClient: Sendable {
     transport = HTTPTransport(configuration: resolved, session: session)
   }
 
-  public func createChatCompletion(_ request: ChatCompletionRequest) async throws
+  public func createChatCompletion(
+    _ request: ChatCompletionRequest,
+    options: RequestOptions? = nil
+  ) async throws
     -> ChatCompletionResponse
   {
     try await transport.post(
       path: "chat/completions",
       requestBody: request,
-      responseType: ChatCompletionResponse.self
+      responseType: ChatCompletionResponse.self,
+      options: options
     )
   }
 
@@ -122,60 +126,79 @@ public struct OpenRouterClient: Sendable {
     return chunks
   }
 
-  public func createEmbeddings(_ request: EmbeddingRequest) async throws -> EmbeddingResponse {
+  public func createEmbeddings(
+    _ request: EmbeddingRequest,
+    options: RequestOptions? = nil
+  ) async throws -> EmbeddingResponse {
     try await transport.post(
       path: "embeddings",
       requestBody: request,
-      responseType: EmbeddingResponse.self
+      responseType: EmbeddingResponse.self,
+      options: options
     )
   }
 
-  public func createCompletion(_ request: CompletionRequest) async throws -> CompletionResponse {
+  public func createCompletion(
+    _ request: CompletionRequest,
+    options: RequestOptions? = nil
+  ) async throws -> CompletionResponse {
     try await transport.post(
       path: "completions",
       requestBody: request,
-      responseType: CompletionResponse.self
+      responseType: CompletionResponse.self,
+      options: options
     )
   }
 
-  public func getGeneration(id: String) async throws -> JSONValue {
+  public func getGeneration(id: String, options: RequestOptions? = nil) async throws
+    -> GenerationResponse
+  {
     try await transport.get(
       path: "generation",
       queryItems: [URLQueryItem(name: "id", value: id)],
-      responseType: JSONValue.self
+      responseType: GenerationResponse.self,
+      options: options
     )
   }
 
-  public func getGenerationResponse(id: String) async throws -> GenerationResponse {
+  public func getGenerationRaw(id: String, options: RequestOptions? = nil) async throws -> JSONValue
+  {
     try await transport.get(
       path: "generation",
       queryItems: [URLQueryItem(name: "id", value: id)],
-      responseType: GenerationResponse.self
+      responseType: JSONValue.self,
+      options: options
     )
   }
 
-  public func listGenerationContent(id: String) async throws -> JSONValue {
+  public func listGenerationContent(id: String, options: RequestOptions? = nil) async throws
+    -> GenerationContentResponse
+  {
     try await transport.get(
       path: "generation/content",
       queryItems: [URLQueryItem(name: "id", value: id)],
-      responseType: JSONValue.self
+      responseType: GenerationContentResponse.self,
+      options: options
     )
   }
 
-  public func listGenerationContentResponse(id: String) async throws -> GenerationContentResponse {
+  public func listGenerationContentRaw(id: String, options: RequestOptions? = nil) async throws
+    -> JSONValue
+  {
     try await transport.get(
       path: "generation/content",
       queryItems: [URLQueryItem(name: "id", value: id)],
-      responseType: GenerationContentResponse.self
+      responseType: JSONValue.self,
+      options: options
     )
   }
 
-  public func listModels() async throws -> ModelsResponse {
-    try await transport.get(path: "models", responseType: ModelsResponse.self)
+  public func listModels(options: RequestOptions? = nil) async throws -> ModelsResponse {
+    try await transport.get(path: "models", responseType: ModelsResponse.self, options: options)
   }
 
-  public func getCredits() async throws -> CreditsResponse {
-    try await transport.get(path: "credits", responseType: CreditsResponse.self)
+  public func getCredits(options: RequestOptions? = nil) async throws -> CreditsResponse {
+    try await transport.get(path: "credits", responseType: CreditsResponse.self, options: options)
   }
 
   public func createChatCompletionWithFallback(
@@ -271,6 +294,107 @@ public struct OpenRouterClient: Sendable {
 
     return policy.errorCodes.contains(statusCode)
   }
+}
+
+extension OpenRouterClient {
+  public var chat: ChatResource { ChatResource(client: self) }
+  public var embeddings: EmbeddingsResource { EmbeddingsResource(client: self) }
+  public var generations: GenerationsResource { GenerationsResource(client: self) }
+  public var models: ModelsResource { ModelsResource(client: self) }
+  public var credits: CreditsResource { CreditsResource(client: self) }
+
+  public struct ChatResource: Sendable {
+    fileprivate let client: OpenRouterClient
+
+    public func send(
+      _ request: ChatCompletionRequest,
+      options: RequestOptions? = nil
+    ) async throws -> ChatCompletionResponse {
+      try await client.createChatCompletion(request, options: options)
+    }
+
+    public func stream(
+      _ request: ChatCompletionRequest
+    ) -> AsyncThrowingStream<ChatCompletionChunk, Error> {
+      client.createChatCompletionStream(request)
+    }
+  }
+
+  public struct EmbeddingsResource: Sendable {
+    fileprivate let client: OpenRouterClient
+
+    public func create(
+      _ request: EmbeddingRequest,
+      options: RequestOptions? = nil
+    ) async throws -> EmbeddingResponse {
+      try await client.createEmbeddings(request, options: options)
+    }
+  }
+
+  public struct GenerationsResource: Sendable {
+    fileprivate let client: OpenRouterClient
+
+    public func get(
+      id: String,
+      options: RequestOptions? = nil
+    ) async throws -> GenerationResponse {
+      try await client.getGeneration(id: id, options: options)
+    }
+
+    public func content(
+      id: String,
+      options: RequestOptions? = nil
+    ) async throws -> GenerationContentResponse {
+      try await client.listGenerationContent(id: id, options: options)
+    }
+  }
+
+  public struct ModelsResource: Sendable {
+    fileprivate let client: OpenRouterClient
+
+    public func list(options: RequestOptions? = nil) async throws -> ModelsResponse {
+      try await client.listModels(options: options)
+    }
+  }
+
+  public struct CreditsResource: Sendable {
+    fileprivate let client: OpenRouterClient
+
+    public func get(options: RequestOptions? = nil) async throws -> CreditsResponse {
+      try await client.getCredits(options: options)
+    }
+  }
+}
+
+public struct RequestOptions: Sendable, Equatable {
+  public var timeout: TimeInterval?
+  public var retries: RetryPolicy?
+  public var baseURL: URL?
+  public var extraHeaders: [String: String]
+
+  public init(
+    timeout: TimeInterval? = nil,
+    retries: RetryPolicy? = nil,
+    baseURL: URL? = nil,
+    extraHeaders: [String: String] = [:]
+  ) {
+    self.timeout = timeout
+    self.retries = retries
+    self.baseURL = baseURL
+    self.extraHeaders = extraHeaders
+  }
+}
+
+public enum RetryPolicy: Sendable, Equatable {
+  case none
+  case backoff(
+    maxAttempts: Int,
+    initialDelay: TimeInterval,
+    maxDelay: TimeInterval,
+    exponent: Double,
+    retryStatusCodes: Set<Int>,
+    retryConnectionErrors: Bool
+  )
 }
 
 public struct ChatCompletionStreamSession {
@@ -386,6 +510,43 @@ public enum OpenRouterError: Error, Equatable {
   }
 }
 
+extension OpenRouterError {
+  public var statusCode: Int? {
+    guard case .apiError(let statusCode, _, _, _) = self else { return nil }
+    return statusCode
+  }
+
+  public var isUnauthorized: Bool { statusCode == 401 }
+  public var isPaymentRequired: Bool { statusCode == 402 }
+  public var isRateLimited: Bool { statusCode == 429 }
+  public var isServerError: Bool {
+    guard let statusCode else { return false }
+    return (500...599).contains(statusCode)
+  }
+
+  public var retryAfter: TimeInterval? {
+    guard case .apiError(_, _, _, let rawBody) = self,
+      let rawBody,
+      let value = OpenRouterError.extractRetryAfter(from: rawBody)
+    else { return nil }
+    return value
+  }
+
+  private static func extractRetryAfter(from rawBody: String) -> TimeInterval? {
+    let pattern = #"retry[_\s-]?after"\s*:\s*(\d+(?:\.\d+)?)"#
+    guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else {
+      return nil
+    }
+    let ns = rawBody as NSString
+    let range = NSRange(location: 0, length: ns.length)
+    guard let match = regex.firstMatch(in: rawBody, options: [], range: range),
+      match.numberOfRanges > 1
+    else { return nil }
+    let value = ns.substring(with: match.range(at: 1))
+    return TimeInterval(value)
+  }
+}
+
 private final class StreamMetadataBox: @unchecked Sendable {
   var continuation: CheckedContinuation<ResponseCacheMetadata?, Error>?
   private var didResume = false
@@ -439,6 +600,8 @@ private final class IncrementalSSEDelegate: NSObject, URLSessionDataDelegate, @u
   private let onError: @Sendable (Error) -> Void
   private let onDone: @Sendable () -> Void
   private var buffer = Data()
+  private var errorBuffer = Data()
+  private var responseStatusCode: Int?
   private var didTerminate = false
 
   init(
@@ -468,16 +631,10 @@ private final class IncrementalSSEDelegate: NSObject, URLSessionDataDelegate, @u
       return
     }
 
+    responseStatusCode = http.statusCode
+
     guard (200..<300).contains(http.statusCode) else {
-      didTerminate = true
-      onError(
-        OpenRouterError.apiError(
-          statusCode: http.statusCode,
-          code: nil,
-          message: "Streaming request failed",
-          rawBody: nil
-        ))
-      completionHandler(.cancel)
+      completionHandler(.allow)
       return
     }
 
@@ -487,6 +644,12 @@ private final class IncrementalSSEDelegate: NSObject, URLSessionDataDelegate, @u
 
   func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
     guard !didTerminate else { return }
+
+    if let responseStatusCode, !(200..<300).contains(responseStatusCode) {
+      errorBuffer.append(data)
+      return
+    }
+
     buffer.append(data)
 
     while let newlineRange = buffer.range(of: Data([0x0A])) {
@@ -520,6 +683,12 @@ private final class IncrementalSSEDelegate: NSObject, URLSessionDataDelegate, @u
   func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
     guard !didTerminate else { return }
     didTerminate = true
+
+    if let responseStatusCode, !(200..<300).contains(responseStatusCode) {
+      onError(transport.mapAPIError(statusCode: responseStatusCode, data: errorBuffer))
+      return
+    }
+
     if let error {
       onError(error)
     } else {

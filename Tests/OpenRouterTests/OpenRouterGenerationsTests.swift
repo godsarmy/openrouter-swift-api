@@ -39,13 +39,7 @@ final class OpenRouterGenerationsTests: XCTestCase {
     }
 
     let value = try await makeClient().getGeneration(id: "gen_1")
-    guard case .object(let obj) = value,
-      case .object(let data)? = obj["data"],
-      case .string(let id)? = data["id"]
-    else {
-      return XCTFail("Expected JSON object payload with data.id")
-    }
-    XCTAssertEqual(id, "gen_1")
+    XCTAssertEqual(value.data?.id, "gen_1")
   }
 
   func testListGenerationContentBuildsGETWithIdQueryAndHeaders() async throws {
@@ -71,13 +65,7 @@ final class OpenRouterGenerationsTests: XCTestCase {
     }
 
     let value = try await makeClient().listGenerationContent(id: "gen_2")
-    guard case .object(let obj) = value,
-      case .object(let data)? = obj["data"],
-      case .string(let id)? = data["id"]
-    else {
-      return XCTFail("Expected JSON object payload with data.id")
-    }
-    XCTAssertEqual(id, "gen_2")
+    XCTAssertEqual(value.data?.id, "gen_2")
   }
 
   func testGenerationMethodsDecodeTypedObject() async throws {
@@ -90,7 +78,7 @@ final class OpenRouterGenerationsTests: XCTestCase {
       return (response, body)
     }
 
-    let value = try await makeClient().getGenerationResponse(id: "any")
+    let value = try await makeClient().getGeneration(id: "any")
     XCTAssertEqual(value.data?.id, "gen_typed")
     XCTAssertEqual(value.data?.providerName, "openai")
     XCTAssertEqual(value.data?.tokensPrompt, 7)
@@ -107,7 +95,7 @@ final class OpenRouterGenerationsTests: XCTestCase {
       return (response, body)
     }
 
-    let value = try await makeClient().listGenerationContentResponse(id: "any")
+    let value = try await makeClient().listGenerationContent(id: "any")
     XCTAssertEqual(value.data?.id, "gen_typed_content")
     XCTAssertNotNil(value.data?.rawContent)
   }
@@ -121,7 +109,7 @@ final class OpenRouterGenerationsTests: XCTestCase {
       return (response, body)
     }
 
-    let value = try await makeClient().getGeneration(id: "any")
+    let value = try await makeClient().getGenerationRaw(id: "any")
     guard case .object(let obj) = value else { return XCTFail("Expected object") }
     XCTAssertEqual(obj["ok"], .bool(true))
   }
@@ -136,7 +124,7 @@ final class OpenRouterGenerationsTests: XCTestCase {
       return (response, body)
     }
 
-    let value = try await makeClient().listGenerationContent(id: "any")
+    let value = try await makeClient().listGenerationContentRaw(id: "any")
     guard case .object(let obj) = value else { return XCTFail("Expected object") }
     XCTAssertEqual(obj["ok"], .bool(true))
   }
@@ -151,7 +139,7 @@ final class OpenRouterGenerationsTests: XCTestCase {
     }
 
     do {
-      _ = try await makeClient().getGeneration(id: "missing")
+      _ = try await makeClient().getGenerationRaw(id: "missing")
       XCTFail("Expected apiError")
     } catch let error as OpenRouterError {
       guard case .apiError(let status, let code, let message, _) = error else {
@@ -173,7 +161,7 @@ final class OpenRouterGenerationsTests: XCTestCase {
     }
 
     do {
-      _ = try await makeClient().getGeneration(id: "gen_timeout")
+      _ = try await makeClient().getGenerationRaw(id: "gen_timeout")
       XCTFail("Expected apiError")
     } catch let error as OpenRouterError {
       guard case .apiError(let status, let code, let message, let rawBody) = error else {
@@ -196,7 +184,7 @@ final class OpenRouterGenerationsTests: XCTestCase {
     }
 
     do {
-      _ = try await makeClient().getGeneration(id: "gen_bad_json")
+      _ = try await makeClient().getGenerationRaw(id: "gen_bad_json")
       XCTFail("Expected decodingFailed")
     } catch let error as OpenRouterError {
       guard case .decodingFailed(let statusCode, let underlying) = error else {
@@ -213,7 +201,7 @@ final class OpenRouterGenerationsTests: XCTestCase {
     }
 
     do {
-      _ = try await makeClient().getGeneration(id: "gen_network")
+      _ = try await makeClient().getGenerationRaw(id: "gen_network")
       XCTFail("Expected URLError")
     } catch let error as URLError {
       XCTAssertEqual(error.code, .notConnectedToInternet)

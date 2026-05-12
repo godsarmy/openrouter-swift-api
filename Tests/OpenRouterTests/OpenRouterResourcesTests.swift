@@ -55,6 +55,42 @@ final class OpenRouterResourcesTests: XCTestCase {
     XCTAssertEqual(result.data?.totalUsage, 12.3)
   }
 
+  func testResourceNamespacesRouteToExpectedEndpoints() async throws {
+    let client = makeClient()
+
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.url?.path, "/api/v1/models")
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      return (response, #"{"data":[]}"#.data(using: .utf8)!)
+    }
+    _ = try await client.models.list()
+
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.url?.path, "/api/v1/credits")
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      return (response, #"{"data":{"total_credits":1,"total_usage":0}}"#.data(using: .utf8)!)
+    }
+    _ = try await client.credits.get()
+
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.url?.path, "/api/v1/generation")
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      return (response, #"{"data":{"id":"gen_1"}}"#.data(using: .utf8)!)
+    }
+    _ = try await client.generations.get(id: "gen_1")
+
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.url?.path, "/api/v1/generation/content")
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      return (response, #"{"data":{"id":"gen_1"}}"#.data(using: .utf8)!)
+    }
+    _ = try await client.generations.content(id: "gen_1")
+  }
+
   private func makeClient() -> OpenRouterClient {
     let config = URLSessionConfiguration.ephemeral
     config.protocolClasses = [URLProtocolResourcesStub.self]
