@@ -14,8 +14,9 @@
 
 ## CI Matrix (initial)
 
+- Implemented in `.github/workflows/ci.yml`
 - Linux: build + unit tests (primary)
-- macOS: optional smoke test job (recommended later)
+- macOS: optional smoke test job (non-blocking)
 
 ## Notes
 
