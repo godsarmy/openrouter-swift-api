@@ -10,7 +10,6 @@ Track progress in:
 
 - `PLAN.md`
 - `FEATURE_PARITY.md`
-- `COMPATIBILITY.md`
 
 ## Quick Start
 
