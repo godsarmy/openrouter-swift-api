@@ -1,5 +1,12 @@
 # OpenRouter Swift — API Parity and Refactor Plan
 
+## Status Snapshot (May 2026)
+
+- ✅ Done: models endpoint, credits endpoint, header/config parity (`appTitle`, `appCategories`, `experimentalMetadata`), typed generation model structs + tests
+- 🟡 Partial: typed generation APIs are available via `getGenerationResponse` / `listGenerationContentResponse`, while legacy `JSONValue` methods remain
+- ⏳ Pending: resource namespaces, stream/non-stream error parity, `RequestOptions`, retry policy, typed error conveniences, docs/examples refresh
+- 🔒 Deferred: Responses API (until compatibility/priority is confirmed)
+
 ## Goal
 Improve parity with the official TypeScript SDK source at:
 
@@ -18,6 +25,8 @@ Focus areas:
 ## P0 — Core parity fixes
 
 ### 1) Add typed generation models
+
+**Status:** 🟡 Partial
 
 **Current state**
 
@@ -66,11 +75,15 @@ Add assertions for typed fields and raw fallback behavior if raw helpers are kep
 
 ### 2) Add missing high-value resources
 
+**Status:** 🟡 Partial
+
 The TypeScript SDK exposes many namespaces. Swift currently covers only a subset.
 
 Prioritize low-risk, high-use endpoints first.
 
 #### 2.1 Models endpoint
+
+**Status:** ✅ Done
 
 Add:
 
@@ -102,6 +115,8 @@ public struct OpenRouterModel: Codable, Sendable, Equatable {
 
 #### 2.2 Credits endpoint
 
+**Status:** ✅ Done
+
 Add:
 
 ```swift
@@ -115,6 +130,8 @@ client.credits.get()
 ```
 
 #### 2.3 Responses API
+
+**Status:** 🔒 Deferred
 
 Add after models/credits if OpenRouter compatibility is confirmed:
 
@@ -130,6 +147,8 @@ Add mocked endpoint tests for each new method.
 ---
 
 ### 3) Improve request/header parity
+
+**Status:** ✅ Done
 
 The TypeScript SDK supports global and per-operation header options:
 
@@ -172,6 +191,8 @@ Update:
 ## P1 — API and transport refactor
 
 ### 4) Introduce resource namespaces
+
+**Status:** ⏳ Pending
 
 Current Swift API is flat:
 
@@ -227,6 +248,8 @@ Keep existing flat methods as backwards-compatible wrappers during transition.
 
 ### 5) Unify stream and non-stream error handling
 
+**Status:** ⏳ Pending
+
 **Current state**
 
 Non-stream responses use shared decode/error mapping.
@@ -265,6 +288,8 @@ Add streaming non-2xx tests asserting:
 
 ### 6) Add `RequestOptions`
 
+**Status:** ⏳ Pending
+
 The TypeScript SDK supports per-request options such as timeout, retries, base URL override, and extra headers.
 
 **Suggested Swift shape**
@@ -294,6 +319,8 @@ Apply similarly to embeddings, completions, generations, models, credits, and fu
 ## P2 — Reliability and ergonomics
 
 ### 7) Add retry policy
+
+**Status:** ⏳ Pending
 
 The TypeScript SDK includes retry/backoff behavior.
 
@@ -331,6 +358,8 @@ Add tests for:
 
 ### 8) Add typed error conveniences
 
+**Status:** ⏳ Pending
+
 Current `OpenRouterError.apiError` is usable, but callers need to inspect status manually.
 
 Add convenience properties:
@@ -359,6 +388,8 @@ Prefer convenience properties first to avoid breaking current API.
 
 ### 9) Reduce `JSONValue` overuse
 
+**Status:** ⏳ Pending
+
 Keep `JSONValue` as an escape hatch, but avoid making it the primary result for stable endpoints.
 
 Prioritize typed wrappers for:
@@ -375,6 +406,8 @@ Prioritize typed wrappers for:
 ## P3 — Documentation and examples
 
 ### 10) Update README and examples
+
+**Status:** ⏳ Pending
 
 Add examples for:
 - usage/cost from non-streaming chat
