@@ -15,3 +15,8 @@ This repository supports agent-assisted development.
 ## Handoff Notes
 - Summarize what changed and why.
 - List any follow-up tasks or assumptions.
+
+## Planning/Tracking
+- Keep long-lived roadmap details in `README.md` and `FEATURE_PARITY.md`.
+- If a planning doc is completed, fold essential status into `README.md` before deleting it.
+- Note deferred work explicitly (e.g., Responses API parity) so follow-up is discoverable.
