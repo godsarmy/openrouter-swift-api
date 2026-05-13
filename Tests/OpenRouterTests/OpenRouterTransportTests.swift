@@ -118,6 +118,49 @@ final class OpenRouterTransportTests: XCTestCase {
     }
   }
 
+  func testDebugLoggerReceivesRedactedRequestAndResponseEvents() async throws {
+    final class EventBox: @unchecked Sendable {
+      private let lock = NSLock()
+      private var values: [OpenRouterDebugEvent] = []
+
+      func append(_ value: OpenRouterDebugEvent) {
+        lock.lock()
+        defer { lock.unlock() }
+        values.append(value)
+      }
+
+      func all() -> [OpenRouterDebugEvent] {
+        lock.lock()
+        defer { lock.unlock() }
+        return values
+      }
+    }
+
+    let events = EventBox()
+    let config = URLSessionConfiguration.ephemeral
+    config.protocolClasses = [URLProtocolTransportDebugStub.self]
+    URLProtocolTransportDebugStub.handler = { request in
+      let body =
+        #"{"id":"x","model":"m","choices":[{"index":0,"message":{"role":"assistant","content":"ok"}}]}"#
+        .data(using: .utf8)!
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      return (response, body)
+    }
+
+    let client = OpenRouterClient(
+      apiKey: "abc123",
+      configuration: .init(debugLogger: { events.append($0) }),
+      session: URLSession(configuration: config)
+    )
+
+    _ = try await client.createChatCompletion(.init(model: "m", messages: [.user("hi")]))
+
+    XCTAssertTrue(
+      events.all().contains { $0.message == "request" && $0.path == "/api/v1/chat/completions" })
+    XCTAssertTrue(events.all().contains { $0.message == "response" && $0.statusCode == 200 })
+  }
+
   func testDecodeResponseAttachesResponseCacheMetadataFromHeaders() throws {
     let config = OpenRouterClient.Configuration().withAPIKeyForTests("abc123")
     let transport = HTTPTransport(configuration: config)
@@ -148,6 +191,31 @@ final class OpenRouterTransportTests: XCTestCase {
     XCTAssertEqual(decoded.responseCache?.ttlSeconds, 288)
     XCTAssertEqual(decoded.responseCache?.generationID, "gen_123")
   }
+}
+
+private final class URLProtocolTransportDebugStub: URLProtocol {
+  static nonisolated(unsafe) var handler:
+    (@Sendable (URLRequest) throws -> (HTTPURLResponse, Data))?
+
+  override class func canInit(with request: URLRequest) -> Bool { true }
+  override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+
+  override func startLoading() {
+    guard let handler = Self.handler else {
+      client?.urlProtocol(self, didFailWithError: URLError(.badServerResponse))
+      return
+    }
+    do {
+      let (response, data) = try handler(request)
+      client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+      client?.urlProtocol(self, didLoad: data)
+      client?.urlProtocolDidFinishLoading(self)
+    } catch {
+      client?.urlProtocol(self, didFailWithError: error)
+    }
+  }
+
+  override func stopLoading() {}
 }
 
 extension OpenRouterClient.Configuration {

@@ -1,6 +1,6 @@
 # OpenRouter Swift Reimplementation Plan
 
-Goal: Reimplement the `go-openrouter` SDK in Swift as a reusable Swift Package for future iOS apps.
+Goal: Reimplement OpenRouter SDK capabilities in Swift as a reusable Swift Package for future iOS apps, using `OpenRouterTeam/typescript-sdk` as the main parity reference.
 
 ## Progress Legend
 - [ ] Not started
@@ -13,8 +13,8 @@ Goal: Reimplement the `go-openrouter` SDK in Swift as a reusable Swift Package f
 
 - [x] Confirm target platform/version (recommended: iOS 15+)
 - [x] Confirm Swift tools version and CI macOS/Xcode matrix
-- [x] Define parity scope with `revrost/go-openrouter`
-- [x] Produce `FEATURE_PARITY.md` mapping Go API → Swift API
+- [x] Define parity scope with `OpenRouterTeam/typescript-sdk`
+- [x] Fold parity status into `README.md` / `PLAN.md`
 
 **Exit criteria**
 - Clear, frozen v1 feature scope and compatibility targets.
@@ -89,7 +89,7 @@ Goal: Reimplement the `go-openrouter` SDK in Swift as a reusable Swift Package f
 
 - [x] Build request factory (method/path/headers/body)
 - [x] Inject auth (`Authorization: Bearer ...`)
-- [x] Inject optional OpenRouter headers (`HTTP-Referer`, `X-Title`)
+- [x] Inject optional OpenRouter headers (`HTTP-Referer`, `X-OpenRouter-Title`, categories, experimental metadata)
 - [x] Implement JSON response decoding and error decoding
 - [x] Map HTTP + API errors to Swift error enum
 
@@ -121,7 +121,7 @@ Goal: Reimplement the `go-openrouter` SDK in Swift as a reusable Swift Package f
 - [x] Add configurable policy override support
 
 **Exit criteria**
-- Fallback behavior matches documented Go client semantics.
+- Fallback behavior matches documented OpenRouter SDK semantics.
 
 ---
 
@@ -146,16 +146,16 @@ Goal: Reimplement the `go-openrouter` SDK in Swift as a reusable Swift Package f
 
 ## Phase 8 — Docs, Examples, Developer Experience
 
-- [ ] Quick start in README
+- [x] Quick start in README
 - [ ] Examples:
   - [x] Basic chat
   - [x] Streaming chat
-  - [ ] Tool calling
-  - [ ] Structured outputs
+  - [x] Tool calling
+  - [x] Structured outputs
   - [x] Fallback usage
-- [ ] Add convenience builders (optional):
-  - [ ] `.user("...")`, `.system("...")`
-- [ ] Add migration notes and known limitations
+- [x] Add convenience builders:
+  - [x] `.user("...")`, `.system("...")`
+- [~] Add migration notes and known limitations
 
 **Exit criteria**
 - A new user can run examples in minutes.
@@ -164,35 +164,42 @@ Goal: Reimplement the `go-openrouter` SDK in Swift as a reusable Swift Package f
 
 ## Phase 9 — Release Management
 
-- [ ] Add CI workflow (build + test)
-- [ ] Add lint/format tooling (optional SwiftLint/SwiftFormat)
+- [x] Add CI workflow (build + test)
+- [~] Add lint/format tooling (currently using `swift format` manually; formal check job still optional)
 - [ ] Tag first release (`v0.1.0` suggested)
-- [ ] Maintain `CHANGELOG.md`
-- [ ] Define versioning and compatibility policy
+- [x] Maintain `CHANGELOG.md`
+- [x] Define versioning and compatibility policy
 
 **Exit criteria**
 - First consumable package release published.
 
 ---
 
-## Phase 10 — Go Parity Gap Closure
+## Phase 10 — TypeScript SDK Parity Gap Closure
 
-Source reference: `https://github.com/revrost/go-openrouter`
+Source reference: `https://github.com/OpenRouterTeam/typescript-sdk`
 
-### Parity Snapshot vs Go SDK (feature list)
+### Current Swift Coverage Snapshot
 
 - [x] Chat Completion
 - [x] Completion
-- [x] Streaming *(needs reliability upgrade to true incremental streaming path)*
+- [x] Streaming
 - [x] Embeddings
+- [x] Generations
+- [x] Models
+- [x] Credits
 - [x] Reasoning
 - [x] Tool calling
 - [x] Structured outputs
 - [x] Prompt caching
 - [x] Response caching
 - [x] Web search
-- [~] Multimodal [Images, PDFs, Audio] *(base support in place; tighten payload parity + fixtures)*
+- [x] Multimodal [Images, PDFs, Audio]
 - [x] Usage fields
+- [x] Resource namespaces (`client.chat`, `client.embeddings`, `client.generations`, `client.models`, `client.credits`)
+- [x] Per-request options (`RequestOptions`: timeout, retries, baseURL, extraHeaders)
+- [x] Retry/backoff policy with retry status codes and `Retry-After`
+- [x] Stream/non-stream API error envelope mapping parity
 
 - [x] Reasoning support parity:
   - [x] Add request reasoning options in `ChatCompletionRequest`
@@ -212,31 +219,81 @@ Source reference: `https://github.com/revrost/go-openrouter`
   - [x] Add web-search request options to chat request models
   - [x] Add typed response fields for search-related annotations (if present)
   - [x] Add request/response tests
-- [ ] Multimodal tightening parity:
+- [x] Multimodal tightening parity:
   - [x] Validate image/pdf/audio payload object shapes
   - [x] Add multimodal fixture tests (image/pdf/audio variants)
   - [x] Document accepted multimodal formats in README
-- [ ] Streaming reliability upgrade:
+- [x] Streaming reliability upgrade:
   - [x] Replace buffered stream read with true incremental streaming where available
   - [x] Keep SSE parser `[DONE]` behavior consistent
   - [x] Add tests for incremental chunk delivery behavior
 
+### Required Modifications vs TypeScript SDK
+
+#### P0 — Release-blocking / high-value gaps
+
+- [ ] Responses API parity:
+  - [ ] Confirm OpenRouter Responses API compatibility and payload shape.
+  - [ ] Add typed `ResponsesRequest` / response result models.
+  - [ ] Add `createResponse(_:, options:)`.
+  - [ ] Add `createResponseStream(_:) -> AsyncThrowingStream<...>` when stream shape is confirmed.
+  - [ ] Add mocked transport + streaming tests.
+- [ ] README/API limitations section:
+  - [x] Document implemented TypeScript SDK parity subset.
+  - [x] Explicitly document unsupported TypeScript resources and deferred Responses API.
+  - [x] Add tool-calling and structured-output usage snippets.
+- [ ] Release readiness:
+  - [x] Add `CHANGELOG.md`.
+  - [x] Define semantic versioning/source-compatibility policy.
+  - [ ] Tag `v0.1.0` after API review.
+
+#### P1 — Strong parity / developer experience
+
+- [ ] Broaden TypeScript resource coverage, prioritized by likely mobile demand:
+  - [x] Providers resource.
+  - [x] Endpoints resource.
+  - [ ] API keys resource, if safe and supported for client contexts.
+  - [ ] Organization/workspaces resources, if server-side Swift use is in scope.
+  - [ ] Guardrails, rerank, TTS/STT, video generation, analytics, beta resources as follow-up if OpenRouter API compatibility is stable.
+- [ ] Typed error taxonomy:
+  - [ ] Keep `OpenRouterError.apiError` for source compatibility.
+  - [x] Add helpers or cases for common statuses (`badRequest`, `unauthorized`, `forbidden`, `notFound`, `rateLimited`, `serverError`).
+  - [x] Preserve transport/network errors separately from API errors.
+- [x] Debug/observability hooks:
+  - [x] Add optional redacted debug logger to `Configuration`.
+  - [x] Log request method/path/status/retry attempts without secrets.
+- [ ] Higher-level typed tool helper (TypeScript `callModel` analogue):
+  - [ ] Explore Swift-friendly API for typed tool execution.
+  - [ ] Keep raw chat/tool APIs as canonical lower-level surface.
+
+#### P2 — Protocol robustness / optional parity
+
+- [ ] SSE parser hardening:
+  - [x] Support multi-line `data:` frame coalescing if needed.
+  - [x] Decide whether to preserve/ignore `event:`, `id:`, and `retry:` fields.
+  - [x] Add fixtures for comments, CRLF, multi-line payloads, and trailing partial lines.
+- [ ] Standalone function-style APIs:
+  - [ ] Evaluate whether Swift should add non-client free functions or lightweight service functions.
+  - [ ] Prefer not adding if it duplicates API surface without strong Swift ergonomics benefit.
+- [ ] Auto-pagination / iterators:
+  - [ ] Add only when paginated resources are implemented.
+
 **Exit criteria**
-- Feature parity checklist aligns with Go SDK claims for:
-  - Chat completion, completion, streaming, embeddings
-  - reasoning, tool calling, structured outputs
-  - prompt caching, response caching, web search
-  - multimodal input and usage fields
+- Core Swift SDK remains source-compatible for current public APIs.
+- Responses API status is either implemented or intentionally documented as deferred.
+- README clearly states implemented TypeScript SDK parity subset and limitations.
+- `swift test` and CI pass.
 
 ---
 
 ## Milestones
 
-- [ ] **M1**: Package + non-streaming chat working end-to-end
-- [ ] **M2**: Streaming + fallback policy complete
-- [ ] **M3**: Embeddings/tools/structured outputs + docs/tests
-- [ ] **M4**: CI green + first release tag
-- [ ] **M5**: Reasoning/caching/web-search parity complete
+- [x] **M1**: Package + non-streaming chat working end-to-end
+- [x] **M2**: Streaming + fallback policy complete
+- [x] **M3**: Embeddings/tools/structured outputs + docs/tests
+- [~] **M4**: CI green + first release tag
+- [x] **M5**: Reasoning/caching/web-search parity complete
+- [ ] **M6**: TypeScript SDK parity audit closure (Responses API decision + documented resource gaps)
 
 ---
 
@@ -246,6 +303,7 @@ Source reference: `https://github.com/revrost/go-openrouter`
 - [ ] API schema drift vs OpenRouter docs → periodic parity audit
 - [ ] Overly rigid models for polymorphic payloads → controlled custom decoders
 - [ ] iOS networking/cancellation quirks → explicit cancellation tests
+- [ ] TypeScript SDK resource breadth grows faster than Swift implementation → prioritize mobile-relevant resources and document gaps.
 
 ---
 
@@ -260,7 +318,7 @@ Source reference: `https://github.com/revrost/go-openrouter`
 
 ### 2026-05-03
 - Completed:
-  - Added Phase 0 framing artifacts: `FEATURE_PARITY.md`, `COMPATIBILITY.md`.
+  - Added Phase 0 framing artifacts (later folded into `README.md` / `PLAN.md`).
   - Confirmed v1 compatibility targets and CI direction.
   - Marked all Phase 0 checklist items complete.
   - Completed Phase 1 package foundation with library, tests, examples targets and base layout.
@@ -276,6 +334,20 @@ Source reference: `https://github.com/revrost/go-openrouter`
   - Phase 8 docs/examples/developer experience.
 - Next:
   - Add tool-calling, structured-output, and fallback-focused usage examples.
+
+### 2026-05-11
+- Completed:
+  - Added typed generation primary APIs and raw JSON helpers.
+  - Added models/credits resources and resource namespace API shape.
+  - Added request options, retry policy, typed error conveniences, and stream/non-stream error mapping parity.
+  - Added CI workflow and removed completed one-off planning docs after folding status into README/PLAN.
+  - Reviewed TypeScript SDK public API surface and updated this plan with remaining parity gaps.
+- In progress:
+  - TypeScript SDK parity gap closure.
+- Next:
+  - Decide Responses API priority/compatibility.
+  - Add README limitations and tool/structured-output examples.
+  - Prepare release metadata (`CHANGELOG.md`, versioning policy, first tag).
 
 Suggested update format:
 

@@ -91,6 +91,59 @@ final class OpenRouterResourcesTests: XCTestCase {
     _ = try await client.generations.content(id: "gen_1")
   }
 
+  func testListProvidersBuildsRequestAndDecodesTypedProvider() async throws {
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.httpMethod, "GET")
+      XCTAssertEqual(request.url?.path, "/api/v1/providers")
+      let body =
+        #"{"data":[{"name":"OpenAI","slug":"openai","privacy_policy_url":"https://openai.com/privacy","status_page_url":"https://status.openai.com"}]}"#
+        .data(using: .utf8)!
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      return (response, body)
+    }
+
+    let result = try await makeClient().providers.list()
+    XCTAssertEqual(result.data.first?.name, "OpenAI")
+    XCTAssertEqual(result.data.first?.slug, "openai")
+    XCTAssertEqual(result.data.first?.privacyPolicyURL, "https://openai.com/privacy")
+  }
+
+  func testListModelEndpointsBuildsRequestAndDecodesEndpoint() async throws {
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.httpMethod, "GET")
+      XCTAssertEqual(request.url?.path, "/api/v1/models/openai/gpt-4o-mini/endpoints")
+      let body =
+        #"{"data":{"id":"openai/gpt-4o-mini","name":"GPT-4o mini","endpoints":[{"name":"OpenAI","provider_name":"openai","context_length":128000,"max_completion_tokens":4096,"supported_parameters":["temperature"]}]}}"#
+        .data(using: .utf8)!
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      return (response, body)
+    }
+
+    let result = try await makeClient().endpoints.list(author: "openai", slug: "gpt-4o-mini")
+    XCTAssertEqual(result.data.id, "openai/gpt-4o-mini")
+    XCTAssertEqual(result.data.endpoints.first?.providerName, "openai")
+    XCTAssertEqual(result.data.endpoints.first?.contextLength, 128000)
+    XCTAssertEqual(result.data.endpoints.first?.supportedParameters, ["temperature"])
+  }
+
+  func testListZDREndpointsBuildsRequestAndDecodesEndpoint() async throws {
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.httpMethod, "GET")
+      XCTAssertEqual(request.url?.path, "/api/v1/endpoints/zdr")
+      let body = #"{"data":[{"name":"ZDR provider","context_length":32000}]}"#.data(
+        using: .utf8)!
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      return (response, body)
+    }
+
+    let result = try await makeClient().endpoints.listZDR()
+    XCTAssertEqual(result.data.first?.name, "ZDR provider")
+    XCTAssertEqual(result.data.first?.contextLength, 32000)
+  }
+
   private func makeClient() -> OpenRouterClient {
     let config = URLSessionConfiguration.ephemeral
     config.protocolClasses = [URLProtocolResourcesStub.self]

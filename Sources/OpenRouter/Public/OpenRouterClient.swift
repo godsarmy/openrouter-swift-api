@@ -201,6 +201,29 @@ public struct OpenRouterClient: Sendable {
     try await transport.get(path: "credits", responseType: CreditsResponse.self, options: options)
   }
 
+  public func listProviders(options: RequestOptions? = nil) async throws -> ProvidersResponse {
+    try await transport.get(
+      path: "providers", responseType: ProvidersResponse.self, options: options)
+  }
+
+  public func listModelEndpoints(
+    author: String,
+    slug: String,
+    options: RequestOptions? = nil
+  ) async throws -> ModelEndpointsResponse {
+    try await transport.get(
+      path: "models/\(author)/\(slug)/endpoints",
+      responseType: ModelEndpointsResponse.self,
+      options: options
+    )
+  }
+
+  public func listZDREndpoints(options: RequestOptions? = nil) async throws -> ZDREndpointsResponse
+  {
+    try await transport.get(
+      path: "endpoints/zdr", responseType: ZDREndpointsResponse.self, options: options)
+  }
+
   public func createChatCompletionWithFallback(
     _ request: ChatCompletionRequest,
     fallbackModels: [String]
@@ -302,6 +325,8 @@ extension OpenRouterClient {
   public var generations: GenerationsResource { GenerationsResource(client: self) }
   public var models: ModelsResource { ModelsResource(client: self) }
   public var credits: CreditsResource { CreditsResource(client: self) }
+  public var providers: ProvidersResource { ProvidersResource(client: self) }
+  public var endpoints: EndpointsResource { EndpointsResource(client: self) }
 
   public struct ChatResource: Sendable {
     fileprivate let client: OpenRouterClient
@@ -364,6 +389,52 @@ extension OpenRouterClient {
       try await client.getCredits(options: options)
     }
   }
+
+  public struct ProvidersResource: Sendable {
+    fileprivate let client: OpenRouterClient
+
+    public func list(options: RequestOptions? = nil) async throws -> ProvidersResponse {
+      try await client.listProviders(options: options)
+    }
+  }
+
+  public struct EndpointsResource: Sendable {
+    fileprivate let client: OpenRouterClient
+
+    public func list(
+      author: String,
+      slug: String,
+      options: RequestOptions? = nil
+    ) async throws -> ModelEndpointsResponse {
+      try await client.listModelEndpoints(author: author, slug: slug, options: options)
+    }
+
+    public func listZDR(options: RequestOptions? = nil) async throws -> ZDREndpointsResponse {
+      try await client.listZDREndpoints(options: options)
+    }
+  }
+}
+
+public struct OpenRouterDebugEvent: Sendable, Equatable {
+  public var message: String
+  public var method: String?
+  public var path: String?
+  public var statusCode: Int?
+  public var retryAttempt: Int?
+
+  public init(
+    message: String,
+    method: String? = nil,
+    path: String? = nil,
+    statusCode: Int? = nil,
+    retryAttempt: Int? = nil
+  ) {
+    self.message = message
+    self.method = method
+    self.path = path
+    self.statusCode = statusCode
+    self.retryAttempt = retryAttempt
+  }
 }
 
 public struct RequestOptions: Sendable, Equatable {
@@ -419,6 +490,7 @@ extension OpenRouterClient {
     public var appCategories: [String]?
     public var experimentalMetadata: String?
     public var xTitle: String?
+    public var debugLogger: (@Sendable (OpenRouterDebugEvent) -> Void)?
 
     // Stored privately until transport layer is implemented.
     var apiKey: String?
@@ -430,7 +502,8 @@ extension OpenRouterClient {
       appTitle: String? = nil,
       appCategories: [String]? = nil,
       experimentalMetadata: String? = nil,
-      xTitle: String? = nil
+      xTitle: String? = nil,
+      debugLogger: (@Sendable (OpenRouterDebugEvent) -> Void)? = nil
     ) {
       self.baseURL = baseURL
       self.timeout = timeout
@@ -439,6 +512,7 @@ extension OpenRouterClient {
       self.appCategories = appCategories
       self.experimentalMetadata = experimentalMetadata
       self.xTitle = xTitle
+      self.debugLogger = debugLogger
       self.apiKey = nil
     }
 
@@ -519,9 +593,22 @@ extension OpenRouterError {
   public var isUnauthorized: Bool { statusCode == 401 }
   public var isPaymentRequired: Bool { statusCode == 402 }
   public var isRateLimited: Bool { statusCode == 429 }
+  public var isBadRequest: Bool { statusCode == 400 }
+  public var isForbidden: Bool { statusCode == 403 }
+  public var isNotFound: Bool { statusCode == 404 }
   public var isServerError: Bool {
     guard let statusCode else { return false }
     return (500...599).contains(statusCode)
+  }
+
+  public var apiCode: Int? {
+    guard case .apiError(_, let code, _, _) = self else { return nil }
+    return code
+  }
+
+  public var isRetryable: Bool {
+    guard let statusCode else { return false }
+    return ChatCompletionFallbackPolicy.defaultErrorCodes.contains(statusCode)
   }
 
   public var retryAfter: TimeInterval? {

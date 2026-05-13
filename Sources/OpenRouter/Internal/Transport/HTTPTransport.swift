@@ -20,6 +20,7 @@ struct HTTPTransport: @unchecked Sendable {
     options: RequestOptions? = nil
   ) async throws -> Response {
     let request = try buildRequest(path: path, body: requestBody, options: options)
+    log(.init(message: "request", method: "POST", path: redactedPath(from: request)))
     let (data, response) = try await execute(request: request, options: options)
     return try decodeResponse(data: data, response: response, responseType: responseType)
   }
@@ -31,6 +32,7 @@ struct HTTPTransport: @unchecked Sendable {
     options: RequestOptions? = nil
   ) async throws -> Response {
     let request = try buildGetRequest(path: path, queryItems: queryItems, options: options)
+    log(.init(message: "request", method: "GET", path: redactedPath(from: request)))
     let (data, response) = try await execute(request: request, options: options)
     return try decodeResponse(data: data, response: response, responseType: responseType)
   }
@@ -117,6 +119,7 @@ struct HTTPTransport: @unchecked Sendable {
     }
 
     if (200..<300).contains(http.statusCode) {
+      log(.init(message: "response", statusCode: http.statusCode))
       do {
         var decoded = try JSONDecoder().decode(responseType, from: data)
         if var attachable = decoded as? ResponseCacheMetadataAttachable {
@@ -131,7 +134,17 @@ struct HTTPTransport: @unchecked Sendable {
       }
     }
 
+    log(.init(message: "api_error", statusCode: http.statusCode))
     throw mapAPIError(statusCode: http.statusCode, data: data)
+  }
+
+  private func log(_ event: OpenRouterDebugEvent) {
+    configuration.debugLogger?(event)
+  }
+
+  private func redactedPath(from request: URLRequest) -> String? {
+    guard let url = request.url else { return nil }
+    return url.path
   }
 
   private func applyResponseCacheHeaders(
@@ -202,6 +215,14 @@ struct HTTPTransport: @unchecked Sendable {
           if shouldRetry(response: result.1, retryStatusCodes: retryStatusCodes),
             attempt < maxAttempts
           {
+            log(
+              .init(
+                message: "retry_status",
+                method: request.httpMethod,
+                path: redactedPath(from: request),
+                statusCode: (result.1 as? HTTPURLResponse)?.statusCode,
+                retryAttempt: attempt
+              ))
             let delay = nextDelay(
               response: result.1,
               attempt: attempt,
@@ -219,6 +240,13 @@ struct HTTPTransport: @unchecked Sendable {
           let canRetryConnectionError =
             retryConnectionErrors && error is URLError && attempt < maxAttempts
           guard canRetryConnectionError else { throw error }
+          log(
+            .init(
+              message: "retry_connection_error",
+              method: request.httpMethod,
+              path: redactedPath(from: request),
+              retryAttempt: attempt
+            ))
           let delay = min(maxDelay, initialDelay * pow(exponent, Double(attempt - 1)))
           try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
           attempt += 1

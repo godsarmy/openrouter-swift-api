@@ -1184,6 +1184,131 @@ public struct Credits: Codable, Sendable, Equatable {
   }
 }
 
+public struct ProvidersResponse: Codable, Sendable, Equatable {
+  public var data: [OpenRouterProvider]
+
+  public init(data: [OpenRouterProvider]) {
+    self.data = data
+  }
+}
+
+public struct OpenRouterProvider: Codable, Sendable, Equatable {
+  public var name: String
+  public var slug: String
+  public var privacyPolicyURL: String?
+  public var statusPageURL: String?
+  public var termsOfServiceURL: String?
+  public var datacenters: JSONValue?
+  public var headquarters: JSONValue?
+
+  enum CodingKeys: String, CodingKey {
+    case name
+    case slug
+    case privacyPolicyURL = "privacy_policy_url"
+    case statusPageURL = "status_page_url"
+    case termsOfServiceURL = "terms_of_service_url"
+    case datacenters
+    case headquarters
+  }
+
+  public init(
+    name: String,
+    slug: String,
+    privacyPolicyURL: String? = nil,
+    statusPageURL: String? = nil,
+    termsOfServiceURL: String? = nil,
+    datacenters: JSONValue? = nil,
+    headquarters: JSONValue? = nil
+  ) {
+    self.name = name
+    self.slug = slug
+    self.privacyPolicyURL = privacyPolicyURL
+    self.statusPageURL = statusPageURL
+    self.termsOfServiceURL = termsOfServiceURL
+    self.datacenters = datacenters
+    self.headquarters = headquarters
+  }
+}
+
+public struct ModelEndpointsResponse: Codable, Sendable, Equatable {
+  public var data: ModelEndpoints
+
+  public init(data: ModelEndpoints) {
+    self.data = data
+  }
+}
+
+public struct ZDREndpointsResponse: Codable, Sendable, Equatable {
+  public var data: [PublicEndpoint]
+
+  public init(data: [PublicEndpoint]) {
+    self.data = data
+  }
+}
+
+public struct ModelEndpoints: Codable, Sendable, Equatable {
+  public var id: String?
+  public var name: String?
+  public var description: String?
+  public var created: Int?
+  public var architecture: JSONValue?
+  public var endpoints: [PublicEndpoint]
+
+  public init(
+    id: String? = nil,
+    name: String? = nil,
+    description: String? = nil,
+    created: Int? = nil,
+    architecture: JSONValue? = nil,
+    endpoints: [PublicEndpoint] = []
+  ) {
+    self.id = id
+    self.name = name
+    self.description = description
+    self.created = created
+    self.architecture = architecture
+    self.endpoints = endpoints
+  }
+}
+
+public struct PublicEndpoint: Codable, Sendable, Equatable {
+  public var name: String?
+  public var providerName: String?
+  public var contextLength: Int?
+  public var maxCompletionTokens: Int?
+  public var pricing: ModelPricing?
+  public var supportedParameters: [String]?
+  public var extra: JSONValue?
+
+  enum CodingKeys: String, CodingKey {
+    case name
+    case providerName = "provider_name"
+    case contextLength = "context_length"
+    case maxCompletionTokens = "max_completion_tokens"
+    case pricing
+    case supportedParameters = "supported_parameters"
+    case extra
+  }
+
+  public init(
+    name: String? = nil,
+    providerName: String? = nil,
+    contextLength: Int? = nil,
+    maxCompletionTokens: Int? = nil,
+    pricing: ModelPricing? = nil,
+    supportedParameters: [String]? = nil,
+    extra: JSONValue? = nil
+  ) {
+    self.name = name
+    self.providerName = providerName
+    self.contextLength = contextLength
+    self.maxCompletionTokens = maxCompletionTokens
+    self.pricing = pricing
+    self.supportedParameters = supportedParameters
+    self.extra = extra
+  }
+}
+
 public enum JSONValue: Codable, Sendable, Equatable {
   case string(String)
   case number(Double)

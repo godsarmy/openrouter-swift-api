@@ -82,7 +82,67 @@ let generationContentRaw = try await client.listGenerationContentRaw(id: "gen_12
 // models / credits
 let models = try await client.models.list()
 let credits = try await client.credits.get()
+
+// providers / endpoints
+let providers = try await client.providers.list()
+let endpoints = try await client.endpoints.list(author: "openai", slug: "gpt-4o-mini")
+let zdrEndpoints = try await client.endpoints.listZDR()
 ```
+
+## Tool calling and structured outputs
+
+```swift
+let weatherTool = ChatTool(
+  function: .init(
+    name: "get_weather",
+    description: "Get weather for a city",
+    parameters: .object([
+      "type": .string("object"),
+      "properties": .object([
+        "city": .object(["type": .string("string")])
+      ]),
+      "required": .array([.string("city")])
+    ])
+  )
+)
+
+let response = try await client.chat.send(.init(
+  model: "openai/gpt-4o-mini",
+  messages: [.user("What's the weather in London?")],
+  tools: [weatherTool],
+  toolChoice: .auto
+))
+```
+
+```swift
+let jsonSchema = JSONSchemaWrapper(
+  name: "summary",
+  strict: true,
+  schema: .object([
+    "type": .string("object"),
+    "properties": .object([
+      "summary": .object(["type": .string("string")])
+    ]),
+    "required": .array([.string("summary")])
+  ])
+)
+
+let structured = try await client.chat.send(.init(
+  model: "openai/gpt-4o-mini",
+  messages: [.user("Summarize this SDK")],
+  responseFormat: .init(type: "json_schema", jsonSchema: jsonSchema)
+))
+```
+
+## Current limitations
+
+- Responses API parity is intentionally deferred while OpenRouter beta compatibility is confirmed.
+- The Swift SDK prioritizes mobile-relevant TypeScript SDK resources; broader resources such as organization/workspaces, guardrails, rerank, TTS/STT, video generation, analytics, and beta namespaces are not yet implemented.
+- The SSE parser supports OpenRouter chat streams and has basic multi-line frame parsing helpers; broader SSE metadata is currently ignored by the streaming client.
+
+## Versioning policy
+
+Before `1.0`, minor versions may add APIs and patch versions are reserved for compatible fixes. After `1.0`, the package follows semantic versioning: breaking source changes require a major version, additive APIs use minor versions, and bug fixes use patch versions.
 
 ## Multimodal Content Formats
 

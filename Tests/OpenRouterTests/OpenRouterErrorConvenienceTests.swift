@@ -18,7 +18,20 @@ final class OpenRouterErrorConvenienceTests: XCTestCase {
 
     let server = OpenRouterError.apiError(statusCode: 503, code: nil, message: nil, rawBody: nil)
     XCTAssertTrue(server.isServerError)
+    XCTAssertTrue(server.isRetryable)
     XCTAssertEqual(server.statusCode, 503)
+
+    let forbidden = OpenRouterError.apiError(statusCode: 403, code: nil, message: nil, rawBody: nil)
+    XCTAssertTrue(forbidden.isForbidden)
+
+    let notFound = OpenRouterError.apiError(statusCode: 404, code: nil, message: nil, rawBody: nil)
+    XCTAssertTrue(notFound.isNotFound)
+  }
+
+  func testAPICodeConvenience() {
+    let error = OpenRouterError.apiError(statusCode: 400, code: 1234, message: nil, rawBody: nil)
+    XCTAssertTrue(error.isBadRequest)
+    XCTAssertEqual(error.apiCode, 1234)
   }
 
   func testRetryAfterParsesFromRawBody() {

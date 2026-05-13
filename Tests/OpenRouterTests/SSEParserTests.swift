@@ -27,4 +27,35 @@ final class SSEParserTests: XCTestCase {
     XCTAssertEqual(SSEParser.parse(line: "data: first"), .data("first"))
     XCTAssertEqual(SSEParser.parse(line: "data: second"), .data("second"))
   }
+
+  func testParsesMultilineFrameData() {
+    let event = SSEParser.parseFrame(lines: [
+      "event: message",
+      "id: 42",
+      "retry: 1000",
+      "data: {\"a\":1,",
+      "data: \"b\":2}",
+    ])
+
+    XCTAssertEqual(event, .data("{\"a\":1,\n\"b\":2}"))
+  }
+
+  func testParsesFrameMetadata() {
+    let frame = SSEParser.parseMetadataFrame(lines: [
+      ": keepalive",
+      "event: update",
+      "id: evt_1",
+      "retry: 2500",
+      "data: payload",
+    ])
+
+    XCTAssertEqual(frame.event, "update")
+    XCTAssertEqual(frame.id, "evt_1")
+    XCTAssertEqual(frame.retry, 2500)
+    XCTAssertEqual(frame.data, "payload")
+  }
+
+  func testParsesDoneFrame() {
+    XCTAssertEqual(SSEParser.parseFrame(lines: ["data: [DONE]"]), .done)
+  }
 }
