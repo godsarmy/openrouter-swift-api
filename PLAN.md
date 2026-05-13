@@ -155,7 +155,7 @@ Goal: Reimplement OpenRouter SDK capabilities in Swift as a reusable Swift Packa
   - [x] Fallback usage
 - [x] Add convenience builders:
   - [x] `.user("...")`, `.system("...")`
-- [~] Add migration notes and known limitations
+- [x] Add migration notes and known limitations
 
 **Exit criteria**
 - A new user can run examples in minutes.
@@ -166,7 +166,7 @@ Goal: Reimplement OpenRouter SDK capabilities in Swift as a reusable Swift Packa
 
 - [x] Add CI workflow (build + test)
 - [~] Add lint/format tooling (currently using `swift format` manually; formal check job still optional)
-- [ ] Tag first release (`v0.1.0` suggested)
+- [ ] Tag first release (`v0.1.0` suggested; release candidate notes prepared)
 - [x] Maintain `CHANGELOG.md`
 - [x] Define versioning and compatibility policy
 
@@ -232,19 +232,21 @@ Source reference: `https://github.com/OpenRouterTeam/typescript-sdk`
 
 #### P0 — Release-blocking / high-value gaps
 
-- [ ] Responses API parity:
-  - [ ] Confirm OpenRouter Responses API compatibility and payload shape.
+- [~] Responses API parity:
+  - [x] Confirmed TypeScript SDK exposes it under `beta.responses` with complex polymorphic payload/streaming surface.
+  - [x] Deferred from `v0.1.0` pending dedicated compatibility pass.
   - [ ] Add typed `ResponsesRequest` / response result models.
   - [ ] Add `createResponse(_:, options:)`.
   - [ ] Add `createResponseStream(_:) -> AsyncThrowingStream<...>` when stream shape is confirmed.
   - [ ] Add mocked transport + streaming tests.
-- [ ] README/API limitations section:
+- [x] README/API limitations section:
   - [x] Document implemented TypeScript SDK parity subset.
   - [x] Explicitly document unsupported TypeScript resources and deferred Responses API.
   - [x] Add tool-calling and structured-output usage snippets.
-- [ ] Release readiness:
+- [~] Release readiness:
   - [x] Add `CHANGELOG.md`.
   - [x] Define semantic versioning/source-compatibility policy.
+  - [x] Add v0.1.0 API review notes.
   - [ ] Tag `v0.1.0` after API review.
 
 #### P1 — Strong parity / developer experience
@@ -293,7 +295,7 @@ Source reference: `https://github.com/OpenRouterTeam/typescript-sdk`
 - [x] **M3**: Embeddings/tools/structured outputs + docs/tests
 - [~] **M4**: CI green + first release tag
 - [x] **M5**: Reasoning/caching/web-search parity complete
-- [ ] **M6**: TypeScript SDK parity audit closure (Responses API decision + documented resource gaps)
+- [x] **M6**: TypeScript SDK parity audit closure (Responses API decision + documented resource gaps)
 
 ---
 
@@ -345,9 +347,8 @@ Source reference: `https://github.com/OpenRouterTeam/typescript-sdk`
 - In progress:
   - TypeScript SDK parity gap closure.
 - Next:
-  - Decide Responses API priority/compatibility.
-  - Add README limitations and tool/structured-output examples.
-  - Prepare release metadata (`CHANGELOG.md`, versioning policy, first tag).
+  - Tag `v0.1.0` after final API review.
+  - Start dedicated Responses API compatibility pass after first release.
 
 Suggested update format:
 

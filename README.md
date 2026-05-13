@@ -16,9 +16,9 @@ Track progress in:
 
 - `PLAN.md`
 
-Current notable deferred item:
+Current v0.1 deferred item:
 
-- Responses API parity (`createResponse`, `createResponseStream`) pending compatibility/priority confirmation
+- Responses API parity (`createResponse`, `createResponseStream`) is deferred because the TypeScript SDK exposes it under `beta.responses` and its polymorphic payload/streaming surface needs a dedicated compatibility pass.
 
 ## Quick Start
 
@@ -136,9 +136,16 @@ let structured = try await client.chat.send(.init(
 
 ## Current limitations
 
-- Responses API parity is intentionally deferred while OpenRouter beta compatibility is confirmed.
+- Responses API parity is intentionally deferred for `v0.1.0` while OpenRouter beta compatibility is confirmed.
 - The Swift SDK prioritizes mobile-relevant TypeScript SDK resources; broader resources such as organization/workspaces, guardrails, rerank, TTS/STT, video generation, analytics, and beta namespaces are not yet implemented.
 - The SSE parser supports OpenRouter chat streams and has basic multi-line frame parsing helpers; broader SSE metadata is currently ignored by the streaming client.
+
+## v0.1.0 API review notes
+
+- Current public APIs are expected to remain source-compatible through `0.x` where practical.
+- Flat client methods remain available alongside resource namespaces for compatibility.
+- `JSONValue` remains the escape hatch for raw/forward-compatible payloads.
+- Responses API and broader beta/resource coverage are intentionally excluded from the first release candidate.
 
 ## Versioning policy
 
