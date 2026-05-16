@@ -2,24 +2,6 @@
 
 Swift Package SDK for OpenRouter API, inspired by [`revrost/go-openrouter`](https://github.com/revrost/go-openrouter).
 
-## Status
-
-Core parity milestones are implemented, including:
-
-- typed generation APIs (`getGeneration`, `listGenerationContent`) with raw JSON helpers
-- resource namespaces (`client.chat`, `client.embeddings`, `client.generations`, `client.models`, `client.credits`)
-- request options (`RequestOptions`) and retry policy (`RetryPolicy`)
-- stream/non-stream error mapping parity
-- typed error convenience flags on `OpenRouterError`
-
-Track progress in:
-
-- `PLAN.md`
-
-Current v0.1 deferred item:
-
-- Responses API parity (`createResponse`, `createResponseStream`) is deferred because the TypeScript SDK exposes it under `beta.responses` and its polymorphic payload/streaming surface needs a dedicated compatibility pass.
-
 ## Quick Start
 
 ```swift
