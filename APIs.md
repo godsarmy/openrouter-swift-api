@@ -28,6 +28,7 @@ Status legend:
 | Status | Method | Path | SDK API | Notes |
 |---|---|---|---|---|
 | [x] | POST | `/chat/completions` | `client.chat.send`, `client.chat.stream`, `client.createChatCompletion*` | Non-streaming and SSE streaming chat completions, plus client-side fallback helpers. |
+| [x] | POST | `/responses` | `client.responses.create`, `client.createResponse` | Non-streaming Responses API. Streaming and tool output parity are not implemented yet. |
 | [x] | POST | `/embeddings` | `client.embeddings.create`, `client.createEmbeddings` | Text embedding requests. |
 | [x] | POST | `/completions` | `client.createCompletion` | Legacy OpenAI-compatible text completions endpoint. |
 | [x] | GET | `/generation` | `client.generations.get`, `client.getGeneration`, `client.getGenerationRaw` | Gets request and usage metadata for a generation. |
@@ -43,7 +44,7 @@ Status legend:
 | Status | Method | Path | Operation | Description | SDK notes |
 |---|---|---|---|---|---|
 | [x] | POST | `/chat/completions` | `sendChatCompletionRequest` | Create a chat completion. | Implemented in `OpenRouterClient.createChatCompletion`; resource aliases: `client.chat.send` and `client.chat.stream`. Streaming uses the same endpoint with `stream: true`. |
-| [ ] | POST | `/responses` | `createResponses` | Create a response using the Responses API style. | Deferred; see `README.md` current limitations. |
+| [x] | POST | `/responses` | `createResponses` | Create a response using the Responses API style. | Implemented in `OpenRouterClient.createResponse`; resource alias: `client.responses.create`. Non-streaming only; streaming/tool output parity deferred. |
 | [ ] | POST | `/messages` | `createMessages` | Create an Anthropic-compatible message. |  |
 | [x] | POST | `/embeddings` | `createEmbeddings` | Submit an embedding request. | Implemented in `OpenRouterClient.createEmbeddings`; resource alias: `client.embeddings.create`. |
 | [ ] | GET | `/embeddings/models` | `listEmbeddingsModels` | List embedding models. |  |

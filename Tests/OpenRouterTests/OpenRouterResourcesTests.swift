@@ -59,6 +59,18 @@ final class OpenRouterResourcesTests: XCTestCase {
     let client = makeClient()
 
     URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.httpMethod, "POST")
+      XCTAssertEqual(request.url?.path, "/api/v1/responses")
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      return (
+        response,
+        #"{"id":"resp_1","object":"response","output":[],"status":"completed"}"#.data(using: .utf8)!
+      )
+    }
+    _ = try await client.responses.create(.init(model: "openai/o4-mini", input: .text("hi")))
+
+    URLProtocolResourcesStub.handler = { request in
       XCTAssertEqual(request.url?.path, "/api/v1/models")
       let response = HTTPURLResponse(
         url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
@@ -89,6 +101,42 @@ final class OpenRouterResourcesTests: XCTestCase {
       return (response, #"{"data":{"id":"gen_1"}}"#.data(using: .utf8)!)
     }
     _ = try await client.generations.content(id: "gen_1")
+  }
+
+  func testCreateResponseBuildsRequestAndDecodesTypedResponse() async throws {
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.httpMethod, "POST")
+      XCTAssertEqual(request.url?.path, "/api/v1/responses")
+      XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-key")
+
+      let payload = try XCTUnwrap(request.httpBody)
+      let json = try XCTUnwrap(JSONSerialization.jsonObject(with: payload) as? [String: Any])
+      XCTAssertEqual(json["model"] as? String, "openai/o4-mini")
+      XCTAssertEqual(json["input"] as? String, "Hello, world!")
+      XCTAssertEqual(json["max_output_tokens"] as? Int, 64)
+      XCTAssertNil(json["stream"])
+
+      let body =
+        #"{"id":"resp_123","object":"response","created_at":1710000000,"model":"openai/o4-mini","status":"completed","output":[{"id":"msg_1","type":"message","status":"completed","role":"assistant","content":[{"type":"output_text","text":"Hello!"}]}],"usage":{"input_tokens":5,"output_tokens":2,"total_tokens":7,"output_tokens_details":{"reasoning_tokens":1}}}"#
+        .data(using: .utf8)!
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      return (response, body)
+    }
+
+    let result = try await makeClient().createResponse(
+      .init(
+        model: "openai/o4-mini",
+        input: .text("Hello, world!"),
+        maxOutputTokens: 64
+      )
+    )
+
+    XCTAssertEqual(result.id, "resp_123")
+    XCTAssertEqual(result.object, "response")
+    XCTAssertEqual(result.output.first?.content?.first?.text, "Hello!")
+    XCTAssertEqual(result.usage?.inputTokens, 5)
+    XCTAssertEqual(result.usage?.outputTokensDetails?.reasoningTokens, 1)
   }
 
   func testListProvidersBuildsRequestAndDecodesTypedProvider() async throws {

@@ -57,6 +57,12 @@ let client = OpenRouterClient(apiKey: apiKey)
 let generation = try await client.getGeneration(id: "gen_123")
 let generationContent = try await client.listGenerationContent(id: "gen_123")
 
+// Responses API (non-streaming)
+let response = try await client.responses.create(.init(
+  model: "openai/o4-mini",
+  input: .text("hello")
+))
+
 // raw fallback JSON helpers
 let generationRaw = try await client.getGenerationRaw(id: "gen_123")
 let generationContentRaw = try await client.listGenerationContentRaw(id: "gen_123")
@@ -118,7 +124,7 @@ let structured = try await client.chat.send(.init(
 
 ## Current limitations
 
-- Responses API parity is intentionally deferred for `v0.1.0` while OpenRouter beta compatibility is confirmed.
+- Responses API streaming and tool-output parity are deferred while OpenRouter beta compatibility is confirmed; non-streaming `POST /responses` is available via `client.responses.create`.
 - The Swift SDK prioritizes mobile-relevant TypeScript SDK resources; broader resources such as organization/workspaces, guardrails, rerank, TTS/STT, video generation, analytics, and beta namespaces are not yet implemented.
 - The SSE parser supports OpenRouter chat streams and has basic multi-line frame parsing helpers; broader SSE metadata is currently ignored by the streaming client.
 
@@ -128,7 +134,7 @@ Endpoint coverage is tracked in [`APIs.md`](APIs.md). Remaining non-endpoint fol
 
 - Tag the first release (`v0.1.0`) after final API review.
 - Optionally add a formal lint/format CI check; formatting is currently run manually with `swift format`.
-- Complete a dedicated Responses API compatibility pass, including typed request/response models and streaming once the stream shape is confirmed.
+- Complete Responses API streaming once the stream shape is confirmed.
 - Consider a higher-level Swift-friendly typed tool helper while keeping raw chat/tool APIs canonical.
 - Add pagination helpers only after paginated resources are implemented.
 
@@ -137,7 +143,7 @@ Endpoint coverage is tracked in [`APIs.md`](APIs.md). Remaining non-endpoint fol
 - Current public APIs are expected to remain source-compatible through `0.x` where practical.
 - Flat client methods remain available alongside resource namespaces for compatibility.
 - `JSONValue` remains the escape hatch for raw/forward-compatible payloads.
-- Responses API and broader beta/resource coverage are intentionally excluded from the first release candidate.
+- Responses API streaming and broader beta/resource coverage are intentionally excluded from the first release candidate.
 
 ## Versioning policy
 

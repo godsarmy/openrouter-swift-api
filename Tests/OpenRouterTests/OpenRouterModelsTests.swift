@@ -71,6 +71,64 @@ final class OpenRouterModelsTests: XCTestCase {
     XCTAssertEqual(decoded, request)
   }
 
+  func testResponsesRequestEncodesStringInputAndSnakeCaseOptions() throws {
+    let request = ResponsesRequest(
+      model: "openai/o4-mini",
+      input: .text("hello"),
+      maxOutputTokens: 128,
+      topP: 0.9,
+      reasoning: .init(effort: "medium"),
+      metadata: .object(["trace_id": .string("abc")]),
+      sessionID: "session-1",
+      previousResponseID: "resp_prev",
+      serviceTier: "default"
+    )
+
+    let data = try JSONEncoder().encode(request)
+    let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+
+    XCTAssertEqual(object["input"] as? String, "hello")
+    XCTAssertEqual(object["max_output_tokens"] as? Int, 128)
+    XCTAssertEqual(object["top_p"] as? Double, 0.9)
+    XCTAssertEqual(object["session_id"] as? String, "session-1")
+    XCTAssertEqual(object["previous_response_id"] as? String, "resp_prev")
+    XCTAssertEqual(object["service_tier"] as? String, "default")
+    XCTAssertNil(object["maxOutputTokens"])
+  }
+
+  func testResponsesInputMessagesRoundTrip() throws {
+    let request = ResponsesRequest(
+      model: "openai/o4-mini",
+      input: .messages([
+        .init(role: "user", content: [.init(text: "hello")])
+      ])
+    )
+
+    let data = try JSONEncoder().encode(request)
+    let decoded = try JSONDecoder().decode(ResponsesRequest.self, from: data)
+
+    XCTAssertEqual(decoded, request)
+  }
+
+  func testResponsesResponseDecodesOutputAndUsage() throws {
+    let json =
+      #"{"id":"resp_123","object":"response","created_at":1710000000,"model":"openai/o4-mini","status":"completed","output":[{"id":"msg_1","type":"message","status":"completed","role":"assistant","content":[{"type":"output_text","text":"Hello!","annotations":[{"type":"url_citation","url_citation":{"title":"Doc","url":"https://example.com"}}]}]},{"id":"rs_1","type":"reasoning","summary":[{"type":"summary_text","text":"short reasoning"}],"encrypted_content":"enc"}],"usage":{"input_tokens":10,"output_tokens":2,"total_tokens":12,"input_tokens_details":{"cached_tokens":3},"output_tokens_details":{"reasoning_tokens":1}}}"#
+      .data(using: .utf8)!
+
+    let decoded = try JSONDecoder().decode(ResponsesResponse.self, from: json)
+
+    XCTAssertEqual(decoded.id, "resp_123")
+    XCTAssertEqual(decoded.createdAt, 1_710_000_000)
+    XCTAssertEqual(decoded.output.first?.content?.first?.text, "Hello!")
+    XCTAssertEqual(
+      decoded.output.first?.content?.first?.annotations?.first?.urlCitation?.url,
+      "https://example.com")
+    XCTAssertEqual(decoded.output.last?.summary?.first?.text, "short reasoning")
+    XCTAssertEqual(decoded.output.last?.encryptedContent, "enc")
+    XCTAssertEqual(decoded.usage?.inputTokensDetails?.cachedTokens, 3)
+    XCTAssertEqual(decoded.usage?.outputTokensDetails?.reasoningTokens, 1)
+  }
+
   func testReasoningPromptCachingAndWebSearchRoundTrip() throws {
     let request = ChatCompletionRequest(
       model: "openai/gpt-4o-mini",

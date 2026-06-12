@@ -571,6 +571,301 @@ public struct EmbeddingData: Codable, Sendable, Equatable {
   }
 }
 
+public struct ResponsesRequest: Codable, Sendable, Equatable {
+  public var model: String
+  public var input: ResponsesInput
+  public var maxOutputTokens: Int?
+  public var temperature: Double?
+  public var topP: Double?
+  public var reasoning: ResponsesReasoning?
+  public var metadata: JSONValue?
+  public var user: String?
+  public var sessionID: String?
+  public var instructions: String?
+  public var previousResponseID: String?
+  public var serviceTier: String?
+
+  enum CodingKeys: String, CodingKey {
+    case model
+    case input
+    case maxOutputTokens = "max_output_tokens"
+    case temperature
+    case topP = "top_p"
+    case reasoning
+    case metadata
+    case user
+    case sessionID = "session_id"
+    case instructions
+    case previousResponseID = "previous_response_id"
+    case serviceTier = "service_tier"
+  }
+
+  public init(
+    model: String,
+    input: ResponsesInput,
+    maxOutputTokens: Int? = nil,
+    temperature: Double? = nil,
+    topP: Double? = nil,
+    reasoning: ResponsesReasoning? = nil,
+    metadata: JSONValue? = nil,
+    user: String? = nil,
+    sessionID: String? = nil,
+    instructions: String? = nil,
+    previousResponseID: String? = nil,
+    serviceTier: String? = nil
+  ) {
+    self.model = model
+    self.input = input
+    self.maxOutputTokens = maxOutputTokens
+    self.temperature = temperature
+    self.topP = topP
+    self.reasoning = reasoning
+    self.metadata = metadata
+    self.user = user
+    self.sessionID = sessionID
+    self.instructions = instructions
+    self.previousResponseID = previousResponseID
+    self.serviceTier = serviceTier
+  }
+}
+
+public enum ResponsesInput: Codable, Sendable, Equatable {
+  case text(String)
+  case messages([ResponsesInputMessage])
+
+  public init(from decoder: Decoder) throws {
+    let single = try decoder.singleValueContainer()
+    if let value = try? single.decode(String.self) {
+      self = .text(value)
+      return
+    }
+    if let value = try? single.decode([ResponsesInputMessage].self) {
+      self = .messages(value)
+      return
+    }
+    throw DecodingError.typeMismatch(
+      ResponsesInput.self,
+      .init(
+        codingPath: decoder.codingPath,
+        debugDescription: "Expected string or response input messages")
+    )
+  }
+
+  public func encode(to encoder: Encoder) throws {
+    var single = encoder.singleValueContainer()
+    switch self {
+    case .text(let value):
+      try single.encode(value)
+    case .messages(let value):
+      try single.encode(value)
+    }
+  }
+}
+
+public struct ResponsesInputMessage: Codable, Sendable, Equatable {
+  public var type: String?
+  public var role: String
+  public var content: [ResponsesInputContent]
+
+  public init(type: String? = "message", role: String, content: [ResponsesInputContent]) {
+    self.type = type
+    self.role = role
+    self.content = content
+  }
+}
+
+public struct ResponsesInputContent: Codable, Sendable, Equatable {
+  public var type: String
+  public var text: String
+
+  public init(type: String = "input_text", text: String) {
+    self.type = type
+    self.text = text
+  }
+}
+
+public struct ResponsesReasoning: Codable, Sendable, Equatable {
+  public var effort: String?
+
+  public init(effort: String? = nil) {
+    self.effort = effort
+  }
+}
+
+public struct ResponsesResponse: Codable, Sendable, Equatable {
+  public var id: String
+  public var object: String?
+  public var createdAt: Int?
+  public var model: String?
+  public var output: [ResponsesOutput]
+  public var usage: ResponsesUsage?
+  public var status: String?
+
+  enum CodingKeys: String, CodingKey {
+    case id
+    case object
+    case createdAt = "created_at"
+    case model
+    case output
+    case usage
+    case status
+  }
+
+  public init(
+    id: String,
+    object: String? = nil,
+    createdAt: Int? = nil,
+    model: String? = nil,
+    output: [ResponsesOutput],
+    usage: ResponsesUsage? = nil,
+    status: String? = nil
+  ) {
+    self.id = id
+    self.object = object
+    self.createdAt = createdAt
+    self.model = model
+    self.output = output
+    self.usage = usage
+    self.status = status
+  }
+}
+
+public struct ResponsesOutput: Codable, Sendable, Equatable {
+  public var id: String?
+  public var type: String
+  public var status: String?
+  public var role: String?
+  public var content: [ResponsesOutputContent]?
+  public var summary: [ResponsesReasoningSummary]?
+  public var encryptedContent: String?
+
+  enum CodingKeys: String, CodingKey {
+    case id
+    case type
+    case status
+    case role
+    case content
+    case summary
+    case encryptedContent = "encrypted_content"
+  }
+
+  public init(
+    id: String? = nil,
+    type: String,
+    status: String? = nil,
+    role: String? = nil,
+    content: [ResponsesOutputContent]? = nil,
+    summary: [ResponsesReasoningSummary]? = nil,
+    encryptedContent: String? = nil
+  ) {
+    self.id = id
+    self.type = type
+    self.status = status
+    self.role = role
+    self.content = content
+    self.summary = summary
+    self.encryptedContent = encryptedContent
+  }
+
+  public init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    id = try container.decodeIfPresent(String.self, forKey: .id)
+    type = try container.decode(String.self, forKey: .type)
+    status = try container.decodeIfPresent(String.self, forKey: .status)
+    role = try container.decodeIfPresent(String.self, forKey: .role)
+    content = try container.decodeIfPresent([ResponsesOutputContent].self, forKey: .content)
+    summary = try container.decodeIfPresent([ResponsesReasoningSummary].self, forKey: .summary)
+    encryptedContent = try container.decodeIfPresent(String.self, forKey: .encryptedContent)
+  }
+
+  public func encode(to encoder: Encoder) throws {
+    var container = encoder.container(keyedBy: CodingKeys.self)
+    try container.encodeIfPresent(id, forKey: .id)
+    try container.encode(type, forKey: .type)
+    try container.encodeIfPresent(status, forKey: .status)
+    try container.encodeIfPresent(role, forKey: .role)
+    try container.encodeIfPresent(content, forKey: .content)
+    try container.encodeIfPresent(summary, forKey: .summary)
+    try container.encodeIfPresent(encryptedContent, forKey: .encryptedContent)
+  }
+}
+
+public struct ResponsesOutputContent: Codable, Sendable, Equatable {
+  public var type: String
+  public var text: String?
+  public var annotations: [Annotation]?
+
+  public init(type: String, text: String? = nil, annotations: [Annotation]? = nil) {
+    self.type = type
+    self.text = text
+    self.annotations = annotations
+  }
+}
+
+public struct ResponsesReasoningSummary: Codable, Sendable, Equatable {
+  public var type: String?
+  public var text: String?
+
+  public init(type: String? = nil, text: String? = nil) {
+    self.type = type
+    self.text = text
+  }
+}
+
+public struct ResponsesUsage: Codable, Sendable, Equatable {
+  public var inputTokens: Int?
+  public var outputTokens: Int?
+  public var totalTokens: Int?
+  public var inputTokensDetails: ResponsesInputTokenDetails?
+  public var outputTokensDetails: ResponsesOutputTokenDetails?
+
+  enum CodingKeys: String, CodingKey {
+    case inputTokens = "input_tokens"
+    case outputTokens = "output_tokens"
+    case totalTokens = "total_tokens"
+    case inputTokensDetails = "input_tokens_details"
+    case outputTokensDetails = "output_tokens_details"
+  }
+
+  public init(
+    inputTokens: Int? = nil,
+    outputTokens: Int? = nil,
+    totalTokens: Int? = nil,
+    inputTokensDetails: ResponsesInputTokenDetails? = nil,
+    outputTokensDetails: ResponsesOutputTokenDetails? = nil
+  ) {
+    self.inputTokens = inputTokens
+    self.outputTokens = outputTokens
+    self.totalTokens = totalTokens
+    self.inputTokensDetails = inputTokensDetails
+    self.outputTokensDetails = outputTokensDetails
+  }
+}
+
+public struct ResponsesInputTokenDetails: Codable, Sendable, Equatable {
+  public var cachedTokens: Int?
+
+  enum CodingKeys: String, CodingKey {
+    case cachedTokens = "cached_tokens"
+  }
+
+  public init(cachedTokens: Int? = nil) {
+    self.cachedTokens = cachedTokens
+  }
+}
+
+public struct ResponsesOutputTokenDetails: Codable, Sendable, Equatable {
+  public var reasoningTokens: Int?
+
+  enum CodingKeys: String, CodingKey {
+    case reasoningTokens = "reasoning_tokens"
+  }
+
+  public init(reasoningTokens: Int? = nil) {
+    self.reasoningTokens = reasoningTokens
+  }
+}
+
 public struct CompletionRequest: Codable, Sendable, Equatable {
   public var model: String
   public var prompt: String

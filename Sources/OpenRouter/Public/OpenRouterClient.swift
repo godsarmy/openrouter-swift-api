@@ -138,6 +138,18 @@ public struct OpenRouterClient: Sendable {
     )
   }
 
+  public func createResponse(
+    _ request: ResponsesRequest,
+    options: RequestOptions? = nil
+  ) async throws -> ResponsesResponse {
+    try await transport.post(
+      path: "responses",
+      requestBody: request,
+      responseType: ResponsesResponse.self,
+      options: options
+    )
+  }
+
   public func createCompletion(
     _ request: CompletionRequest,
     options: RequestOptions? = nil
@@ -321,6 +333,7 @@ public struct OpenRouterClient: Sendable {
 
 extension OpenRouterClient {
   public var chat: ChatResource { ChatResource(client: self) }
+  public var responses: ResponsesResource { ResponsesResource(client: self) }
   public var embeddings: EmbeddingsResource { EmbeddingsResource(client: self) }
   public var generations: GenerationsResource { GenerationsResource(client: self) }
   public var models: ModelsResource { ModelsResource(client: self) }
@@ -342,6 +355,17 @@ extension OpenRouterClient {
       _ request: ChatCompletionRequest
     ) -> AsyncThrowingStream<ChatCompletionChunk, Error> {
       client.createChatCompletionStream(request)
+    }
+  }
+
+  public struct ResponsesResource: Sendable {
+    fileprivate let client: OpenRouterClient
+
+    public func create(
+      _ request: ResponsesRequest,
+      options: RequestOptions? = nil
+    ) async throws -> ResponsesResponse {
+      try await client.createResponse(request, options: options)
     }
   }
 
