@@ -122,6 +122,16 @@ let structured = try await client.chat.send(.init(
 - The Swift SDK prioritizes mobile-relevant TypeScript SDK resources; broader resources such as organization/workspaces, guardrails, rerank, TTS/STT, video generation, analytics, and beta namespaces are not yet implemented.
 - The SSE parser supports OpenRouter chat streams and has basic multi-line frame parsing helpers; broader SSE metadata is currently ignored by the streaming client.
 
+## Roadmap
+
+Endpoint coverage is tracked in [`APIs.md`](APIs.md). Remaining non-endpoint follow-ups:
+
+- Tag the first release (`v0.1.0`) after final API review.
+- Optionally add a formal lint/format CI check; formatting is currently run manually with `swift format`.
+- Complete a dedicated Responses API compatibility pass, including typed request/response models and streaming once the stream shape is confirmed.
+- Consider a higher-level Swift-friendly typed tool helper while keeping raw chat/tool APIs canonical.
+- Add pagination helpers only after paginated resources are implemented.
+
 ## v0.1.0 API review notes
 
 - Current public APIs are expected to remain source-compatible through `0.x` where practical.
