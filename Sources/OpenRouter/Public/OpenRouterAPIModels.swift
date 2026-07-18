@@ -574,6 +574,7 @@ public struct EmbeddingData: Codable, Sendable, Equatable {
 public struct ResponsesRequest: Codable, Sendable, Equatable {
   public var model: String
   public var input: ResponsesInput
+  public var stream: Bool?
   public var maxOutputTokens: Int?
   public var temperature: Double?
   public var topP: Double?
@@ -588,6 +589,7 @@ public struct ResponsesRequest: Codable, Sendable, Equatable {
   enum CodingKeys: String, CodingKey {
     case model
     case input
+    case stream
     case maxOutputTokens = "max_output_tokens"
     case temperature
     case topP = "top_p"
@@ -603,6 +605,7 @@ public struct ResponsesRequest: Codable, Sendable, Equatable {
   public init(
     model: String,
     input: ResponsesInput,
+    stream: Bool? = nil,
     maxOutputTokens: Int? = nil,
     temperature: Double? = nil,
     topP: Double? = nil,
@@ -616,6 +619,7 @@ public struct ResponsesRequest: Codable, Sendable, Equatable {
   ) {
     self.model = model
     self.input = input
+    self.stream = stream
     self.maxOutputTokens = maxOutputTokens
     self.temperature = temperature
     self.topP = topP
@@ -626,6 +630,70 @@ public struct ResponsesRequest: Codable, Sendable, Equatable {
     self.instructions = instructions
     self.previousResponseID = previousResponseID
     self.serviceTier = serviceTier
+  }
+}
+
+/// A forward-compatible Server-Sent Event emitted by the beta Responses API.
+/// `rawPayload` preserves fields not yet modeled by this SDK.
+public struct ResponsesStreamEvent: Codable, Sendable, Equatable {
+  public var type: String
+  public var delta: String?
+  public var responseID: String?
+  public var itemID: String?
+  public var outputIndex: Int?
+  public var contentIndex: Int?
+  public var sequenceNumber: Int?
+  public var response: ResponsesResponse?
+  public var rawPayload: JSONValue
+
+  enum CodingKeys: String, CodingKey {
+    case type
+    case delta
+    case responseID = "response_id"
+    case itemID = "item_id"
+    case outputIndex = "output_index"
+    case contentIndex = "content_index"
+    case sequenceNumber = "sequence_number"
+    case response
+  }
+
+  public init(
+    type: String,
+    delta: String? = nil,
+    responseID: String? = nil,
+    itemID: String? = nil,
+    outputIndex: Int? = nil,
+    contentIndex: Int? = nil,
+    sequenceNumber: Int? = nil,
+    response: ResponsesResponse? = nil,
+    rawPayload: JSONValue? = nil
+  ) {
+    self.type = type
+    self.delta = delta
+    self.responseID = responseID
+    self.itemID = itemID
+    self.outputIndex = outputIndex
+    self.contentIndex = contentIndex
+    self.sequenceNumber = sequenceNumber
+    self.response = response
+    self.rawPayload = rawPayload ?? .object(["type": .string(type)])
+  }
+
+  public init(from decoder: Decoder) throws {
+    rawPayload = try JSONValue(from: decoder)
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    type = try container.decode(String.self, forKey: .type)
+    delta = try container.decodeIfPresent(String.self, forKey: .delta)
+    responseID = try container.decodeIfPresent(String.self, forKey: .responseID)
+    itemID = try container.decodeIfPresent(String.self, forKey: .itemID)
+    outputIndex = try container.decodeIfPresent(Int.self, forKey: .outputIndex)
+    contentIndex = try container.decodeIfPresent(Int.self, forKey: .contentIndex)
+    sequenceNumber = try container.decodeIfPresent(Int.self, forKey: .sequenceNumber)
+    response = try? container.decodeIfPresent(ResponsesResponse.self, forKey: .response)
+  }
+
+  public func encode(to encoder: Encoder) throws {
+    try rawPayload.encode(to: encoder)
   }
 }
 

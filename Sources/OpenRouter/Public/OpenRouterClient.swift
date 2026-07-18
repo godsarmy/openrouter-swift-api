@@ -36,52 +36,58 @@ public struct OpenRouterClient: Sendable {
     _ request: ChatCompletionRequest
   ) -> AsyncThrowingStream<ChatCompletionChunk, Error> {
     let transport = self.transport
-    let (stream, _) = makeIncrementalStream(transport: transport, request: request)
-    return stream
+    return makeIncrementalStream(
+      transport: transport, path: "chat/completions", request: request,
+      prepare: { $0.stream = true },
+      decode: { data in
+        try JSONDecoder().decode(ChatCompletionChunk.self, from: data)
+      })
   }
 
   public func createChatCompletionStreamSession(
     _ request: ChatCompletionRequest
   ) async throws -> ChatCompletionStreamSession {
     let transport = self.transport
-    let (stream, metadataTask) = makeIncrementalStream(transport: transport, request: request)
+    let metadataBox = StreamMetadataBox()
+    let metadataTask = metadataBox.makeTask()
+    let stream = makeIncrementalStream(
+      transport: transport, path: "chat/completions", request: request,
+      prepare: { $0.stream = true },
+      metadataBox: metadataBox,
+      decode: { data in
+        try JSONDecoder().decode(ChatCompletionChunk.self, from: data)
+      })
     return ChatCompletionStreamSession(
       stream: stream,
       responseCacheMetadata: try await metadataTask.value
     )
   }
 
-  private func makeIncrementalStream(
+  private func makeIncrementalStream<Request: Encodable, Element: Sendable>(
     transport: HTTPTransport,
-    request: ChatCompletionRequest
-  ) -> (
-    stream: AsyncThrowingStream<ChatCompletionChunk, Error>,
-    metadataTask: Task<ResponseCacheMetadata?, Error>
-  ) {
-    let metadataBox = StreamMetadataBox()
-    let metadataTask = Task<ResponseCacheMetadata?, Error> {
-      try await withCheckedThrowingContinuation {
-        (continuation: CheckedContinuation<ResponseCacheMetadata?, Error>) in
-        metadataBox.continuation = continuation
-      }
-    }
-
-    let stream = AsyncThrowingStream<ChatCompletionChunk, Error> { continuation in
+    path: String,
+    request: Request,
+    prepare: @escaping @Sendable (inout Request) -> Void,
+    metadataBox: StreamMetadataBox? = nil,
+    decode: @escaping @Sendable (Data) throws -> Element
+  ) -> AsyncThrowingStream<Element, Error> {
+    let stream = AsyncThrowingStream<Element, Error> { continuation in
       do {
         var streamRequest = request
-        streamRequest.stream = true
-        let urlRequest = try transport.buildRequest(path: "chat/completions", body: streamRequest)
+        prepare(&streamRequest)
+        let urlRequest = try transport.buildRequest(path: path, body: streamRequest)
 
         let delegate = IncrementalSSEDelegate(
           transport: transport,
           onMetadata: { metadata in
-            metadataBox.resume(with: .success(metadata))
+            metadataBox?.resume(with: .success(metadata))
           },
-          onChunk: { chunk in
-            continuation.yield(chunk)
+          decode: decode,
+          onElement: { element in
+            continuation.yield(element)
           },
           onError: { error in
-            metadataBox.resume(with: .failure(error))
+            metadataBox?.resume(with: .failure(error))
             continuation.finish(throwing: error)
           },
           onDone: {
@@ -96,17 +102,17 @@ public struct OpenRouterClient: Sendable {
 
         continuation.onTermination = { _ in
           runtime.cancel()
-          metadataBox.resume(with: .failure(OpenRouterError.streamCancelled))
+          metadataBox?.resume(with: .failure(OpenRouterError.streamCancelled))
         }
 
         runtime.start()
       } catch {
-        metadataBox.resume(with: .failure(error))
+        metadataBox?.resume(with: .failure(error))
         continuation.finish(throwing: error)
       }
     }
 
-    return (stream, metadataTask)
+    return stream
   }
 
   private static func decodeStreamChunks(from data: Data) throws -> [ChatCompletionChunk] {
@@ -148,6 +154,28 @@ public struct OpenRouterClient: Sendable {
       responseType: ResponsesResponse.self,
       options: options
     )
+  }
+
+  public func createResponseStream(
+    _ request: ResponsesRequest
+  ) -> AsyncThrowingStream<ResponsesStreamEvent, Error> {
+    let transport = self.transport
+    return makeResponsesIncrementalStream(transport: transport, request: request)
+  }
+
+  private func makeResponsesIncrementalStream(
+    transport: HTTPTransport,
+    request: ResponsesRequest
+  ) -> AsyncThrowingStream<ResponsesStreamEvent, Error> {
+    return makeIncrementalStream(
+      transport: transport, path: "responses", request: request, prepare: { $0.stream = true }
+    ) { data in
+      let event = try JSONDecoder().decode(ResponsesStreamEvent.self, from: data)
+      if ["response.failed", "response.error", "error"].contains(event.type) {
+        throw OpenRouterError.streamEventError(from: event)
+      }
+      return event
+    }
   }
 
   public func createCompletion(
@@ -366,6 +394,12 @@ extension OpenRouterClient {
       options: RequestOptions? = nil
     ) async throws -> ResponsesResponse {
       try await client.createResponse(request, options: options)
+    }
+
+    public func stream(
+      _ request: ResponsesRequest
+    ) -> AsyncThrowingStream<ResponsesStreamEvent, Error> {
+      client.createResponseStream(request)
     }
   }
 
@@ -609,6 +643,31 @@ public enum OpenRouterError: Error, Equatable {
 }
 
 extension OpenRouterError {
+  static func streamEventError(from event: ResponsesStreamEvent) -> Self {
+    let payload = event.rawPayload
+    let errorPayload: JSONValue
+    if case .object(let object) = payload, let error = object["error"] {
+      errorPayload = error
+    } else if case .object(let object) = payload,
+      case .object(let response)? = object["response"],
+      let error = response["error"]
+    {
+      errorPayload = error
+    } else {
+      errorPayload = payload
+    }
+
+    var code: Int?
+    var message: String?
+    if case .object(let object) = errorPayload {
+      if case .number(let value)? = object["code"] { code = Int(value) }
+      if case .string(let value)? = object["message"] { message = value }
+    }
+    if message == nil { message = "Responses stream event: \(event.type)" }
+    let rawBody = try? String(data: JSONEncoder().encode(payload), encoding: .utf8)
+    return .apiError(statusCode: code ?? 0, code: code, message: message, rawBody: rawBody)
+  }
+
   public var statusCode: Int? {
     guard case .apiError(let statusCode, _, _, _) = self else { return nil }
     return statusCode
@@ -659,31 +718,75 @@ extension OpenRouterError {
 }
 
 private final class StreamMetadataBox: @unchecked Sendable {
-  var continuation: CheckedContinuation<ResponseCacheMetadata?, Error>?
+  private let lock = NSLock()
+  private var continuation: CheckedContinuation<ResponseCacheMetadata?, Error>?
+  private var pendingResult: Result<ResponseCacheMetadata?, Error>?
   private var didResume = false
 
+  func makeTask() -> Task<ResponseCacheMetadata?, Error> {
+    Task {
+      try await withCheckedThrowingContinuation {
+        (continuation: CheckedContinuation<ResponseCacheMetadata?, Error>) in
+        setContinuation(continuation)
+      }
+    }
+  }
+
+  private func setContinuation(_ continuation: CheckedContinuation<ResponseCacheMetadata?, Error>) {
+    lock.lock()
+    if let pendingResult {
+      self.pendingResult = nil
+      self.continuation = nil
+      lock.unlock()
+      resume(continuation, with: pendingResult)
+      return
+    }
+    self.continuation = continuation
+    lock.unlock()
+  }
+
   func resume(with result: Result<ResponseCacheMetadata?, Error>) {
-    guard !didResume else { return }
+    lock.lock()
+    guard !didResume else {
+      lock.unlock()
+      return
+    }
     didResume = true
-    guard let continuation else { return }
-    switch result {
-    case .success(let metadata):
-      continuation.resume(returning: metadata)
-    case .failure(let error):
-      continuation.resume(throwing: error)
+    guard let continuation else {
+      pendingResult = result
+      lock.unlock()
+      return
     }
     self.continuation = nil
+    switch result {
+    case .success(let metadata):
+      lock.unlock()
+      continuation.resume(returning: metadata)
+    case .failure(let error):
+      lock.unlock()
+      continuation.resume(throwing: error)
+    }
+  }
+
+  private func resume(
+    _ continuation: CheckedContinuation<ResponseCacheMetadata?, Error>,
+    with result: Result<ResponseCacheMetadata?, Error>
+  ) {
+    switch result {
+    case .success(let metadata): continuation.resume(returning: metadata)
+    case .failure(let error): continuation.resume(throwing: error)
+    }
   }
 }
 
-private final class IncrementalStreamRuntime: @unchecked Sendable {
+private final class IncrementalStreamRuntime<Element: Sendable>: @unchecked Sendable {
   private let session: URLSession
   private let task: URLSessionDataTask
-  private let delegate: IncrementalSSEDelegate
+  private let delegate: IncrementalSSEDelegate<Element>
 
   init(
     request: URLRequest,
-    delegate: IncrementalSSEDelegate,
+    delegate: IncrementalSSEDelegate<Element>,
     protocolClasses: [AnyClass]?
   ) {
     self.delegate = delegate
@@ -704,13 +807,17 @@ private final class IncrementalStreamRuntime: @unchecked Sendable {
   }
 }
 
-private final class IncrementalSSEDelegate: NSObject, URLSessionDataDelegate, @unchecked Sendable {
+private final class IncrementalSSEDelegate<Element: Sendable>: NSObject, URLSessionDataDelegate,
+  @unchecked Sendable
+{
   private let transport: HTTPTransport
   private let onMetadata: @Sendable (ResponseCacheMetadata?) -> Void
-  private let onChunk: @Sendable (ChatCompletionChunk) -> Void
+  private let decode: @Sendable (Data) throws -> Element
+  private let onElement: @Sendable (Element) -> Void
   private let onError: @Sendable (Error) -> Void
   private let onDone: @Sendable () -> Void
   private var buffer = Data()
+  private var frameLines: [String] = []
   private var errorBuffer = Data()
   private var responseStatusCode: Int?
   private var didTerminate = false
@@ -718,13 +825,15 @@ private final class IncrementalSSEDelegate: NSObject, URLSessionDataDelegate, @u
   init(
     transport: HTTPTransport,
     onMetadata: @escaping @Sendable (ResponseCacheMetadata?) -> Void,
-    onChunk: @escaping @Sendable (ChatCompletionChunk) -> Void,
+    decode: @escaping @Sendable (Data) throws -> Element,
+    onElement: @escaping @Sendable (Element) -> Void,
     onError: @escaping @Sendable (Error) -> Void,
     onDone: @escaping @Sendable () -> Void
   ) {
     self.transport = transport
     self.onMetadata = onMetadata
-    self.onChunk = onChunk
+    self.decode = decode
+    self.onElement = onElement
     self.onError = onError
     self.onDone = onDone
   }
@@ -766,43 +875,81 @@ private final class IncrementalSSEDelegate: NSObject, URLSessionDataDelegate, @u
     while let newlineRange = buffer.range(of: Data([0x0A])) {
       let lineData = buffer.subdata(in: buffer.startIndex..<newlineRange.lowerBound)
       buffer.removeSubrange(buffer.startIndex...newlineRange.lowerBound)
-      let line = String(decoding: lineData, as: UTF8.self)
+      var line = String(decoding: lineData, as: UTF8.self)
+      if line.last == "\r" { line.removeLast() }
 
-      guard let event = SSEParser.parse(line: line) else { continue }
-
-      switch event {
-      case .done:
-        didTerminate = true
-        onDone()
-        session.invalidateAndCancel()
-        return
-      case .data(let payload):
-        do {
-          let payloadData = Data(payload.utf8)
-          let chunk = try JSONDecoder().decode(ChatCompletionChunk.self, from: payloadData)
-          onChunk(chunk)
-        } catch {
-          didTerminate = true
-          onError(error)
-          session.invalidateAndCancel()
+      if line.isEmpty {
+        if processFrame(session: session) { return }
+      } else {
+        if line.hasPrefix("data:"), frameContainsCompleteEvent(), processFrame(session: session) {
           return
         }
+        frameLines.append(line)
       }
+    }
+  }
+
+  private func processFrame(session: URLSession?) -> Bool {
+    guard !frameLines.isEmpty else { return false }
+    let lines = frameLines
+    frameLines.removeAll(keepingCapacity: true)
+    guard let event = SSEParser.parseFrame(lines: lines) else { return false }
+
+    switch event {
+    case .done:
+      didTerminate = true
+      onDone()
+      session?.invalidateAndCancel()
+      return true
+    case .data(let payload):
+      do {
+        onElement(try decode(Data(payload.utf8)))
+        return false
+      } catch {
+        didTerminate = true
+        onError(error)
+        session?.invalidateAndCancel()
+        return true
+      }
+    }
+  }
+
+  /// Accept legacy streams that omit the blank SSE frame delimiter between complete JSON events.
+  private func frameContainsCompleteEvent() -> Bool {
+    guard let event = SSEParser.parseFrame(lines: frameLines) else { return false }
+    switch event {
+    case .done:
+      return true
+    case .data(let payload):
+      return (try? JSONSerialization.jsonObject(with: Data(payload.utf8))) != nil
     }
   }
 
   func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
     guard !didTerminate else { return }
-    didTerminate = true
-
     if let responseStatusCode, !(200..<300).contains(responseStatusCode) {
+      didTerminate = true
       onError(transport.mapAPIError(statusCode: responseStatusCode, data: errorBuffer))
       return
     }
 
     if let error {
+      didTerminate = true
       onError(error)
     } else {
+      if !buffer.isEmpty {
+        var line = String(decoding: buffer, as: UTF8.self)
+        if line.last == "\r" { line.removeLast() }
+        if !line.isEmpty {
+          if line.hasPrefix("data:"), frameContainsCompleteEvent(), processFrame(session: nil) {
+            return
+          }
+          frameLines.append(line)
+        }
+        buffer.removeAll(keepingCapacity: false)
+      }
+      if processFrame(session: nil) { return }
+      didTerminate = true
       onDone()
     }
   }

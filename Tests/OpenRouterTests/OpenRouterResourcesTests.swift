@@ -139,6 +139,27 @@ final class OpenRouterResourcesTests: XCTestCase {
     XCTAssertEqual(result.usage?.outputTokensDetails?.reasoningTokens, 1)
   }
 
+  func testResponsesResourceStreams() async throws {
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.url?.path, "/api/v1/responses")
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil,
+        headerFields: ["Content-Type": "text/event-stream"]
+      )!
+      return (
+        response,
+        "data: {\"type\":\"response.output_text.delta\",\"delta\":\"ok\"}\ndata: [DONE]\n".data(
+          using: .utf8)!
+      )
+    }
+
+    var events: [ResponsesStreamEvent] = []
+    for try await event in makeClient().responses.stream(.init(model: "m", input: .text("hi"))) {
+      events.append(event)
+    }
+    XCTAssertEqual(events.first?.delta, "ok")
+  }
+
   func testListProvidersBuildsRequestAndDecodesTypedProvider() async throws {
     URLProtocolResourcesStub.handler = { request in
       XCTAssertEqual(request.httpMethod, "GET")

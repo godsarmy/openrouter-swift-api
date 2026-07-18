@@ -106,6 +106,96 @@ final class OpenRouterClientMockedTests: XCTestCase {
     XCTAssertEqual(got, "hello")
   }
 
+  func testCreateResponseStreamForcesStreamAndYieldsEventsInOrder() async throws {
+    let streamBody = """
+      data: {"type":"response.output_text.delta","delta":"Hello","response_id":"resp_1","output_index":0,"content_index":0}
+      data: {"type":"response.content_part.delta","delta":" world","response_id":"resp_1"}
+      data: {"type":"response.function_call_arguments.delta","delta":"{\\"city\\":\\"Paris\\"}","item_id":"call_1","output_index":1}
+      data: {"type":"response.completed","response":{"id":"resp_1","output":[],"status":"completed"}}
+      data: [DONE]
+      """.data(using: .utf8)!
+
+    URLProtocolStub.handler = { request in
+      XCTAssertEqual(request.httpMethod, "POST")
+      XCTAssertEqual(request.url?.path, "/api/v1/responses")
+      let body = try XCTUnwrap(request.httpBody)
+      let json = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
+      XCTAssertEqual(json["stream"] as? Bool, true)
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil,
+        headerFields: ["Content-Type": "text/event-stream"]
+      )!
+      return (response, streamBody)
+    }
+
+    let stream = makeClient().createResponseStream(
+      .init(model: "m", input: .text("hi"), stream: false))
+    var events: [ResponsesStreamEvent] = []
+    for try await event in stream { events.append(event) }
+
+    XCTAssertEqual(
+      events.map(\.type),
+      [
+        "response.output_text.delta", "response.content_part.delta",
+        "response.function_call_arguments.delta", "response.completed",
+      ])
+    XCTAssertEqual(events[0].delta, "Hello")
+    XCTAssertEqual(events[1].delta, " world")
+    XCTAssertEqual(events[2].delta, #"{"city":"Paris"}"#)
+    XCTAssertEqual(events[3].response?.status, "completed")
+  }
+
+  func testCreateResponseStreamThrowsForErrorEvent() async throws {
+    let streamBody =
+      "data: {\"type\":\"response.failed\",\"response\":{\"error\":{\"code\":400,\"message\":\"invalid input\"}}}\r\n\r\ndata: [DONE]\r\n\r\n"
+      .data(using: .utf8)!
+    URLProtocolStub.handler = { request in
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil,
+        headerFields: ["Content-Type": "text/event-stream"]
+      )!
+      return (response, streamBody)
+    }
+
+    do {
+      for try await _ in makeClient().createResponseStream(.init(model: "m", input: .text("hi"))) {}
+      XCTFail("Expected stream error")
+    } catch let error as OpenRouterError {
+      guard case .apiError(_, let code, let message, _) = error else {
+        return XCTFail("Unexpected error: \(error)")
+      }
+      XCTAssertEqual(code, 400)
+      XCTAssertEqual(message, "invalid input")
+    }
+  }
+
+  func testCreateResponseStreamDecodesMultilineSSEFrame() async throws {
+    let streamBody = """
+      event: response.output_text.delta\r
+      data: {"type":"response.output_text.delta",\r
+      data: "delta":"hello"}\r
+      \r
+      data: [DONE]\r
+      \r
+      """.data(using: .utf8)!
+    URLProtocolStub.handler = { request in
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil,
+        headerFields: ["Content-Type": "text/event-stream"]
+      )!
+      return (response, streamBody)
+    }
+
+    var events: [ResponsesStreamEvent] = []
+    for try await event in makeClient().createResponseStream(.init(model: "m", input: .text("hi")))
+    {
+      events.append(event)
+    }
+    XCTAssertEqual(events.count, 1)
+    XCTAssertEqual(events.first?.type, "response.output_text.delta")
+    XCTAssertEqual(events.first?.delta, "hello")
+  }
+
   func testStreamFallbackUsesNextModelOnFallbackableError() async throws {
     let streamBody = """
       data: {"id":"chunk-1","model":"fallback-model","choices":[{"index":0,"delta":{"content":"ok"},"finish_reason":null}]}

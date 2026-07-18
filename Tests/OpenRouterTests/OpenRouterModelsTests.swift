@@ -75,6 +75,7 @@ final class OpenRouterModelsTests: XCTestCase {
     let request = ResponsesRequest(
       model: "openai/o4-mini",
       input: .text("hello"),
+      stream: true,
       maxOutputTokens: 128,
       topP: 0.9,
       reasoning: .init(effort: "medium"),
@@ -88,12 +89,32 @@ final class OpenRouterModelsTests: XCTestCase {
     let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
 
     XCTAssertEqual(object["input"] as? String, "hello")
+    XCTAssertEqual(object["stream"] as? Bool, true)
     XCTAssertEqual(object["max_output_tokens"] as? Int, 128)
     XCTAssertEqual(object["top_p"] as? Double, 0.9)
     XCTAssertEqual(object["session_id"] as? String, "session-1")
     XCTAssertEqual(object["previous_response_id"] as? String, "resp_prev")
     XCTAssertEqual(object["service_tier"] as? String, "default")
     XCTAssertNil(object["maxOutputTokens"])
+  }
+
+  func testResponsesStreamEventPreservesUnknownPayload() throws {
+    let json =
+      #"{"type":"response.output_text.delta","delta":"Hi","response_id":"resp_1","future_field":{"value":1}}"#
+      .data(using: .utf8)!
+    let event = try JSONDecoder().decode(ResponsesStreamEvent.self, from: json)
+
+    XCTAssertEqual(event.type, "response.output_text.delta")
+    XCTAssertEqual(event.delta, "Hi")
+    XCTAssertEqual(event.responseID, "resp_1")
+    XCTAssertEqual(
+      event.rawPayload,
+      .object([
+        "type": .string("response.output_text.delta"),
+        "delta": .string("Hi"),
+        "response_id": .string("resp_1"),
+        "future_field": .object(["value": .number(1)]),
+      ]))
   }
 
   func testResponsesInputMessagesRoundTrip() throws {
