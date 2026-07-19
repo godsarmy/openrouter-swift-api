@@ -45,7 +45,7 @@ Status legend:
 |---|---|---|---|---|---|
 | [x] | POST | `/chat/completions` | `sendChatCompletionRequest` | Create a chat completion. | Implemented in `OpenRouterClient.createChatCompletion`; resource aliases: `client.chat.send` and `client.chat.stream`. Streaming uses the same endpoint with `stream: true`. |
 | [x] | POST | `/responses` | `createResponses` | Create a response using the Responses API style. | Implemented in `OpenRouterClient.createResponse` and `createResponseStream`; resource aliases: `client.responses.create` and `client.responses.stream`. Supports flat function tools plus stateless function-call/output and reasoning replay, and beta SSE typed/raw events. |
-| [ ] | POST | `/messages` | `createMessages` | Create an Anthropic-compatible message. |  |
+| [x] | POST | `/messages` | `createMessages` | Create an Anthropic-compatible message. | Implemented in `OpenRouterClient.createMessage` and `createMessageStream`; resource aliases: `client.messages.create` and `client.messages.stream`. Supports typed native tools/content blocks and raw unknown extensions. |
 | [x] | POST | `/embeddings` | `createEmbeddings` | Submit an embedding request. | Implemented in `OpenRouterClient.createEmbeddings`; resource alias: `client.embeddings.create`. |
 | [ ] | GET | `/embeddings/models` | `listEmbeddingsModels` | List embedding models. |  |
 | [ ] | POST | `/rerank` | `createRerank` | Submit a rerank request. |  |

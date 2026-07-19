@@ -250,6 +250,106 @@ final class OpenRouterModelsTests: XCTestCase {
     XCTAssertEqual(object["text"] as? String, "brief")
   }
 
+  func testMessagesRequestAndResponseToolContinuation() throws {
+    let request = MessagesRequest(
+      model: "anthropic/claude",
+      messages: [
+        .init(
+          role: .user,
+          content: .blocks([
+            .text("hi"),
+            .image(
+              .object([
+                "type": .string("base64"), "media_type": .string("image/png"),
+                "data": .string("abc"),
+              ])),
+            .document(
+              .object(["type": .string("url"), "url": .string("https://example.com/doc.pdf")])),
+          ]))
+      ], maxTokens: 2048, thinking: .enabled(budgetTokens: 1024),
+      tools: [.init(name: "weather", inputSchema: .object(["type": .string("object")]))],
+      toolChoice: .tool(name: "weather"))
+    let json = try XCTUnwrap(
+      JSONSerialization.jsonObject(with: JSONEncoder().encode(request)) as? [String: Any])
+    XCTAssertEqual(json["max_tokens"] as? Int, 2048)
+    XCTAssertEqual(
+      ((json["tools"] as? [[String: Any]])?.first?["input_schema"] as? [String: Any])?["type"]
+        as? String,
+      "object")
+
+    let response = try JSONDecoder().decode(
+      MessagesResponse.self,
+      from:
+        #"{"id":"msg_1","role":"assistant","content":[{"type":"text","text":"checking"},{"type":"tool_use","id":"tool_1","name":"weather","input":{"city":"Paris"}},{"type":"thinking","thinking":"reason","signature":"sig"}]}"#
+        .data(using: .utf8)!)
+    let followUp = MessagesMessage(
+      role: .user, content: .blocks([.toolResult(toolUseID: "tool_1", content: .text("sunny"))]))
+    XCTAssertEqual(response.assistantMessage.role, .assistant)
+    XCTAssertEqual(
+      followUp.content, .blocks([.toolResult(toolUseID: "tool_1", content: .text("sunny"))]))
+  }
+
+  func testMessagesContinuationPreservesRawBlocksAndServerTools() throws {
+    let response = try JSONDecoder().decode(
+      MessagesResponse.self,
+      from:
+        #"{"role":"assistant","content":[{"type":"text","text":"ok","cache_control":{"type":"ephemeral"},"citation":"x"},{"type":"tool_use","id":"u1","name":"tool","input":{},"vendor":"extra"}]}"#
+        .data(using: .utf8)!)
+    let request = MessagesRequest(
+      model: "m", messages: [response.assistantMessage], maxTokens: 10,
+      tools: [
+        try JSONDecoder().decode(
+          MessagesTool.self,
+          from: #"{"type":"web_search_20250305","name":"web_search"}"#.data(using: .utf8)!)
+      ])
+    let json = try XCTUnwrap(
+      JSONSerialization.jsonObject(with: JSONEncoder().encode(request)) as? [String: Any])
+    let blocks = try XCTUnwrap(
+      (json["messages"] as? [[String: Any]])?.first?["content"] as? [[String: Any]])
+    XCTAssertEqual((blocks[0]["cache_control"] as? [String: Any])?["type"] as? String, "ephemeral")
+    XCTAssertEqual(blocks[1]["vendor"] as? String, "extra")
+    XCTAssertEqual(
+      (json["tools"] as? [[String: Any]])?.first?["type"] as? String, "web_search_20250305")
+  }
+
+  func testMessagesToolResultAndSystemPromptEncoding() throws {
+    let request = MessagesRequest(
+      model: "m",
+      messages: [
+        .init(
+          role: .user,
+          content: .blocks([
+            .toolResult(toolUseID: "u1", isError: true),
+            .toolResult(toolUseID: "u2", content: .text("ok")),
+          ]))
+      ], maxTokens: 10, system: .blocks([.init(text: "Be concise")]))
+    let json = try XCTUnwrap(
+      JSONSerialization.jsonObject(with: JSONEncoder().encode(request)) as? [String: Any])
+    let blocks = try XCTUnwrap(
+      (json["messages"] as? [[String: Any]])?.first?["content"] as? [[String: Any]])
+    XCTAssertEqual(blocks[0]["tool_use_id"] as? String, "u1")
+    XCTAssertEqual(blocks[0]["is_error"] as? Bool, true)
+    XCTAssertNil(blocks[0]["content"])
+    XCTAssertEqual(((json["system"] as? [[String: Any]])?.first)?["type"] as? String, "text")
+  }
+
+  func testDecodedMessagesToolPreservesExtensionFields() throws {
+    let tool = try JSONDecoder().decode(
+      MessagesTool.self,
+      from:
+        #"{"name":"weather","description":"forecast","input_schema":{"type":"object"},"cache_control":{"type":"ephemeral"},"strict":true,"input_examples":[{"city":"Paris"}],"defer_loading":true}"#
+        .data(using: .utf8)!)
+    XCTAssertEqual(tool.name, "weather")
+    XCTAssertEqual(tool.inputSchema, .object(["type": .string("object")]))
+
+    let json = try XCTUnwrap(
+      JSONSerialization.jsonObject(with: JSONEncoder().encode(tool)) as? [String: Any])
+    XCTAssertEqual((json["cache_control"] as? [String: Any])?["type"] as? String, "ephemeral")
+    XCTAssertEqual(json["strict"] as? Bool, true)
+    XCTAssertEqual((json["input_examples"] as? [[String: Any]])?.first?["city"] as? String, "Paris")
+    XCTAssertEqual(json["defer_loading"] as? Bool, true)
+  }
+
   func testResponsesFunctionCallOutputSupportsReplayAndStreamToolFields() throws {
     let response = try JSONDecoder().decode(
       ResponsesResponse.self,

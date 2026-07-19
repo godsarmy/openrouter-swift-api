@@ -39,7 +39,7 @@ public struct OpenRouterClient: Sendable {
     return makeIncrementalStream(
       transport: transport, path: "chat/completions", request: request,
       prepare: { $0.stream = true },
-      decode: { data in
+      decode: { data, _ in
         try JSONDecoder().decode(ChatCompletionChunk.self, from: data)
       })
   }
@@ -54,7 +54,7 @@ public struct OpenRouterClient: Sendable {
       transport: transport, path: "chat/completions", request: request,
       prepare: { $0.stream = true },
       metadataBox: metadataBox,
-      decode: { data in
+      decode: { data, _ in
         try JSONDecoder().decode(ChatCompletionChunk.self, from: data)
       })
     return ChatCompletionStreamSession(
@@ -69,7 +69,7 @@ public struct OpenRouterClient: Sendable {
     request: Request,
     prepare: @escaping @Sendable (inout Request) -> Void,
     metadataBox: StreamMetadataBox? = nil,
-    decode: @escaping @Sendable (Data) throws -> Element
+    decode: @escaping @Sendable (Data, String?) throws -> Element
   ) -> AsyncThrowingStream<Element, Error> {
     let stream = AsyncThrowingStream<Element, Error> { continuation in
       do {
@@ -156,6 +156,26 @@ public struct OpenRouterClient: Sendable {
     )
   }
 
+  public func createMessage(_ request: MessagesRequest, options: RequestOptions? = nil) async throws
+    -> MessagesResponse
+  {
+    try await transport.post(
+      path: "messages", requestBody: request, responseType: MessagesResponse.self, options: options)
+  }
+
+  public func createMessageStream(_ request: MessagesRequest) -> AsyncThrowingStream<
+    MessagesStreamEvent, Error
+  > {
+    makeIncrementalStream(
+      transport: transport, path: "messages", request: request, prepare: { $0.stream = true }
+    ) { data, eventName in
+      let event = try JSONDecoder().decode(MessagesStreamEvent.self, from: data).withEventName(
+        eventName)
+      if event.type == "error" { throw OpenRouterError.messageStreamError(from: event) }
+      return event
+    }
+  }
+
   public func createResponseStream(
     _ request: ResponsesRequest
   ) -> AsyncThrowingStream<ResponsesStreamEvent, Error> {
@@ -169,7 +189,7 @@ public struct OpenRouterClient: Sendable {
   ) -> AsyncThrowingStream<ResponsesStreamEvent, Error> {
     return makeIncrementalStream(
       transport: transport, path: "responses", request: request, prepare: { $0.stream = true }
-    ) { data in
+    ) { data, _ in
       let event = try JSONDecoder().decode(ResponsesStreamEvent.self, from: data)
       if ["response.failed", "response.error", "error"].contains(event.type) {
         throw OpenRouterError.streamEventError(from: event)
@@ -362,6 +382,7 @@ public struct OpenRouterClient: Sendable {
 extension OpenRouterClient {
   public var chat: ChatResource { ChatResource(client: self) }
   public var responses: ResponsesResource { ResponsesResource(client: self) }
+  public var messages: MessagesResource { MessagesResource(client: self) }
   public var embeddings: EmbeddingsResource { EmbeddingsResource(client: self) }
   public var generations: GenerationsResource { GenerationsResource(client: self) }
   public var models: ModelsResource { ModelsResource(client: self) }
@@ -401,6 +422,16 @@ extension OpenRouterClient {
     ) -> AsyncThrowingStream<ResponsesStreamEvent, Error> {
       client.createResponseStream(request)
     }
+  }
+
+  public struct MessagesResource: Sendable {
+    fileprivate let client: OpenRouterClient
+    public func create(_ request: MessagesRequest, options: RequestOptions? = nil) async throws
+      -> MessagesResponse
+    { try await client.createMessage(request, options: options) }
+    public func stream(_ request: MessagesRequest) -> AsyncThrowingStream<
+      MessagesStreamEvent, Error
+    > { client.createMessageStream(request) }
   }
 
   public struct EmbeddingsResource: Sendable {
@@ -643,6 +674,19 @@ public enum OpenRouterError: Error, Equatable {
 }
 
 extension OpenRouterError {
+  static func messageStreamError(from event: MessagesStreamEvent) -> Self {
+    let payload = event.error ?? event.rawPayload
+    var code: Int?
+    var message: String?
+    if case .object(let object) = payload {
+      if case .number(let value)? = object["code"] { code = Int(value) }
+      if case .string(let value)? = object["message"] { message = value }
+    }
+    return .apiError(
+      statusCode: code ?? 0, code: code, message: message ?? "Messages stream error",
+      rawBody: try? String(data: JSONEncoder().encode(payload), encoding: .utf8))
+  }
+
   static func streamEventError(from event: ResponsesStreamEvent) -> Self {
     let payload = event.rawPayload
     let errorPayload: JSONValue
@@ -812,7 +856,7 @@ private final class IncrementalSSEDelegate<Element: Sendable>: NSObject, URLSess
 {
   private let transport: HTTPTransport
   private let onMetadata: @Sendable (ResponseCacheMetadata?) -> Void
-  private let decode: @Sendable (Data) throws -> Element
+  private let decode: @Sendable (Data, String?) throws -> Element
   private let onElement: @Sendable (Element) -> Void
   private let onError: @Sendable (Error) -> Void
   private let onDone: @Sendable () -> Void
@@ -825,7 +869,7 @@ private final class IncrementalSSEDelegate<Element: Sendable>: NSObject, URLSess
   init(
     transport: HTTPTransport,
     onMetadata: @escaping @Sendable (ResponseCacheMetadata?) -> Void,
-    decode: @escaping @Sendable (Data) throws -> Element,
+    decode: @escaping @Sendable (Data, String?) throws -> Element,
     onElement: @escaping @Sendable (Element) -> Void,
     onError: @escaping @Sendable (Error) -> Void,
     onDone: @escaping @Sendable () -> Void
@@ -893,6 +937,7 @@ private final class IncrementalSSEDelegate<Element: Sendable>: NSObject, URLSess
     guard !frameLines.isEmpty else { return false }
     let lines = frameLines
     frameLines.removeAll(keepingCapacity: true)
+    let frame = SSEParser.parseMetadataFrame(lines: lines)
     guard let event = SSEParser.parseFrame(lines: lines) else { return false }
 
     switch event {
@@ -903,7 +948,7 @@ private final class IncrementalSSEDelegate<Element: Sendable>: NSObject, URLSess
       return true
     case .data(let payload):
       do {
-        onElement(try decode(Data(payload.utf8)))
+        onElement(try decode(Data(payload.utf8), frame.event))
         return false
       } catch {
         didTerminate = true

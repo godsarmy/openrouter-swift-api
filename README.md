@@ -63,6 +63,20 @@ let response = try await client.responses.create(.init(
   input: .text("hello")
 ))
 
+// Anthropic Messages API. Set `maxTokens` for compatible providers.
+let message = try await client.messages.create(.init(
+  model: "anthropic/claude-sonnet-4",
+  messages: [.init(role: .user, content: .text("Hello"))],
+  maxTokens: 256
+))
+for try await event in client.messages.stream(.init(
+  model: "anthropic/claude-sonnet-4",
+  messages: [.init(role: .user, content: .text("Hello"))], maxTokens: 256
+)) {
+  if event.type == "content_block_delta" { print(event.delta ?? .null) }
+}
+// Unknown Messages blocks and SSE fields remain available through raw payload values.
+
 // Beta Responses API SSE streaming; events retain their raw payload for forward compatibility.
 for try await event in client.responses.stream(.init(model: "openai/o4-mini", input: .text("hello"))) {
   if event.type == "response.output_text.delta" || event.type == "response.content_part.delta" {

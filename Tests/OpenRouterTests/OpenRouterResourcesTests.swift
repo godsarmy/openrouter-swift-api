@@ -160,6 +160,22 @@ final class OpenRouterResourcesTests: XCTestCase {
     XCTAssertEqual(events.first?.delta, "ok")
   }
 
+  func testMessagesResourceCreatesMessage() async throws {
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.url?.path, "/api/v1/messages")
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      return (
+        response,
+        #"{"id":"m1","role":"assistant","content":[{"type":"text","text":"ok"}]}"#.data(
+          using: .utf8)!
+      )
+    }
+    let result = try await makeClient().messages.create(
+      .init(model: "m", messages: [.init(role: .user, content: .text("hi"))], maxTokens: 10))
+    XCTAssertEqual(result.content, [.text("ok")])
+  }
+
   func testCreateResponseReplaysFunctionCallAndOutput() async throws {
     URLProtocolResourcesStub.handler = { request in
       XCTAssertEqual(request.httpMethod, "POST")

@@ -196,6 +196,102 @@ final class OpenRouterClientMockedTests: XCTestCase {
     XCTAssertEqual(events.first?.delta, "hello")
   }
 
+  func testCreateMessageStreamUsesNamedEventsAndMapsErrors() async throws {
+    let streamBody = """
+      event: message_start
+      data: {"type":"message_start","message":{"id":"m1","role":"assistant","content":[]}}
+
+      event: content_block_delta
+      data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Hi"},"future":true}
+
+      event: content_block_delta
+      data: {"type":"content_block_delta","delta":{"type":"input_json_delta","partial_json":"{\\\"x\\\":1"}}
+
+      event: content_block_delta
+      data: {"type":"content_block_delta","delta":{"type":"thinking_delta","thinking":"reason"}}
+
+      event: content_block_delta
+      data: {"type":"content_block_delta","delta":{"type":"signature_delta","signature":"sig"}}
+
+      data: [DONE]
+
+      """.data(using: .utf8)!
+    URLProtocolStub.handler = { request in
+      XCTAssertEqual(request.url?.path, "/api/v1/messages")
+      let body = try XCTUnwrap(request.httpBody)
+      XCTAssertEqual(
+        (try JSONSerialization.jsonObject(with: body) as? [String: Any])?["stream"] as? Bool, true)
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil,
+        headerFields: ["Content-Type": "text/event-stream"])!
+      return (response, streamBody)
+    }
+    var events: [MessagesStreamEvent] = []
+    for try await event in makeClient().createMessageStream(
+      .init(model: "m", messages: [.init(role: .user, content: .text("hi"))], maxTokens: 10))
+    { events.append(event) }
+    XCTAssertEqual(
+      events.map(\.eventName),
+      [
+        "message_start", "content_block_delta", "content_block_delta", "content_block_delta",
+        "content_block_delta",
+      ])
+    XCTAssertEqual(
+      events[1].delta, .object(["type": .string("text_delta"), "text": .string("Hi")]))
+    XCTAssertEqual(
+      events[1].rawPayload,
+      .object([
+        "type": .string("content_block_delta"), "index": .number(0),
+        "delta": .object(["type": .string("text_delta"), "text": .string("Hi")]),
+        "future": .bool(true),
+      ]))
+    XCTAssertEqual(events[2].inputJSONDelta, #"{"x":1"#)
+    XCTAssertEqual(events[3].thinkingDelta, "reason")
+    XCTAssertEqual(events[4].signatureDelta, "sig")
+  }
+
+  func testCreateMessageStreamThrowsForErrorEvent() async throws {
+    let streamBody =
+      "event: error\ndata: {\"type\":\"error\",\"error\":{\"code\":400,\"message\":\"bad message\"}}\n\n"
+      .data(using: .utf8)!
+    URLProtocolStub.handler = { request in
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil,
+        headerFields: ["Content-Type": "text/event-stream"])!
+      return (response, streamBody)
+    }
+    do {
+      for try await _ in makeClient().createMessageStream(
+        .init(model: "m", messages: [.init(role: .user, content: .text("hi"))], maxTokens: 10))
+      {}
+      XCTFail("Expected stream error")
+    } catch let error as OpenRouterError {
+      guard case .apiError(_, let code, let message, _) = error else {
+        return XCTFail("Unexpected error")
+      }
+      XCTAssertEqual(code, 400)
+      XCTAssertEqual(message, "bad message")
+    }
+  }
+
+  func testChatStreamStillDecodesNamedSSEFrames() async throws {
+    URLProtocolStub.handler = { request in
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil,
+        headerFields: ["Content-Type": "text/event-stream"])!
+      return (
+        response,
+        "event: chunk\ndata: {\"choices\":[{\"delta\":{\"content\":\"ok\"}}]}\n\ndata: [DONE]\n\n"
+          .data(using: .utf8)!
+      )
+    }
+    var output = ""
+    for try await chunk in makeClient().createChatCompletionStream(
+      .init(model: "m", messages: [.user("hi")]))
+    { output += chunk.choices.first?.delta?.content ?? "" }
+    XCTAssertEqual(output, "ok")
+  }
+
   func testStreamFallbackUsesNextModelOnFallbackableError() async throws {
     let streamBody = """
       data: {"id":"chunk-1","model":"fallback-model","choices":[{"index":0,"delta":{"content":"ok"},"finish_reason":null}]}
