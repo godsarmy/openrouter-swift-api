@@ -117,6 +117,173 @@ final class OpenRouterModelsTests: XCTestCase {
       ]))
   }
 
+  func testResponsesToolsEncodeFlatToolAndForcedChoice() throws {
+    let request = ResponsesRequest(
+      model: "m", input: .text("weather"),
+      tools: [
+        .init(
+          name: "get_weather", description: "Get weather",
+          parameters: .object(["type": .string("object")]), strict: true)
+      ],
+      toolChoice: .function(name: "get_weather"), parallelToolCalls: true
+    )
+    let json = try XCTUnwrap(
+      JSONSerialization.jsonObject(with: JSONEncoder().encode(request)) as? [String: Any])
+    let tool = try XCTUnwrap((json["tools"] as? [[String: Any]])?.first)
+    XCTAssertEqual(tool["type"] as? String, "function")
+    XCTAssertEqual(tool["name"] as? String, "get_weather")
+    XCTAssertEqual(tool["strict"] as? Bool, true)
+    XCTAssertNil(tool["function"])
+    let choice = try XCTUnwrap(json["tool_choice"] as? [String: Any])
+    XCTAssertEqual(choice["type"] as? String, "function")
+    XCTAssertEqual(choice["name"] as? String, "get_weather")
+    XCTAssertNil(choice["function"])
+    XCTAssertEqual(json["parallel_tool_calls"] as? Bool, true)
+    XCTAssertEqual(
+      try JSONDecoder().decode(ResponsesToolChoice.self, from: #""required""#.data(using: .utf8)!),
+      .required)
+    XCTAssertEqual(
+      String(data: try JSONEncoder().encode(ResponsesToolChoice.required), encoding: .utf8),
+      #""required""#)
+  }
+
+  func testResponsesMixedItemHistoryRoundTrips() throws {
+    let items: [ResponsesInputItem] = [
+      .message(.init(role: "user", content: [.init(text: "weather")])),
+      .functionCall(
+        .init(
+          id: "fc_1", callID: "call_1", name: "get_weather", arguments: #"{"city":"Paris"}"#,
+          status: "completed")),
+      .functionCallOutput(.init(callID: "call_1", output: .text("sunny"))),
+      .functionCallOutput(
+        .init(
+          callID: "call_2",
+          output: .parts([
+            .object([
+              "type": .string("input_image"), "image_url": .string("https://example.com/image.png"),
+            ])
+          ]))),
+    ]
+    let request = ResponsesRequest(model: "m", input: .items(items))
+    let data = try JSONEncoder().encode(request)
+    let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+    let input = try XCTUnwrap(json["input"] as? [[String: Any]])
+    XCTAssertEqual(
+      input.map { $0["type"] as? String },
+      ["message", "function_call", "function_call_output", "function_call_output"])
+    XCTAssertEqual(input[1]["call_id"] as? String, "call_1")
+    XCTAssertEqual(input[2]["output"] as? String, "sunny")
+    XCTAssertTrue(input[3]["output"] is [[String: Any]])
+    XCTAssertEqual(try JSONDecoder().decode(ResponsesRequest.self, from: data), request)
+  }
+
+  func testResponsesItemsTreatMissingTypeAsMessageAndEncodeMessageType() throws {
+    let rawMessage = #"{"role":"user","content":[{"type":"input_text","text":"hello"}]}"#.data(
+      using: .utf8)!
+    XCTAssertEqual(
+      try JSONDecoder().decode(ResponsesInputItem.self, from: rawMessage),
+      .message(.init(type: nil, role: "user", content: [.init(text: "hello")])))
+    let input = try JSONDecoder().decode(
+      ResponsesInput.self,
+      from: Data("[".utf8) + rawMessage + Data("]".utf8))
+    XCTAssertEqual(
+      input, .messages([.init(type: nil, role: "user", content: [.init(text: "hello")])]))
+
+    let request = ResponsesRequest(
+      model: "m",
+      input: .items([.message(.init(type: nil, role: "user", content: [.init(text: "hello")]))]))
+    let json = try XCTUnwrap(
+      JSONSerialization.jsonObject(with: JSONEncoder().encode(request)) as? [String: Any])
+    let item = try XCTUnwrap((json["input"] as? [[String: Any]])?.first)
+    XCTAssertEqual(item["type"] as? String, "message")
+  }
+
+  func testResponsesReasoningItemReplaysAndEncodesReasoningContext() throws {
+    let response = try JSONDecoder().decode(
+      ResponsesResponse.self,
+      from:
+        #"{"id":"resp_1","output":[{"type":"reasoning","id":"rs_1","summary":[{"type":"summary_text","text":"brief"}],"content":[{"type":"reasoning_text","text":"detail"}],"encrypted_content":"enc","status":"completed","format":"openai","signature":"sig"}]}"#
+        .data(using: .utf8)!)
+    let reasoning = try XCTUnwrap(response.output.first?.reasoningItem)
+    XCTAssertEqual(reasoning.encryptedContent, "enc")
+    XCTAssertEqual(reasoning.summary.first?.text, "brief")
+    XCTAssertEqual(reasoning.content?.first?.text, "detail")
+
+    let request = ResponsesRequest(
+      model: "m", input: .items([.reasoning(reasoning)]),
+      reasoning: .init(context: "all_turns"), include: ["reasoning.encrypted_content"])
+    let json = try XCTUnwrap(
+      JSONSerialization.jsonObject(with: JSONEncoder().encode(request)) as? [String: Any])
+    let item = try XCTUnwrap((json["input"] as? [[String: Any]])?.first)
+    XCTAssertEqual(item["type"] as? String, "reasoning")
+    XCTAssertEqual(item["encrypted_content"] as? String, "enc")
+    XCTAssertEqual((item["summary"] as? [[String: Any]])?.first?["text"] as? String, "brief")
+    XCTAssertEqual((json["reasoning"] as? [String: Any])?["context"] as? String, "all_turns")
+    XCTAssertEqual(json["include"] as? [String], ["reasoning.encrypted_content"])
+  }
+
+  func testResponsesReasoningStringSummaryPreservesReplayWireShape() throws {
+    let response = try JSONDecoder().decode(
+      ResponsesResponse.self,
+      from:
+        #"{"id":"resp_1","output":[{"type":"reasoning","id":"rs_1","summary":["Analyzed the problem"]}]}"#
+        .data(using: .utf8)!)
+    let reasoning = try XCTUnwrap(response.output.first?.reasoningItem)
+    XCTAssertEqual(reasoning.summary.first?.text, "Analyzed the problem")
+
+    let request = ResponsesRequest(model: "m", input: .items([.reasoning(reasoning)]))
+    let json = try XCTUnwrap(
+      JSONSerialization.jsonObject(with: JSONEncoder().encode(request)) as? [String: Any])
+    let item = try XCTUnwrap((json["input"] as? [[String: Any]])?.first)
+    XCTAssertEqual(item["summary"] as? [String], ["Analyzed the problem"])
+  }
+
+  func testResponsesReasoningSummaryEqualityAndMutationRespectPublicFields() throws {
+    var decoded = try JSONDecoder().decode(
+      ResponsesReasoningSummary.self, from: #""brief""#.data(using: .utf8)!)
+    XCTAssertEqual(decoded, ResponsesReasoningSummary(text: "brief"))
+
+    decoded.type = "summary_text"
+    let object = try XCTUnwrap(
+      JSONSerialization.jsonObject(with: JSONEncoder().encode(decoded)) as? [String: Any])
+    XCTAssertEqual(object["type"] as? String, "summary_text")
+    XCTAssertEqual(object["text"] as? String, "brief")
+  }
+
+  func testResponsesFunctionCallOutputSupportsReplayAndStreamToolFields() throws {
+    let response = try JSONDecoder().decode(
+      ResponsesResponse.self,
+      from:
+        #"{"id":"resp_1","output":[{"type":"function_call","id":"fc_1","call_id":"call_1","name":"get_weather","arguments":"{}","status":"completed"}]}"#
+        .data(using: .utf8)!)
+    let call = try XCTUnwrap(response.output.first?.functionCall)
+    XCTAssertEqual(call.callID, "call_1")
+    let replay = ResponsesRequest(
+      model: "m",
+      input: .items([
+        .functionCall(call),
+        .functionCallOutput(.init(callID: call.callID, output: .text("sunny"))),
+      ]))
+    XCTAssertEqual(
+      replay.input,
+      .items([
+        .functionCall(call),
+        .functionCallOutput(.init(callID: call.callID, output: .text("sunny"))),
+      ]))
+
+    let itemEvent = try JSONDecoder().decode(
+      ResponsesStreamEvent.self,
+      from:
+        #"{"type":"response.output_item.added","item":{"type":"function_call","call_id":"call_1","name":"get_weather","arguments":"{}"}}"#
+        .data(using: .utf8)!)
+    let argumentsEvent = try JSONDecoder().decode(
+      ResponsesStreamEvent.self,
+      from: #"{"type":"response.function_call_arguments.done","arguments":"{}"}"#.data(
+        using: .utf8)!)
+    XCTAssertEqual(itemEvent.item?.functionCall?.name, "get_weather")
+    XCTAssertEqual(argumentsEvent.arguments, "{}")
+  }
+
   func testResponsesInputMessagesRoundTrip() throws {
     let request = ResponsesRequest(
       model: "openai/o4-mini",

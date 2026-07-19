@@ -160,6 +160,37 @@ final class OpenRouterResourcesTests: XCTestCase {
     XCTAssertEqual(events.first?.delta, "ok")
   }
 
+  func testCreateResponseReplaysFunctionCallAndOutput() async throws {
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.httpMethod, "POST")
+      XCTAssertEqual(request.url?.path, "/api/v1/responses")
+      let body = try XCTUnwrap(request.httpBody)
+      let json = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
+      let tool = try XCTUnwrap((json["tools"] as? [[String: Any]])?.first)
+      XCTAssertEqual(tool["type"] as? String, "function")
+      XCTAssertNil(tool["function"])
+      let input = try XCTUnwrap(json["input"] as? [[String: Any]])
+      XCTAssertEqual(input[0]["type"] as? String, "function_call")
+      XCTAssertEqual(input[0]["call_id"] as? String, "call_1")
+      XCTAssertEqual(input[1]["type"] as? String, "function_call_output")
+      XCTAssertEqual(input[1]["call_id"] as? String, "call_1")
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      return (response, #"{"id":"resp_2","output":[]}"#.data(using: .utf8)!)
+    }
+
+    _ = try await makeClient().createResponse(
+      .init(
+        model: "m",
+        input: .items([
+          .functionCall(
+            .init(callID: "call_1", name: "get_weather", arguments: #"{"city":"Paris"}"#)),
+          .functionCallOutput(.init(callID: "call_1", output: .text("sunny"))),
+        ]),
+        tools: [.init(name: "get_weather")], toolChoice: .function(name: "get_weather")
+      ))
+  }
+
   func testListProvidersBuildsRequestAndDecodesTypedProvider() async throws {
     URLProtocolResourcesStub.handler = { request in
       XCTAssertEqual(request.httpMethod, "GET")

@@ -71,6 +71,25 @@ for try await event in client.responses.stream(.init(model: "openai/o4-mini", in
   // `response.function_call_arguments.delta` is exposed through `event.delta` too.
 }
 
+// Responses function tool call and stateless replay. Reasoning-capable models can preserve
+// reasoning context with `include: ["reasoning.encrypted_content"]` and `context: "all_turns"`.
+let tool = ResponsesFunctionTool(name: "get_weather", parameters: .object(["type": .string("object")]))
+let userMessage = ResponsesInputMessage(role: "user", content: [.init(text: "Weather in Paris?")])
+let first = try await client.responses.create(.init(
+  model: "openai/o4-mini", input: .messages([userMessage]), tools: [tool],
+  reasoning: .init(context: "all_turns"), include: ["reasoning.encrypted_content"]
+))
+if let call = first.output.compactMap(\.functionCall).first {
+  let replayItems: [ResponsesInputItem] =
+    [.message(userMessage)]
+    + first.output.compactMap(\.reasoningItem).map(ResponsesInputItem.reasoning)
+    + [.functionCall(call), .functionCallOutput(.init(callID: call.callID, output: .text("Sunny")))]
+  let followUp = try await client.responses.create(.init(
+    model: "openai/o4-mini",
+    input: .items(replayItems)
+  ))
+}
+
 // raw fallback JSON helpers
 let generationRaw = try await client.getGenerationRaw(id: "gen_123")
 let generationContentRaw = try await client.listGenerationContentRaw(id: "gen_123")
@@ -132,7 +151,7 @@ let structured = try await client.chat.send(.init(
 
 ## Current limitations
 
-- Beta Responses API SSE streaming is available via `client.responses.stream` with forward-compatible raw typed events, including text and function argument deltas. Tool-result submission/output parity remains deferred.
+- Beta Responses API SSE streaming is available via `client.responses.stream` with forward-compatible raw typed events, including text and function argument deltas. Provider-specific beta event fields may still require `rawPayload`.
 - The Swift SDK prioritizes mobile-relevant TypeScript SDK resources; broader resources such as organization/workspaces, guardrails, rerank, TTS/STT, video generation, analytics, and beta namespaces are not yet implemented.
 - The SSE parser supports OpenRouter chat streams and has basic multi-line frame parsing helpers; broader SSE metadata is currently ignored by the streaming client.
 
@@ -142,7 +161,7 @@ Endpoint coverage is tracked in [`APIs.md`](APIs.md). Remaining non-endpoint fol
 
 - Tag the first release (`v0.1.0`) after final API review.
 - Optionally add a formal lint/format CI check; formatting is currently run manually with `swift format`.
-- Complete Responses API tool-result submission/output parity.
+- Track additional beta Responses event fields as OpenRouter confirms them.
 - Consider a higher-level Swift-friendly typed tool helper while keeping raw chat/tool APIs canonical.
 - Add pagination helpers only after paginated resources are implemented.
 
@@ -151,7 +170,7 @@ Endpoint coverage is tracked in [`APIs.md`](APIs.md). Remaining non-endpoint fol
 - Current public APIs are expected to remain source-compatible through `0.x` where practical.
 - Flat client methods remain available alongside resource namespaces for compatibility.
 - `JSONValue` remains the escape hatch for raw/forward-compatible payloads.
-- Responses API tool-result submission/output parity and broader beta/resource coverage are intentionally excluded from the first release candidate.
+- Broader beta/resource coverage is intentionally excluded from the first release candidate.
 
 ## Versioning policy
 

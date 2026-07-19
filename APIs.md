@@ -28,7 +28,7 @@ Status legend:
 | Status | Method | Path | SDK API | Notes |
 |---|---|---|---|---|
 | [x] | POST | `/chat/completions` | `client.chat.send`, `client.chat.stream`, `client.createChatCompletion*` | Non-streaming and SSE streaming chat completions, plus client-side fallback helpers. |
-| [x] | POST | `/responses` | `client.responses.create`, `client.responses.stream`, `client.createResponse*` | Non-streaming and beta SSE Responses API. Raw typed events expose text and function argument deltas; tool-result submission/output parity remains deferred. |
+| [x] | POST | `/responses` | `client.responses.create`, `client.responses.stream`, `client.createResponse*` | Non-streaming and beta SSE Responses API, including flat function tools and stateless function-call/output and reasoning replay. Raw typed events expose text and function argument deltas. |
 | [x] | POST | `/embeddings` | `client.embeddings.create`, `client.createEmbeddings` | Text embedding requests. |
 | [x] | POST | `/completions` | `client.createCompletion` | Legacy OpenAI-compatible text completions endpoint. |
 | [x] | GET | `/generation` | `client.generations.get`, `client.getGeneration`, `client.getGenerationRaw` | Gets request and usage metadata for a generation. |
@@ -44,7 +44,7 @@ Status legend:
 | Status | Method | Path | Operation | Description | SDK notes |
 |---|---|---|---|---|---|
 | [x] | POST | `/chat/completions` | `sendChatCompletionRequest` | Create a chat completion. | Implemented in `OpenRouterClient.createChatCompletion`; resource aliases: `client.chat.send` and `client.chat.stream`. Streaming uses the same endpoint with `stream: true`. |
-| [x] | POST | `/responses` | `createResponses` | Create a response using the Responses API style. | Implemented in `OpenRouterClient.createResponse` and `createResponseStream`; resource aliases: `client.responses.create` and `client.responses.stream`. Beta SSE streaming forwards raw typed events, including text and function argument deltas. Tool-result submission/output parity remains deferred. |
+| [x] | POST | `/responses` | `createResponses` | Create a response using the Responses API style. | Implemented in `OpenRouterClient.createResponse` and `createResponseStream`; resource aliases: `client.responses.create` and `client.responses.stream`. Supports flat function tools plus stateless function-call/output and reasoning replay, and beta SSE typed/raw events. |
 | [ ] | POST | `/messages` | `createMessages` | Create an Anthropic-compatible message. |  |
 | [x] | POST | `/embeddings` | `createEmbeddings` | Submit an embedding request. | Implemented in `OpenRouterClient.createEmbeddings`; resource alias: `client.embeddings.create`. |
 | [ ] | GET | `/embeddings/models` | `listEmbeddingsModels` | List embedding models. |  |
