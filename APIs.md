@@ -67,6 +67,7 @@ Status legend:
 | Status | Method | Path | Operation | Description | SDK notes |
 |---|---|---|---|---|---|
 | [x] | GET | `/models` | `getModels` | List all models and their properties. | Implemented in `OpenRouterClient.listModels`; resource alias: `client.models.list`. |
+| [ ] | GET | `/model/{author}/{slug}` | `getModelBySlug` | Get full details for one model. | Distinct from `/models/{author}/{slug}/endpoints`. |
 | [ ] | GET | `/models/count` | `listModelsCount` | Get the total count of available models. |  |
 | [ ] | GET | `/models/user` | `listModelsUser` | List models filtered by user preferences, privacy, or guardrails. |  |
 | [x] | GET | `/models/{author}/{slug}/endpoints` | `listEndpoints` | List endpoints for a specific model. | Implemented in `OpenRouterClient.listModelEndpoints`; resource alias: `client.endpoints.list`. |
@@ -78,7 +79,6 @@ Status legend:
 | Status | Method | Path | Operation | Description | SDK notes |
 |---|---|---|---|---|---|
 | [x] | GET | `/credits` | `getCredits` | Get remaining credits. | Implemented in `OpenRouterClient.getCredits`; resource alias: `client.credits.get`. Requires a management API key. |
-| [ ] | POST | `/credits/coinbase` | `createCoinbaseCharge` | Create a Coinbase Commerce charge. Deprecated. |  |
 | [x] | GET | `/generation` | `getGeneration` | Get request and usage metadata for a generation. | Implemented in `OpenRouterClient.getGeneration`; resource alias: `client.generations.get`. Also has `getGenerationRaw`. |
 | [x] | GET | `/generation/content` | `listGenerationContent` | Get stored prompt/completion content for a generation. | Implemented in `OpenRouterClient.listGenerationContent`; resource alias: `client.generations.content`. Also has `listGenerationContentRaw`. |
 | [ ] | GET | `/activity` | `getUserActivity` | Get user activity grouped by endpoint. Requires a management API key. |  |
@@ -143,13 +143,19 @@ Status legend:
 | [ ] | PATCH | `/observability/destinations/{id}` | `updateObservabilityDestination` | Update an observability destination. |  |
 | [ ] | DELETE | `/observability/destinations/{id}` | `deleteObservabilityDestination` | Delete an observability destination. |  |
 
-## Preset-based Inference Endpoints
+## Files
 
 | Status | Method | Path | Operation | Description | SDK notes |
 |---|---|---|---|---|---|
-| [ ] | POST | `/presets/{slug}/chat/completions` | `createPresetsChatCompletions` | Create a preset from a chat completions request body. |  |
-| [ ] | POST | `/presets/{slug}/messages` | `createPresetsMessages` | Create a preset from a messages request body. |  |
-| [ ] | POST | `/presets/{slug}/responses` | `createPresetsResponses` | Create a preset from a responses request body. |  |
+| [ ] | POST | `/files` | `uploadFile` | Upload a file for later API calls. |  |
+
+## Preset Configuration Endpoints
+
+| Status | Method | Path | Operation | Description | SDK notes |
+|---|---|---|---|---|---|
+| [ ] | POST | `/presets/{slug}/chat/completions` | `createPresetsChatCompletions` | Create or update a preset from a chat-completions-shaped body. | Does not execute inference. |
+| [ ] | POST | `/presets/{slug}/messages` | `createPresetsMessages` | Create or update a preset from a Messages-shaped body. | Does not execute inference. |
+| [ ] | POST | `/presets/{slug}/responses` | `createPresetsResponses` | Create or update a preset from a Responses-shaped body. | Does not execute inference. |
 
 ## Notes
 
