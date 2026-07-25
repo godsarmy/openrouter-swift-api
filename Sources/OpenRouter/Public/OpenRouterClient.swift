@@ -144,6 +144,13 @@ public struct OpenRouterClient: Sendable {
     )
   }
 
+  public func createRerank(_ request: RerankRequest, options: RequestOptions? = nil) async throws
+    -> RerankResponse
+  {
+    try await transport.post(
+      path: "rerank", requestBody: request, responseType: RerankResponse.self, options: options)
+  }
+
   public func createResponse(
     _ request: ResponsesRequest,
     options: RequestOptions? = nil
@@ -384,6 +391,7 @@ extension OpenRouterClient {
   public var responses: ResponsesResource { ResponsesResource(client: self) }
   public var messages: MessagesResource { MessagesResource(client: self) }
   public var embeddings: EmbeddingsResource { EmbeddingsResource(client: self) }
+  public var rerank: RerankResource { RerankResource(client: self) }
   public var generations: GenerationsResource { GenerationsResource(client: self) }
   public var models: ModelsResource { ModelsResource(client: self) }
   public var credits: CreditsResource { CreditsResource(client: self) }
@@ -443,6 +451,13 @@ extension OpenRouterClient {
     ) async throws -> EmbeddingResponse {
       try await client.createEmbeddings(request, options: options)
     }
+  }
+
+  public struct RerankResource: Sendable {
+    fileprivate let client: OpenRouterClient
+    public func create(_ request: RerankRequest, options: RequestOptions? = nil) async throws
+      -> RerankResponse
+    { try await client.createRerank(request, options: options) }
   }
 
   public struct GenerationsResource: Sendable {

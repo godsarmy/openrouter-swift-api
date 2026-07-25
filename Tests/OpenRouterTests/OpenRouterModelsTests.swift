@@ -333,6 +333,24 @@ final class OpenRouterModelsTests: XCTestCase {
     XCTAssertEqual(((json["system"] as? [[String: Any]])?.first)?["type"] as? String, "text")
   }
 
+  func testRerankRequestEncodesDocumentsAndProvider() throws {
+    let request = RerankRequest(
+      model: "cohere/rerank", query: "swift",
+      documents: [
+        .text("Swift language"),
+        .object(.init(text: "Guide", image: "https://example.com/image.png")),
+      ],
+      topN: 2, provider: .init(order: ["cohere"]))
+    let json = try XCTUnwrap(
+      JSONSerialization.jsonObject(with: JSONEncoder().encode(request)) as? [String: Any])
+    XCTAssertEqual(json["top_n"] as? Int, 2)
+    let documents = try XCTUnwrap(json["documents"] as? [Any])
+    XCTAssertEqual(documents[0] as? String, "Swift language")
+    XCTAssertEqual(
+      (documents[1] as? [String: Any])?["image"] as? String, "https://example.com/image.png")
+    XCTAssertEqual((json["provider"] as? [String: Any])?["order"] as? [String], ["cohere"])
+  }
+
   func testDecodedMessagesToolPreservesExtensionFields() throws {
     let tool = try JSONDecoder().decode(
       MessagesTool.self,

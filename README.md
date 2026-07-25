@@ -77,6 +77,13 @@ for try await event in client.messages.stream(.init(
 }
 // Unknown Messages blocks and SSE fields remain available through raw payload values.
 
+// Rerank documents by relevance.
+let reranked = try await client.rerank.create(.init(
+  model: "cohere/rerank-v3.5", query: "Swift concurrency",
+  documents: [.text("Actors protect mutable state."), .object(.init(text: "Structured concurrency guide"))],
+  topN: 2
+))
+
 // Beta Responses API SSE streaming; events retain their raw payload for forward compatibility.
 for try await event in client.responses.stream(.init(model: "openai/o4-mini", input: .text("hello"))) {
   if event.type == "response.output_text.delta" || event.type == "response.content_part.delta" {
@@ -166,7 +173,7 @@ let structured = try await client.chat.send(.init(
 ## Current limitations
 
 - Beta Responses API SSE streaming is available via `client.responses.stream` with forward-compatible raw typed events, including text and function argument deltas. Provider-specific beta event fields may still require `rawPayload`.
-- The Swift SDK prioritizes mobile-relevant TypeScript SDK resources; broader resources such as organization/workspaces, guardrails, rerank, TTS/STT, video generation, analytics, and beta namespaces are not yet implemented.
+- The Swift SDK prioritizes mobile-relevant TypeScript SDK resources; broader resources such as organization/workspaces, guardrails, TTS/STT, video generation, analytics, and beta namespaces are not yet implemented.
 - The SSE parser supports OpenRouter chat streams and has basic multi-line frame parsing helpers; broader SSE metadata is currently ignored by the streaming client.
 
 ## Roadmap

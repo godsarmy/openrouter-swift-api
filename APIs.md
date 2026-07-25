@@ -48,7 +48,7 @@ Status legend:
 | [x] | POST | `/messages` | `createMessages` | Create an Anthropic-compatible message. | Implemented in `OpenRouterClient.createMessage` and `createMessageStream`; resource aliases: `client.messages.create` and `client.messages.stream`. Supports typed native tools/content blocks and raw unknown extensions. |
 | [x] | POST | `/embeddings` | `createEmbeddings` | Submit an embedding request. | Implemented in `OpenRouterClient.createEmbeddings`; resource alias: `client.embeddings.create`. |
 | [ ] | GET | `/embeddings/models` | `listEmbeddingsModels` | List embedding models. |  |
-| [ ] | POST | `/rerank` | `createRerank` | Submit a rerank request. |  |
+| [x] | POST | `/rerank` | `createRerank` | Submit a rerank request. | Implemented in `OpenRouterClient.createRerank`; resource alias: `client.rerank.create`. |
 | [ ] | POST | `/audio/speech` | `createAudioSpeech` | Create speech from text. |  |
 | [ ] | POST | `/audio/transcriptions` | `createAudioTranscriptions` | Create a transcription from audio. |  |
 | [ ] | POST | `/videos` | `createVideos` | Submit a video generation request. |  |

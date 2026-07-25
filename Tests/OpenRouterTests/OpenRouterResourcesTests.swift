@@ -176,6 +176,37 @@ final class OpenRouterResourcesTests: XCTestCase {
     XCTAssertEqual(result.content, [.text("ok")])
   }
 
+  func testRerankBuildsRequestAndDecodesResponse() async throws {
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.httpMethod, "POST")
+      XCTAssertEqual(request.url?.path, "/api/v1/rerank")
+      XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-key")
+      let json = try XCTUnwrap(
+        JSONSerialization.jsonObject(with: try XCTUnwrap(request.httpBody)) as? [String: Any])
+      XCTAssertEqual(json["top_n"] as? Int, 1)
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      return (
+        response,
+        #"{"id":"rr_1","model":"cohere/rerank","results":[{"index":1,"relevance_score":0.98,"document":{"text":"match","extension":true}}],"usage":{"cost":0.01,"search_units":2,"total_tokens":7,"extra":"kept"}}"#
+          .data(using: .utf8)!
+      )
+    }
+    let result = try await makeClient().rerank.create(
+      .init(
+        model: "cohere/rerank", query: "q", documents: [.text("a"), .object(.init(text: "match"))],
+        topN: 1))
+    XCTAssertEqual(result.id, "rr_1")
+    XCTAssertEqual(result.results.first?.index, 1)
+    XCTAssertEqual(result.results.first?.relevanceScore, 0.98)
+    XCTAssertEqual(result.results.first?.document.text, "match")
+    XCTAssertEqual(
+      result.results.first?.document.rawPayload,
+      .object(["text": .string("match"), "extension": .bool(true)]))
+    XCTAssertEqual(result.usage?.searchUnits, 2)
+    XCTAssertEqual(result.usage?.totalTokens, 7)
+  }
+
   func testCreateResponseReplaysFunctionCallAndOutput() async throws {
     URLProtocolResourcesStub.handler = { request in
       XCTAssertEqual(request.httpMethod, "POST")
