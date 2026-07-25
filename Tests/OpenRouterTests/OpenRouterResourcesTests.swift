@@ -132,6 +132,85 @@ final class OpenRouterResourcesTests: XCTestCase {
     }
   }
 
+  func testAudioTranscriptionBuildsMultipartRequestAndDecodesVerboseResponse() async throws {
+    let audio = Data([0x52, 0x49, 0x46, 0x46])
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.httpMethod, "POST")
+      XCTAssertEqual(request.url?.path, "/api/v1/audio/transcriptions")
+      XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-key")
+      let contentType = try XCTUnwrap(request.value(forHTTPHeaderField: "Content-Type"))
+      XCTAssertTrue(contentType.hasPrefix("multipart/form-data; boundary="))
+      let body = try XCTUnwrap(request.httpBody)
+      let payload = String(decoding: body, as: UTF8.self)
+      XCTAssertTrue(payload.contains("name=\"file\"; filename=\"sample.wav\""))
+      XCTAssertTrue(payload.contains("Content-Type: audio/wav"))
+      XCTAssertTrue(payload.contains("name=\"model\"\r\n\r\nopenai/whisper"))
+      XCTAssertTrue(payload.contains("name=\"language\"\r\n\r\nen"))
+      XCTAssertTrue(payload.contains("name=\"temperature\"\r\n\r\n0.25"))
+      XCTAssertTrue(payload.contains("name=\"response_format\"\r\n\r\nverbose_json"))
+      let granularities = payload.components(
+        separatedBy: "name=\"timestamp_granularities[]\"")
+      XCTAssertEqual(granularities.count - 1, 2)
+      XCTAssertTrue(payload.contains("name=\"prompt\"\r\n\r\nNames and places"))
+      XCTAssertNotNil(body.range(of: audio))
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      let json =
+        #"{"text":"Hello world","usage":{"seconds":1.5,"total_tokens":7,"#
+        + #""input_tokens":5,"output_tokens":2,"cost":0.01},"#
+        + #""segments":[{"text":"Hello world"}]}"#
+      return (response, json.data(using: .utf8)!)
+    }
+
+    let result = try await makeClient().audio.transcribe(
+      .init(
+        file: .init(data: audio, filename: "sample.wav", mediaType: "audio/wav"),
+        model: "openai/whisper", language: "en", temperature: 0.25,
+        responseFormat: .verboseJSON,
+        timestampGranularities: [.segment, .word], prompt: "Names and places"))
+    XCTAssertEqual(result.text, "Hello world")
+    XCTAssertEqual(result.usage?.seconds, 1.5)
+    XCTAssertEqual(result.usage?.totalTokens, 7)
+    XCTAssertEqual(result.usage?.inputTokens, 5)
+    XCTAssertEqual(result.usage?.outputTokens, 2)
+    XCTAssertEqual(result.usage?.cost, 0.01)
+    XCTAssertEqual(
+      result.rawPayload,
+      .object([
+        "text": .string("Hello world"),
+        "usage": .object([
+          "seconds": .number(1.5), "total_tokens": .number(7),
+          "input_tokens": .number(5), "output_tokens": .number(2),
+          "cost": .number(0.01),
+        ]),
+        "segments": .array([.object(["text": .string("Hello world")])]),
+      ]))
+  }
+
+  func testAudioTranscriptionMapsJSONErrorResponse() async throws {
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.url?.path, "/api/v1/audio/transcriptions")
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 400, httpVersion: nil, headerFields: nil)!
+      let errorJson =
+        #"{"error":{"code":400,"message":"invalid audio"}}"#
+      return (response, errorJson.data(using: .utf8)!)
+    }
+    do {
+      _ = try await makeClient().createAudioTranscriptions(
+        .init(
+          file: .init(data: Data(), filename: "empty.wav"), model: "m"))
+      XCTFail("Expected apiError")
+    } catch let error as OpenRouterError {
+      guard case .apiError(let status, let code, let message, _) = error else {
+        return XCTFail("Unexpected error: \(error)")
+      }
+      XCTAssertEqual(status, 400)
+      XCTAssertEqual(code, 400)
+      XCTAssertEqual(message, "invalid audio")
+    }
+  }
+
   func testGetCreditsDecodesWrappedCreditsPayload() async throws {
     URLProtocolResourcesStub.handler = { request in
       XCTAssertEqual(request.httpMethod, "GET")

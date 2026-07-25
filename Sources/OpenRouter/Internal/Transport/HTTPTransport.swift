@@ -37,6 +37,33 @@ struct HTTPTransport: @unchecked Sendable {
     return try decodeDataResponse(data: data, response: response)
   }
 
+  func postMultipart<Response: Decodable>(
+    path: String,
+    body: Data,
+    boundary: String,
+    responseType: Response.Type,
+    options: RequestOptions? = nil
+  ) async throws -> Response {
+    guard let apiKey = configuration.apiKey, !apiKey.isEmpty else {
+      throw OpenRouterError.missingAPIKey
+    }
+    let url = (options?.baseURL ?? configuration.baseURL).appendingPathComponent(path)
+    var request = URLRequest(url: url)
+    request.httpMethod = "POST"
+    request.timeoutInterval = options?.timeout ?? configuration.timeout
+    request.setValue(
+      "multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+    request.setValue("application/json", forHTTPHeaderField: "Accept")
+    request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+    applyCommonHeaders(to: &request)
+    applyExtraHeaders(options?.extraHeaders ?? [:], to: &request)
+    request.httpBody = body
+
+    log(.init(message: "request", method: "POST", path: redactedPath(from: request)))
+    let (data, response) = try await execute(request: request, options: options)
+    return try decodeResponse(data: data, response: response, responseType: responseType)
+  }
+
   func get<Response: Decodable>(
     path: String,
     queryItems: [URLQueryItem] = [],

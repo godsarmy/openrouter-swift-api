@@ -156,6 +156,49 @@ public struct OpenRouterClient: Sendable {
     )
   }
 
+  public func createAudioTranscriptions(
+    _ request: AudioTranscriptionRequest,
+    options: RequestOptions? = nil
+  ) async throws -> AudioTranscriptionResponse {
+    let boundary = "OpenRouterBoundary-\(UUID().uuidString)"
+    return try await transport.postMultipart(
+      path: "audio/transcriptions",
+      body: makeAudioTranscriptionMultipartBody(request, boundary: boundary),
+      boundary: boundary,
+      responseType: AudioTranscriptionResponse.self,
+      options: options
+    )
+  }
+
+  private func makeAudioTranscriptionMultipartBody(
+    _ request: AudioTranscriptionRequest, boundary: String
+  ) -> Data {
+    var body = Data()
+    func append(_ value: String) { body.append(contentsOf: value.utf8) }
+    func field(_ name: String, _ value: String) {
+      append(
+        "--\(boundary)\r\nContent-Disposition: form-data; name=\"\(name)\"\r\n\r\n\(value)\r\n")
+    }
+    let filename = request.file.filename.replacingOccurrences(of: "\"", with: "%22")
+    append("--\(boundary)\r\n")
+    append("Content-Disposition: form-data; name=\"file\"; filename=\"\(filename)\"\r\n")
+    append("Content-Type: \(request.file.mediaType ?? "application/octet-stream")\r\n\r\n")
+    body.append(request.file.data)
+    append("\r\n")
+    field("model", request.model)
+    if let language = request.language { field("language", language) }
+    if let temperature = request.temperature { field("temperature", String(temperature)) }
+    if let responseFormat = request.responseFormat {
+      field("response_format", responseFormat.rawValue)
+    }
+    for granularity in request.timestampGranularities ?? [] {
+      field("timestamp_granularities[]", granularity.rawValue)
+    }
+    if let prompt = request.prompt { field("prompt", prompt) }
+    append("--\(boundary)--\r\n")
+    return body
+  }
+
   public func listEmbeddingsModels(
     offset: Int? = nil,
     limit: Int? = nil,
@@ -498,6 +541,13 @@ extension OpenRouterClient {
       options: RequestOptions? = nil
     ) async throws -> Data {
       try await client.createAudioSpeech(request, options: options)
+    }
+
+    public func transcribe(
+      _ request: AudioTranscriptionRequest,
+      options: RequestOptions? = nil
+    ) async throws -> AudioTranscriptionResponse {
+      try await client.createAudioTranscriptions(request, options: options)
     }
   }
 

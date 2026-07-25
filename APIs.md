@@ -52,7 +52,7 @@ Status legend:
 | [x] | GET | `/embeddings/models` | `listEmbeddingsModels` | List embedding models. | Implemented in `OpenRouterClient.listEmbeddingsModels`; resource alias: `client.embeddings.listModels`. Supports optional `offset` and `limit` pagination parameters. |
 | [x] | POST | `/rerank` | `createRerank` | Submit a rerank request. | Implemented in `OpenRouterClient.createRerank`; resource alias: `client.rerank.create`. |
 | [x] | POST | `/audio/speech` | `createAudioSpeech` | Create speech from text. | Implemented in `OpenRouterClient.createAudioSpeech`; resource alias: `client.audio.speech`. Returns raw audio bytes. |
-| [ ] | POST | `/audio/transcriptions` | `createAudioTranscriptions` | Create a transcription from audio. |  |
+| [x] | POST | `/audio/transcriptions` | `createAudioTranscriptions` | Create a transcription from audio. | Implemented in `OpenRouterClient.createAudioTranscriptions`; resource alias: `client.audio.transcribe`. |
 | [ ] | POST | `/videos` | `createVideos` | Submit a video generation request. |  |
 | [ ] | GET | `/videos/{jobId}` | `getVideos` | Poll video generation job status. |  |
 | [ ] | GET | `/videos/{jobId}/content` | `listVideosContent` | Download generated video content. |  |
