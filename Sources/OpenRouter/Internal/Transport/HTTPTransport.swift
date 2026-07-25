@@ -25,6 +25,18 @@ struct HTTPTransport: @unchecked Sendable {
     return try decodeResponse(data: data, response: response, responseType: responseType)
   }
 
+  func postData<Request: Encodable>(
+    path: String,
+    requestBody: Request,
+    accept: String,
+    options: RequestOptions? = nil
+  ) async throws -> Data {
+    let request = try buildRequest(path: path, body: requestBody, accept: accept, options: options)
+    log(.init(message: "request", method: "POST", path: redactedPath(from: request)))
+    let (data, response) = try await execute(request: request, options: options)
+    return try decodeDataResponse(data: data, response: response)
+  }
+
   func get<Response: Decodable>(
     path: String,
     queryItems: [URLQueryItem] = [],
@@ -40,6 +52,7 @@ struct HTTPTransport: @unchecked Sendable {
   func buildRequest<Body: Encodable>(
     path: String,
     body: Body,
+    accept: String = "application/json",
     options: RequestOptions? = nil
   ) throws -> URLRequest {
     guard let apiKey = configuration.apiKey, !apiKey.isEmpty else {
@@ -52,7 +65,7 @@ struct HTTPTransport: @unchecked Sendable {
     request.httpMethod = "POST"
     request.timeoutInterval = options?.timeout ?? configuration.timeout
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-    request.setValue("application/json", forHTTPHeaderField: "Accept")
+    request.setValue(accept, forHTTPHeaderField: "Accept")
     request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
 
     applyCommonHeaders(to: &request)
@@ -132,6 +145,20 @@ struct HTTPTransport: @unchecked Sendable {
       } catch {
         throw OpenRouterError.decodingFailed(statusCode: http.statusCode, underlying: error)
       }
+    }
+
+    log(.init(message: "api_error", statusCode: http.statusCode))
+    throw mapAPIError(statusCode: http.statusCode, data: data)
+  }
+
+  private func decodeDataResponse(data: Data, response: URLResponse) throws -> Data {
+    guard let http = response as? HTTPURLResponse else {
+      throw OpenRouterError.invalidResponse
+    }
+
+    if (200..<300).contains(http.statusCode) {
+      log(.init(message: "response", statusCode: http.statusCode))
+      return data
     }
 
     log(.init(message: "api_error", statusCode: http.statusCode))

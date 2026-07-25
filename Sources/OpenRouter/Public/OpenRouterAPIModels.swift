@@ -571,6 +571,46 @@ public struct EmbeddingData: Codable, Sendable, Equatable {
   }
 }
 
+public struct AudioSpeechRequest: Codable, Sendable, Equatable {
+  public var model: String
+  public var input: String
+  public var voice: String
+  public var responseFormat: AudioSpeechResponseFormat?
+  public var speed: Double?
+  /// Provider-specific passthrough options, preserved without imposing chat routing semantics.
+  public var provider: JSONValue?
+
+  enum CodingKeys: String, CodingKey {
+    case model
+    case input
+    case voice
+    case responseFormat = "response_format"
+    case speed
+    case provider
+  }
+
+  public init(
+    model: String,
+    input: String,
+    voice: String,
+    responseFormat: AudioSpeechResponseFormat? = nil,
+    speed: Double? = nil,
+    provider: JSONValue? = nil
+  ) {
+    self.model = model
+    self.input = input
+    self.voice = voice
+    self.responseFormat = responseFormat
+    self.speed = speed
+    self.provider = provider
+  }
+}
+
+public enum AudioSpeechResponseFormat: String, Codable, Sendable, Equatable {
+  case mp3
+  case pcm
+}
+
 public struct ResponsesRequest: Codable, Sendable, Equatable {
   public var model: String
   public var input: ResponsesInput

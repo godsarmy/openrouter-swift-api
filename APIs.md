@@ -31,6 +31,7 @@ Status legend:
 | [x] | POST | `/responses` | `client.responses.create`, `client.responses.stream`, `client.createResponse*` | Non-streaming and beta SSE Responses API, including flat function tools and stateless function-call/output and reasoning replay. Raw typed events expose text and function argument deltas. |
 | [x] | POST | `/embeddings` | `client.embeddings.create`, `client.createEmbeddings` | Text embedding requests. |
 | [x] | GET | `/embeddings/models` | `client.embeddings.listModels`, `client.listEmbeddingsModels` | Lists embedding models with pagination. |
+| [x] | POST | `/audio/speech` | `client.audio.speech`, `client.createAudioSpeech` | Creates speech and returns raw audio bytes. |
 | [x] | POST | `/completions` | `client.createCompletion` | Legacy OpenAI-compatible text completions endpoint. |
 | [x] | GET | `/generation` | `client.generations.get`, `client.getGeneration`, `client.getGenerationRaw` | Gets request and usage metadata for a generation. |
 | [x] | GET | `/generation/content` | `client.generations.content`, `client.listGenerationContent`, `client.listGenerationContentRaw` | Gets stored prompt/completion content for a generation. |
@@ -50,7 +51,7 @@ Status legend:
 | [x] | POST | `/embeddings` | `createEmbeddings` | Submit an embedding request. | Implemented in `OpenRouterClient.createEmbeddings`; resource alias: `client.embeddings.create`. |
 | [x] | GET | `/embeddings/models` | `listEmbeddingsModels` | List embedding models. | Implemented in `OpenRouterClient.listEmbeddingsModels`; resource alias: `client.embeddings.listModels`. Supports optional `offset` and `limit` pagination parameters. |
 | [x] | POST | `/rerank` | `createRerank` | Submit a rerank request. | Implemented in `OpenRouterClient.createRerank`; resource alias: `client.rerank.create`. |
-| [ ] | POST | `/audio/speech` | `createAudioSpeech` | Create speech from text. |  |
+| [x] | POST | `/audio/speech` | `createAudioSpeech` | Create speech from text. | Implemented in `OpenRouterClient.createAudioSpeech`; resource alias: `client.audio.speech`. Returns raw audio bytes. |
 | [ ] | POST | `/audio/transcriptions` | `createAudioTranscriptions` | Create a transcription from audio. |  |
 | [ ] | POST | `/videos` | `createVideos` | Submit a video generation request. |  |
 | [ ] | GET | `/videos/{jobId}` | `getVideos` | Poll video generation job status. |  |

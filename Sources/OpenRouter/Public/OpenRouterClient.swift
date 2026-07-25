@@ -144,6 +144,18 @@ public struct OpenRouterClient: Sendable {
     )
   }
 
+  public func createAudioSpeech(
+    _ request: AudioSpeechRequest,
+    options: RequestOptions? = nil
+  ) async throws -> Data {
+    try await transport.postData(
+      path: "audio/speech",
+      requestBody: request,
+      accept: "audio/mpeg, audio/pcm",
+      options: options
+    )
+  }
+
   public func listEmbeddingsModels(
     offset: Int? = nil,
     limit: Int? = nil,
@@ -407,6 +419,7 @@ extension OpenRouterClient {
   public var responses: ResponsesResource { ResponsesResource(client: self) }
   public var messages: MessagesResource { MessagesResource(client: self) }
   public var embeddings: EmbeddingsResource { EmbeddingsResource(client: self) }
+  public var audio: AudioResource { AudioResource(client: self) }
   public var rerank: RerankResource { RerankResource(client: self) }
   public var generations: GenerationsResource { GenerationsResource(client: self) }
   public var models: ModelsResource { ModelsResource(client: self) }
@@ -474,6 +487,17 @@ extension OpenRouterClient {
       options: RequestOptions? = nil
     ) async throws -> EmbeddingsModelsResponse {
       try await client.listEmbeddingsModels(offset: offset, limit: limit, options: options)
+    }
+  }
+
+  public struct AudioResource: Sendable {
+    fileprivate let client: OpenRouterClient
+
+    public func speech(
+      _ request: AudioSpeechRequest,
+      options: RequestOptions? = nil
+    ) async throws -> Data {
+      try await client.createAudioSpeech(request, options: options)
     }
   }
 

@@ -83,6 +83,55 @@ final class OpenRouterResourcesTests: XCTestCase {
     XCTAssertEqual(result.links.next, "cursor-2")
   }
 
+  func testAudioSpeechBuildsRequestAndReturnsAudioBytes() async throws {
+    let audio = Data([0x49, 0x44, 0x33, 0x04])
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.httpMethod, "POST")
+      XCTAssertEqual(request.url?.path, "/api/v1/audio/speech")
+      XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-key")
+      XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "audio/mpeg, audio/pcm")
+      let body = try XCTUnwrap(request.httpBody)
+      let json = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
+      XCTAssertEqual(json["model"] as? String, "openai/gpt-4o-mini-tts")
+      XCTAssertEqual(json["input"] as? String, "Hello")
+      XCTAssertEqual(json["voice"] as? String, "alloy")
+      XCTAssertEqual(json["response_format"] as? String, "pcm")
+      XCTAssertEqual(json["speed"] as? Double, 1.25)
+      XCTAssertEqual((json["provider"] as? [String: Any])?["voice"] as? String, "custom")
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil,
+        headerFields: ["Content-Type": "audio/pcm"])!
+      return (response, audio)
+    }
+
+    let result = try await makeClient().audio.speech(
+      .init(
+        model: "openai/gpt-4o-mini-tts", input: "Hello", voice: "alloy", responseFormat: .pcm,
+        speed: 1.25, provider: .object(["voice": .string("custom")])))
+    XCTAssertEqual(result, audio)
+  }
+
+  func testAudioSpeechMapsJSONErrorResponse() async throws {
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.url?.path, "/api/v1/audio/speech")
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 400, httpVersion: nil, headerFields: nil)!
+      return (response, #"{"error":{"code":400,"message":"invalid voice"}}"#.data(using: .utf8)!)
+    }
+
+    do {
+      _ = try await makeClient().createAudioSpeech(.init(model: "m", input: "hi", voice: "bad"))
+      XCTFail("Expected apiError")
+    } catch let error as OpenRouterError {
+      guard case .apiError(let status, let code, let message, _) = error else {
+        return XCTFail("Unexpected error: \(error)")
+      }
+      XCTAssertEqual(status, 400)
+      XCTAssertEqual(code, 400)
+      XCTAssertEqual(message, "invalid voice")
+    }
+  }
+
   func testGetCreditsDecodesWrappedCreditsPayload() async throws {
     URLProtocolResourcesStub.handler = { request in
       XCTAssertEqual(request.httpMethod, "GET")
