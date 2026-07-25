@@ -49,7 +49,7 @@ public struct ChatCompletionRequest: Codable, Sendable, Equatable {
     streamOptions: StreamOptions? = nil,
     serviceTier: String? = nil,
     sessionID: String? = nil,
-    parallelToolCalls: Bool? = nil,
+    parallelToolCalls: Bool? = nil
   ) {
     self.model = model
     self.models = models
