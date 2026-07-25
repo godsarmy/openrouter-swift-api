@@ -1883,6 +1883,33 @@ public struct ModelsResponse: Codable, Sendable, Equatable {
   }
 }
 
+/// A paginated list of embedding-capable models.
+public struct EmbeddingsModelsResponse: Codable, Sendable, Equatable {
+  public var data: [OpenRouterModel]
+  public var links: Links
+  public var totalCount: Int
+
+  enum CodingKeys: String, CodingKey {
+    case data
+    case links
+    case totalCount = "total_count"
+  }
+
+  public init(data: [OpenRouterModel], links: Links, totalCount: Int) {
+    self.data = data
+    self.links = links
+    self.totalCount = totalCount
+  }
+
+  public struct Links: Codable, Sendable, Equatable {
+    public var next: String?
+
+    public init(next: String? = nil) {
+      self.next = next
+    }
+  }
+}
+
 public struct OpenRouterModel: Codable, Sendable, Equatable {
   public var id: String
   public var name: String?
