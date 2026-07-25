@@ -211,6 +211,67 @@ final class OpenRouterResourcesTests: XCTestCase {
     }
   }
 
+  func testCreateVideosBuildsRequestAndDecodesJob() async throws {
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.httpMethod, "POST")
+      XCTAssertEqual(request.url?.path, "/api/v1/videos")
+      XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-key")
+      let json = try XCTUnwrap(
+        JSONSerialization.jsonObject(with: try XCTUnwrap(request.httpBody)) as? [String: Any])
+      XCTAssertEqual(json["model"] as? String, "google/veo-3")
+      XCTAssertEqual(json["prompt"] as? String, "A mountain sunrise")
+      XCTAssertEqual(json["aspect_ratio"] as? String, "16:9")
+      XCTAssertEqual(json["duration"] as? Int, 8)
+      XCTAssertEqual(json["resolution"] as? String, "1080p")
+      XCTAssertEqual(json["size"] as? String, "large")
+      XCTAssertEqual(json["generate_audio"] as? Bool, true)
+      XCTAssertEqual(json["seed"] as? Int, 42)
+      XCTAssertEqual(json["callback_url"] as? String, "https://example.com/callback")
+      XCTAssertEqual(
+        (json["frame_images"] as? [[String: Any]])?.first?["url"] as? String,
+        "https://example.com/frame.png")
+      XCTAssertEqual(
+        (json["input_references"] as? [[String: Any]])?.first?["type"] as? String, "image")
+      XCTAssertEqual((json["provider"] as? [String: Any])?["quality"] as? String, "high")
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 202, httpVersion: nil, headerFields: nil)!
+      return (
+        response,
+        #"{"id":"video_1","polling_url":"https://api.example.com/videos/video_1","status":"in_progress","generation_id":"gen_1","error":"provider warning","unsigned_urls":["https://signed.example.com/video"],"usage":{"cost":0.25,"is_byok":false},"provider_job_id":"provider_1"}"#
+          .data(using: .utf8)!
+      )
+    }
+
+    let result = try await makeClient().videos.create(
+      .init(
+        model: "google/veo-3", prompt: "A mountain sunrise", aspectRatio: .landscape, duration: 8,
+        resolution: .p1080, size: "large", generateAudio: true, seed: 42,
+        callbackURL: "https://example.com/callback",
+        frameImages: [.object(["url": .string("https://example.com/frame.png")])],
+        inputReferences: [.object(["type": .string("image")])],
+        provider: .object(["quality": .string("high")])
+      ))
+    XCTAssertEqual(result.id, "video_1")
+    XCTAssertEqual(result.pollingURL, "https://api.example.com/videos/video_1")
+    XCTAssertEqual(result.status, .inProgress)
+    XCTAssertEqual(result.generationID, "gen_1")
+    XCTAssertEqual(result.error, "provider warning")
+    XCTAssertEqual(result.unsignedURLs, ["https://signed.example.com/video"])
+    XCTAssertEqual(result.usage, .init(cost: 0.25, isByok: false))
+    XCTAssertEqual(
+      result.rawPayload,
+      .object([
+        "id": .string("video_1"),
+        "polling_url": .string("https://api.example.com/videos/video_1"),
+        "status": .string("in_progress"),
+        "generation_id": .string("gen_1"),
+        "error": .string("provider warning"),
+        "unsigned_urls": .array([.string("https://signed.example.com/video")]),
+        "usage": .object(["cost": .number(0.25), "is_byok": .bool(false)]),
+        "provider_job_id": .string("provider_1"),
+      ]))
+  }
+
   func testGetCreditsDecodesWrappedCreditsPayload() async throws {
     URLProtocolResourcesStub.handler = { request in
       XCTAssertEqual(request.httpMethod, "GET")

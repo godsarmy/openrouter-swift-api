@@ -32,6 +32,7 @@ Status legend:
 | [x] | POST | `/embeddings` | `client.embeddings.create`, `client.createEmbeddings` | Text embedding requests. |
 | [x] | GET | `/embeddings/models` | `client.embeddings.listModels`, `client.listEmbeddingsModels` | Lists embedding models with pagination. |
 | [x] | POST | `/audio/speech` | `client.audio.speech`, `client.createAudioSpeech` | Creates speech and returns raw audio bytes. |
+| [x] | POST | `/videos` | `client.videos.create`, `client.createVideos` | Creates an asynchronous video generation job. |
 | [x] | POST | `/completions` | `client.createCompletion` | Legacy OpenAI-compatible text completions endpoint. |
 | [x] | GET | `/generation` | `client.generations.get`, `client.getGeneration`, `client.getGenerationRaw` | Gets request and usage metadata for a generation. |
 | [x] | GET | `/generation/content` | `client.generations.content`, `client.listGenerationContent`, `client.listGenerationContentRaw` | Gets stored prompt/completion content for a generation. |
@@ -53,7 +54,7 @@ Status legend:
 | [x] | POST | `/rerank` | `createRerank` | Submit a rerank request. | Implemented in `OpenRouterClient.createRerank`; resource alias: `client.rerank.create`. |
 | [x] | POST | `/audio/speech` | `createAudioSpeech` | Create speech from text. | Implemented in `OpenRouterClient.createAudioSpeech`; resource alias: `client.audio.speech`. Returns raw audio bytes. |
 | [x] | POST | `/audio/transcriptions` | `createAudioTranscriptions` | Create a transcription from audio. | Implemented in `OpenRouterClient.createAudioTranscriptions`; resource alias: `client.audio.transcribe`. |
-| [ ] | POST | `/videos` | `createVideos` | Submit a video generation request. |  |
+| [x] | POST | `/videos` | `createVideos` | Submit a video generation request. | Implemented in `OpenRouterClient.createVideos`; resource alias: `client.videos.create`. |
 | [ ] | GET | `/videos/{jobId}` | `getVideos` | Poll video generation job status. |  |
 | [ ] | GET | `/videos/{jobId}/content` | `listVideosContent` | Download generated video content. |  |
 | [ ] | GET | `/videos/models` | `listVideosModels` | List video generation models. |  |

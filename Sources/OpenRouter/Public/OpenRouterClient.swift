@@ -170,6 +170,14 @@ public struct OpenRouterClient: Sendable {
     )
   }
 
+  public func createVideos(
+    _ request: VideoRequest,
+    options: RequestOptions? = nil
+  ) async throws -> VideoResponse {
+    try await transport.post(
+      path: "videos", requestBody: request, responseType: VideoResponse.self, options: options)
+  }
+
   private func makeAudioTranscriptionMultipartBody(
     _ request: AudioTranscriptionRequest, boundary: String
   ) -> Data {
@@ -463,6 +471,7 @@ extension OpenRouterClient {
   public var messages: MessagesResource { MessagesResource(client: self) }
   public var embeddings: EmbeddingsResource { EmbeddingsResource(client: self) }
   public var audio: AudioResource { AudioResource(client: self) }
+  public var videos: VideosResource { VideosResource(client: self) }
   public var rerank: RerankResource { RerankResource(client: self) }
   public var generations: GenerationsResource { GenerationsResource(client: self) }
   public var models: ModelsResource { ModelsResource(client: self) }
@@ -556,6 +565,16 @@ extension OpenRouterClient {
     public func create(_ request: RerankRequest, options: RequestOptions? = nil) async throws
       -> RerankResponse
     { try await client.createRerank(request, options: options) }
+  }
+
+  public struct VideosResource: Sendable {
+    fileprivate let client: OpenRouterClient
+
+    public func create(_ request: VideoRequest, options: RequestOptions? = nil) async throws
+      -> VideoResponse
+    {
+      try await client.createVideos(request, options: options)
+    }
   }
 
   public struct GenerationsResource: Sendable {
