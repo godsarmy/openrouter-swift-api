@@ -55,7 +55,7 @@ Status legend:
 | [x] | POST | `/audio/speech` | `createAudioSpeech` | Create speech from text. | Implemented in `OpenRouterClient.createAudioSpeech`; resource alias: `client.audio.speech`. Returns raw audio bytes. |
 | [x] | POST | `/audio/transcriptions` | `createAudioTranscriptions` | Create a transcription from audio. | Implemented in `OpenRouterClient.createAudioTranscriptions`; resource alias: `client.audio.transcribe`. |
 | [x] | POST | `/videos` | `createVideos` | Submit a video generation request. | Implemented in `OpenRouterClient.createVideos`; resource alias: `client.videos.create`. |
-| [ ] | GET | `/videos/{jobId}` | `getVideos` | Poll video generation job status. |  |
+| [x] | GET | `/videos/{jobId}` | `getVideos` | Poll video generation job status. | Implemented in `OpenRouterClient.getVideos`; resource alias: `client.videos.get`. |
 | [ ] | GET | `/videos/{jobId}/content` | `listVideosContent` | Download generated video content. |  |
 | [ ] | GET | `/videos/models` | `listVideosModels` | List video generation models. |  |
 

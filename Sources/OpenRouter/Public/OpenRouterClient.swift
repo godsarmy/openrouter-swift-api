@@ -178,6 +178,12 @@ public struct OpenRouterClient: Sendable {
       path: "videos", requestBody: request, responseType: VideoResponse.self, options: options)
   }
 
+  public func getVideos(jobId: String, options: RequestOptions? = nil) async throws -> VideoResponse
+  {
+    try await transport.get(
+      path: "videos/\(jobId)", responseType: VideoResponse.self, options: options)
+  }
+
   private func makeAudioTranscriptionMultipartBody(
     _ request: AudioTranscriptionRequest, boundary: String
   ) -> Data {
@@ -574,6 +580,10 @@ extension OpenRouterClient {
       -> VideoResponse
     {
       try await client.createVideos(request, options: options)
+    }
+
+    public func get(jobId: String, options: RequestOptions? = nil) async throws -> VideoResponse {
+      try await client.getVideos(jobId: jobId, options: options)
     }
   }
 

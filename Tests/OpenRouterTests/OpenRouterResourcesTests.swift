@@ -272,6 +272,27 @@ final class OpenRouterResourcesTests: XCTestCase {
       ]))
   }
 
+  func testGetVideosBuildsRequestAndDecodesCompletedJob() async throws {
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.httpMethod, "GET")
+      XCTAssertEqual(request.url?.path, "/api/v1/videos/video_1")
+      XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-key")
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      return (
+        response,
+        #"{"id":"video_1","polling_url":"https://api.example.com/videos/video_1","status":"completed","unsigned_urls":["https://signed.example.com/video.mp4"],"usage":{"cost":0.25,"is_byok":true}}"#
+          .data(using: .utf8)!
+      )
+    }
+
+    let result = try await makeClient().videos.get(jobId: "video_1")
+    XCTAssertEqual(result.id, "video_1")
+    XCTAssertEqual(result.status, .completed)
+    XCTAssertEqual(result.unsignedURLs, ["https://signed.example.com/video.mp4"])
+    XCTAssertEqual(result.usage, .init(cost: 0.25, isByok: true))
+  }
+
   func testGetCreditsDecodesWrappedCreditsPayload() async throws {
     URLProtocolResourcesStub.handler = { request in
       XCTAssertEqual(request.httpMethod, "GET")
