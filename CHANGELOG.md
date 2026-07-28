@@ -4,7 +4,7 @@ All notable changes to this package will be documented in this file.
 
 This project follows semantic versioning once public releases are tagged.
 
-## Unreleased (v0.2.0)
+## 0.2.0 - 2026-07-27
 
 - Added Anthropic-compatible Messages creation and SSE streaming APIs.
 - Expanded the beta Responses API with typed/raw events, function tools, stateless function-call/output replay, and reasoning replay support.
