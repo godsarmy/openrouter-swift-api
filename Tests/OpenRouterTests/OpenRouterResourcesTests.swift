@@ -40,6 +40,92 @@ final class OpenRouterResourcesTests: XCTestCase {
     XCTAssertEqual(result.data.first?.pricing?.inputCacheRead, "0.01")
   }
 
+  func testGetModelDecodesDetailsAndEscapesPathSegments() async throws {
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.httpMethod, "GET")
+      XCTAssertEqual(
+        URLComponents(url: try XCTUnwrap(request.url), resolvingAgainstBaseURL: false)?
+          .percentEncodedPath,
+        "/api/v1/model/open%20router%252Fbad/gpt%20mini%2Fv1")
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      return (
+        response,
+        #"{"data":{"id":"openrouter/gpt","canonical_slug":"gpt","created":1710000000,"default_parameters":{"temperature":0.7},"expiration_date":"2026-12-31","benchmarks":{"mmlu":88}}}"#
+          .data(using: .utf8)!
+      )
+    }
+
+    let result = try await makeClient().models.get(
+      author: "open router%2Fbad", slug: "gpt mini/v1")
+    XCTAssertEqual(result.data.canonicalSlug, "gpt")
+    XCTAssertEqual(result.data.created, 1_710_000_000)
+    XCTAssertEqual(result.data.defaultParameters, .object(["temperature": .number(0.7)]))
+    XCTAssertEqual(result.data.expirationDate, "2026-12-31")
+    XCTAssertEqual(result.data.benchmarks, .object(["mmlu": .number(88)]))
+  }
+
+  func testUploadFileBuildsMultipartRequestAndDecodesMetadata() async throws {
+    let bytes = Data([0x00, 0xFF, 0x42])
+    let workspaceID = UUID(uuidString: "12345678-1234-1234-1234-123456789ABC")!
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.httpMethod, "POST")
+      XCTAssertEqual(request.url?.path, "/api/v1/files")
+      XCTAssertEqual(
+        URLComponents(url: try XCTUnwrap(request.url), resolvingAgainstBaseURL: false)?
+          .queryItems?.first(where: { $0.name == "workspace_id" })?.value,
+        workspaceID.uuidString)
+      let contentType = try XCTUnwrap(request.value(forHTTPHeaderField: "Content-Type"))
+      XCTAssertTrue(contentType.hasPrefix("multipart/form-data; boundary="))
+      let body = try XCTUnwrap(request.httpBody)
+      let payload = String(decoding: body, as: UTF8.self)
+      XCTAssertTrue(payload.contains("name=\"file\"; filename=\"unsafe%22name.txt\""))
+      XCTAssertTrue(payload.contains("Content-Type: text/plain"))
+      XCTAssertNotNil(body.range(of: bytes))
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      return (
+        response,
+        #"{"id":"file_1","type":"file","filename":"unsafe name.txt","mime_type":"text/plain","size_bytes":3,"created_at":"2026-01-01T00:00:00Z","downloadable":true,"future":"kept"}"#
+          .data(using: .utf8)!
+      )
+    }
+
+    let result = try await makeClient().files.upload(
+      .init(data: bytes, filename: "unsafe\"\r\nname.txt", mediaType: "text/plain"),
+      workspaceID: workspaceID)
+    XCTAssertEqual(result.id, "file_1")
+    XCTAssertEqual(result.mimeType, "text/plain")
+    XCTAssertEqual(result.sizeBytes, 3)
+    XCTAssertEqual(
+      result.rawPayload,
+      .object([
+        "id": .string("file_1"), "type": .string("file"), "filename": .string("unsafe name.txt"),
+        "mime_type": .string("text/plain"), "size_bytes": .number(3),
+        "created_at": .string("2026-01-01T00:00:00Z"), "downloadable": .bool(true),
+        "future": .string("kept"),
+      ]))
+  }
+
+  func testUploadFileMapsAPIError() async throws {
+    URLProtocolResourcesStub.handler = { request in
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 400, httpVersion: nil, headerFields: nil)!
+      return (response, #"{"error":{"code":400,"message":"invalid file"}}"#.data(using: .utf8)!)
+    }
+    do {
+      _ = try await makeClient().uploadFile(.init(data: Data(), filename: "empty.txt"))
+      XCTFail("Expected apiError")
+    } catch let error as OpenRouterError {
+      guard case .apiError(let status, let code, let message, _) = error else {
+        return XCTFail("Unexpected error: \(error)")
+      }
+      XCTAssertEqual(status, 400)
+      XCTAssertEqual(code, 400)
+      XCTAssertEqual(message, "invalid file")
+    }
+  }
+
   func testListEmbeddingsModelsBuildsRequestAndDecodesPagination() async throws {
     URLProtocolResourcesStub.handler = { request in
       XCTAssertEqual(request.httpMethod, "GET")

@@ -34,6 +34,7 @@ Status legend:
 | [x] | POST | `/rerank` | `client.rerank.create`, `client.createRerank` | Reranks documents by relevance. |
 | [x] | POST | `/audio/speech` | `client.audio.speech`, `client.createAudioSpeech` | Creates speech and returns raw audio bytes. |
 | [x] | POST | `/audio/transcriptions` | `client.audio.transcribe`, `client.createAudioTranscriptions` | Creates an audio transcription with multipart upload. |
+| [x] | POST | `/files` | `client.files.upload`, `client.uploadFile` | Uploads a file with an optional workspace ID. |
 | [x] | POST | `/videos` | `client.videos.create`, `client.createVideos` | Creates an asynchronous video generation job. |
 | [x] | GET | `/videos/{jobId}` | `client.videos.get`, `client.getVideos` | Polls a video generation job. |
 | [x] | GET | `/videos/{jobId}/content` | `client.videos.content`, `client.listVideosContent` | Downloads buffered video data and its Content-Type. |
@@ -42,6 +43,7 @@ Status legend:
 | [x] | GET | `/generation` | `client.generations.get`, `client.getGeneration`, `client.getGenerationRaw` | Gets request and usage metadata for a generation. |
 | [x] | GET | `/generation/content` | `client.generations.content`, `client.listGenerationContent`, `client.listGenerationContentRaw` | Gets stored prompt/completion content for a generation. |
 | [x] | GET | `/models` | `client.models.list`, `client.listModels` | Lists available models. |
+| [x] | GET | `/model/{author}/{slug}` | `client.models.get`, `client.getModel` | Gets full details for one model. |
 | [x] | GET | `/credits` | `client.credits.get`, `client.getCredits` | Gets remaining credits and usage. Requires a management API key. |
 | [x] | GET | `/providers` | `client.providers.list`, `client.listProviders` | Lists available providers. |
 | [x] | GET | `/models/{author}/{slug}/endpoints` | `client.endpoints.list`, `client.listModelEndpoints` | Lists endpoints for a specific model. |
@@ -75,7 +77,7 @@ Status legend:
 | Status | Method | Path | Operation | Description | SDK notes |
 |---|---|---|---|---|---|
 | [x] | GET | `/models` | `getModels` | List all models and their properties. | Implemented in `OpenRouterClient.listModels`; resource alias: `client.models.list`. |
-| [ ] | GET | `/model/{author}/{slug}` | `getModelBySlug` | Get full details for one model. | Distinct from `/models/{author}/{slug}/endpoints`. |
+| [x] | GET | `/model/{author}/{slug}` | `getModelBySlug` | Get full details for one model. | Implemented in `OpenRouterClient.getModel`; resource alias: `client.models.get`. Distinct from `/models/{author}/{slug}/endpoints`. |
 | [ ] | GET | `/models/count` | `listModelsCount` | Get the total count of available models. |  |
 | [ ] | GET | `/models/user` | `listModelsUser` | List models filtered by user preferences, privacy, or guardrails. |  |
 | [x] | GET | `/models/{author}/{slug}/endpoints` | `listEndpoints` | List endpoints for a specific model. | Implemented in `OpenRouterClient.listModelEndpoints`; resource alias: `client.endpoints.list`. |
@@ -155,7 +157,7 @@ Status legend:
 
 | Status | Method | Path | Operation | Description | SDK notes |
 |---|---|---|---|---|---|
-| [ ] | POST | `/files` | `uploadFile` | Upload a file for later API calls. |  |
+| [x] | POST | `/files` | `uploadFile` | Upload a file for later API calls. | Implemented in `OpenRouterClient.uploadFile`; resource alias: `client.files.upload`. |
 
 ## Preset Configuration Endpoints
 

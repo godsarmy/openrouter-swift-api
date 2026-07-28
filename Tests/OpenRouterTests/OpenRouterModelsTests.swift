@@ -3,6 +3,24 @@ import XCTest
 @testable import OpenRouter
 
 final class OpenRouterModelsTests: XCTestCase {
+  func testFileMetadataDecodesRequiredFieldsAndPreservesExtensions() throws {
+    let metadata = try JSONDecoder().decode(
+      FileMetadata.self,
+      from:
+        #"{"id":"file_1","type":"file","filename":"notes.txt","mime_type":"text/plain","size_bytes":12,"created_at":"2026-01-01T00:00:00Z","downloadable":false,"checksum":"abc"}"#
+        .data(using: .utf8)!)
+    XCTAssertEqual(metadata.filename, "notes.txt")
+    XCTAssertEqual(metadata.createdAt, "2026-01-01T00:00:00Z")
+    XCTAssertEqual(
+      metadata.rawPayload,
+      .object([
+        "id": .string("file_1"), "type": .string("file"), "filename": .string("notes.txt"),
+        "mime_type": .string("text/plain"), "size_bytes": .number(12),
+        "created_at": .string("2026-01-01T00:00:00Z"), "downloadable": .bool(false),
+        "checksum": .string("abc"),
+      ]))
+  }
+
   func testChatCompletionRequestRoundTripWithMultimodalContent() throws {
     let request = ChatCompletionRequest(
       model: "openai/gpt-4o-mini",

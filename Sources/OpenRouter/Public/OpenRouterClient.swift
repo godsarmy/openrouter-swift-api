@@ -170,6 +170,26 @@ public struct OpenRouterClient: Sendable {
     )
   }
 
+  public func uploadFile(
+    _ file: FileUpload,
+    workspaceID: UUID? = nil,
+    options: RequestOptions? = nil
+  ) async throws -> FileMetadata {
+    let boundary = "OpenRouterBoundary-\(UUID().uuidString)"
+    let queryItems =
+      workspaceID.map {
+        [URLQueryItem(name: "workspace_id", value: $0.uuidString)]
+      } ?? []
+    return try await transport.postMultipart(
+      path: "files",
+      body: makeFileUploadMultipartBody(file, boundary: boundary),
+      boundary: boundary,
+      queryItems: queryItems,
+      responseType: FileMetadata.self,
+      options: options
+    )
+  }
+
   public func createVideos(
     _ request: VideoRequest,
     options: RequestOptions? = nil
@@ -221,7 +241,7 @@ public struct OpenRouterClient: Sendable {
       append(
         "--\(boundary)\r\nContent-Disposition: form-data; name=\"\(name)\"\r\n\r\n\(value)\r\n")
     }
-    let filename = request.file.filename.replacingOccurrences(of: "\"", with: "%22")
+    let filename = sanitizeMultipartFilename(request.file.filename)
     append("--\(boundary)\r\n")
     append("Content-Disposition: form-data; name=\"file\"; filename=\"\(filename)\"\r\n")
     append("Content-Type: \(request.file.mediaType ?? "application/octet-stream")\r\n\r\n")
@@ -239,6 +259,26 @@ public struct OpenRouterClient: Sendable {
     if let prompt = request.prompt { field("prompt", prompt) }
     append("--\(boundary)--\r\n")
     return body
+  }
+
+  private func makeFileUploadMultipartBody(_ file: FileUpload, boundary: String) -> Data {
+    var body = Data()
+    func append(_ value: String) { body.append(contentsOf: value.utf8) }
+    append("--\(boundary)\r\n")
+    append(
+      "Content-Disposition: form-data; name=\"file\"; filename=\"\(sanitizeMultipartFilename(file.filename))\"\r\n"
+    )
+    append("Content-Type: \(file.mediaType ?? "application/octet-stream")\r\n\r\n")
+    body.append(file.data)
+    append("\r\n--\(boundary)--\r\n")
+    return body
+  }
+
+  private func sanitizeMultipartFilename(_ filename: String) -> String {
+    filename
+      .replacingOccurrences(of: "\"", with: "%22")
+      .replacingOccurrences(of: "\r", with: "")
+      .replacingOccurrences(of: "\n", with: "")
   }
 
   public func listEmbeddingsModels(
@@ -377,6 +417,18 @@ public struct OpenRouterClient: Sendable {
     try await transport.get(path: "models", responseType: ModelsResponse.self, options: options)
   }
 
+  public func getModel(
+    author: String,
+    slug: String,
+    options: RequestOptions? = nil
+  ) async throws -> ModelResponse {
+    try await transport.get(
+      path: .preEscaped("model/\(escapePathSegment(author))/\(escapePathSegment(slug))"),
+      responseType: ModelResponse.self,
+      options: options
+    )
+  }
+
   public func getCredits(options: RequestOptions? = nil) async throws -> CreditsResponse {
     try await transport.get(path: "credits", responseType: CreditsResponse.self, options: options)
   }
@@ -513,6 +565,7 @@ extension OpenRouterClient {
   public var credits: CreditsResource { CreditsResource(client: self) }
   public var providers: ProvidersResource { ProvidersResource(client: self) }
   public var endpoints: EndpointsResource { EndpointsResource(client: self) }
+  public var files: FilesResource { FilesResource(client: self) }
 
   public struct ChatResource: Sendable {
     fileprivate let client: OpenRouterClient
@@ -656,6 +709,24 @@ extension OpenRouterClient {
 
     public func list(options: RequestOptions? = nil) async throws -> ModelsResponse {
       try await client.listModels(options: options)
+    }
+
+    public func get(author: String, slug: String, options: RequestOptions? = nil) async throws
+      -> ModelResponse
+    {
+      try await client.getModel(author: author, slug: slug, options: options)
+    }
+  }
+
+  public struct FilesResource: Sendable {
+    fileprivate let client: OpenRouterClient
+
+    public func upload(
+      _ file: FileUpload,
+      workspaceID: UUID? = nil,
+      options: RequestOptions? = nil
+    ) async throws -> FileMetadata {
+      try await client.uploadFile(file, workspaceID: workspaceID, options: options)
     }
   }
 

@@ -52,13 +52,23 @@ struct HTTPTransport: @unchecked Sendable {
     path: String,
     body: Data,
     boundary: String,
+    queryItems: [URLQueryItem] = [],
     responseType: Response.Type,
     options: RequestOptions? = nil
   ) async throws -> Response {
     guard let apiKey = configuration.apiKey, !apiKey.isEmpty else {
       throw OpenRouterError.missingAPIKey
     }
-    let url = (options?.baseURL ?? configuration.baseURL).appendingPathComponent(path)
+    guard
+      var components = URLComponents(
+        url: options?.baseURL ?? configuration.baseURL, resolvingAgainstBaseURL: false)
+    else {
+      throw OpenRouterError.invalidURL(path)
+    }
+    let separator = components.percentEncodedPath.hasSuffix("/") ? "" : "/"
+    components.percentEncodedPath += "\(separator)\(percentEncodedRawPath(path))"
+    if !queryItems.isEmpty { components.queryItems = queryItems }
+    guard let url = components.url else { throw OpenRouterError.invalidURL(path) }
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
     request.timeoutInterval = options?.timeout ?? configuration.timeout
