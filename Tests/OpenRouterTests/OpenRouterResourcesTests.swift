@@ -293,6 +293,85 @@ final class OpenRouterResourcesTests: XCTestCase {
     XCTAssertEqual(result.usage, .init(cost: 0.25, isByok: true))
   }
 
+  func testGetVideosEscapesJobIDAsPathSegment() async throws {
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(
+        URLComponents(url: try XCTUnwrap(request.url), resolvingAgainstBaseURL: false)?
+          .percentEncodedPath,
+        "/api/v1/videos/job%2Fid%201")
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      return (
+        response,
+        #"{"id":"job/id 1","polling_url":"https://example.com","status":"pending"}"#.data(
+          using: .utf8)!
+      )
+    }
+    _ = try await makeClient().getVideos(jobId: "job/id 1")
+  }
+
+  func testVideosContentBuildsRequestAndReturnsBytes() async throws {
+    let bytes = Data([0x00, 0x01, 0xFF])
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.httpMethod, "GET")
+      XCTAssertEqual(
+        URLComponents(url: try XCTUnwrap(request.url), resolvingAgainstBaseURL: false)?
+          .percentEncodedPath,
+        "/api/v1/videos/job%2Fid%201/content")
+      XCTAssertEqual(request.url?.query, "index=2")
+      XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-key")
+      XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "application/octet-stream")
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil,
+        headerFields: ["Content-Type": "video/mp4"])!
+      return (response, bytes)
+    }
+    let result = try await makeClient().videos.content(.init(jobID: "job/id 1", index: 2))
+    XCTAssertEqual(result.data, bytes)
+    XCTAssertEqual(result.contentType, "video/mp4")
+  }
+
+  func testVideosContentMapsJSONErrorResponse() async throws {
+    URLProtocolResourcesStub.handler = { request in
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 404, httpVersion: nil, headerFields: nil)!
+      return (response, #"{"error":{"code":404,"message":"video not found"}}"#.data(using: .utf8)!)
+    }
+    do {
+      _ = try await makeClient().listVideosContent(.init(jobID: "missing"))
+      XCTFail("Expected apiError")
+    } catch let error as OpenRouterError {
+      guard case .apiError(let status, let code, let message, _) = error else {
+        return XCTFail("Unexpected error: \(error)")
+      }
+      XCTAssertEqual(status, 404)
+      XCTAssertEqual(code, 404)
+      XCTAssertEqual(message, "video not found")
+    }
+  }
+
+  func testListVideosModelsBuildsRequestAndDecodesCapabilities() async throws {
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.httpMethod, "GET")
+      XCTAssertEqual(request.url?.path, "/api/v1/videos/models")
+      XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-key")
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      return (
+        response,
+        #"{"data":[{"id":"google/veo-3.1","canonical_slug":"google/veo-3.1","name":"Google: Veo 3.1","description":"Video generation","created":1719792000,"generate_audio":true,"pricing_skus":{"standard":0.5},"seed":false,"supported_aspect_ratios":["16:9"],"supported_durations":[5,8],"supported_frame_images":["first"],"supported_resolutions":["720p"],"supported_sizes":["large"],"allowed_passthrough_parameters":["output_config"]}]}"#
+          .data(using: .utf8)!
+      )
+    }
+    let result = try await makeClient().videos.models.list()
+    let model = try XCTUnwrap(result.data.first)
+    XCTAssertEqual(model.id, "google/veo-3.1")
+    XCTAssertEqual(model.generateAudio, true)
+    XCTAssertEqual(model.supportedDurations, [5, 8])
+    XCTAssertEqual(model.allowedPassthroughParameters, ["output_config"])
+    XCTAssertEqual(model.pricingSKUs, .object(["standard": .number(0.5)]))
+  }
+
   func testGetCreditsDecodesWrappedCreditsPayload() async throws {
     URLProtocolResourcesStub.handler = { request in
       XCTAssertEqual(request.httpMethod, "GET")
@@ -526,6 +605,22 @@ final class OpenRouterResourcesTests: XCTestCase {
     XCTAssertEqual(result.data.endpoints.first?.providerName, "openai")
     XCTAssertEqual(result.data.endpoints.first?.contextLength, 128000)
     XCTAssertEqual(result.data.endpoints.first?.supportedParameters, ["temperature"])
+  }
+
+  func testListModelEndpointsEncodesRawDynamicPathValues() async throws {
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(
+        URLComponents(url: try XCTUnwrap(request.url), resolvingAgainstBaseURL: false)?
+          .percentEncodedPath,
+        "/custom/api/models/open%20router%252F%252E%25zz%2Fa/gpt%20mini%25%2Fx/endpoints")
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      return (response, #"{"data":{"id":"model","endpoints":[]}}"#.data(using: .utf8)!)
+    }
+    _ = try await makeClient().listModelEndpoints(
+      author: "open router%2F%2E%zz/a",
+      slug: "gpt mini%/x",
+      options: .init(baseURL: URL(string: "https://example.test/custom/api/")!))
   }
 
   func testListZDREndpointsBuildsRequestAndDecodesEndpoint() async throws {

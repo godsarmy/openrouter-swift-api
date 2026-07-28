@@ -4,6 +4,17 @@ import Foundation
   import FoundationNetworking
 #endif
 
+enum HTTPPath: CustomStringConvertible {
+  case raw(String)
+  case preEscaped(String)
+
+  var description: String {
+    switch self {
+    case .raw(let value), .preEscaped(let value): value
+    }
+  }
+}
+
 struct HTTPTransport: @unchecked Sendable {
   let configuration: OpenRouterClient.Configuration
   let session: URLSession
@@ -70,10 +81,44 @@ struct HTTPTransport: @unchecked Sendable {
     responseType: Response.Type,
     options: RequestOptions? = nil
   ) async throws -> Response {
+    try await get(
+      path: .raw(path), queryItems: queryItems, responseType: responseType, options: options)
+  }
+
+  func get<Response: Decodable>(
+    path: HTTPPath,
+    queryItems: [URLQueryItem] = [],
+    responseType: Response.Type,
+    options: RequestOptions? = nil
+  ) async throws -> Response {
     let request = try buildGetRequest(path: path, queryItems: queryItems, options: options)
     log(.init(message: "request", method: "GET", path: redactedPath(from: request)))
     let (data, response) = try await execute(request: request, options: options)
     return try decodeResponse(data: data, response: response, responseType: responseType)
+  }
+
+  func getData(
+    path: String,
+    queryItems: [URLQueryItem] = [],
+    accept: String,
+    options: RequestOptions? = nil
+  ) async throws -> (data: Data, contentType: String?) {
+    try await getData(
+      path: .raw(path), queryItems: queryItems, accept: accept, options: options)
+  }
+
+  func getData(
+    path: HTTPPath,
+    queryItems: [URLQueryItem] = [],
+    accept: String,
+    options: RequestOptions? = nil
+  ) async throws -> (data: Data, contentType: String?) {
+    let request = try buildGetRequest(
+      path: path, queryItems: queryItems, accept: accept, options: options)
+    log(.init(message: "request", method: "GET", path: redactedPath(from: request)))
+    let (data, response) = try await execute(request: request, options: options)
+    let decoded = try decodeDataResponse(data: data, response: response)
+    return (decoded, (response as? HTTPURLResponse)?.value(forHTTPHeaderField: "Content-Type"))
   }
 
   func buildRequest<Body: Encodable>(
@@ -109,28 +154,39 @@ struct HTTPTransport: @unchecked Sendable {
   }
 
   func buildGetRequest(
-    path: String,
+    path: HTTPPath,
     queryItems: [URLQueryItem] = [],
+    accept: String = "application/json",
     options: RequestOptions? = nil
   ) throws -> URLRequest {
     guard let apiKey = configuration.apiKey, !apiKey.isEmpty else {
       throw OpenRouterError.missingAPIKey
     }
 
-    var components = URLComponents(
-      url: (options?.baseURL ?? configuration.baseURL).appendingPathComponent(path),
-      resolvingAgainstBaseURL: false)
-    if !queryItems.isEmpty {
-      components?.queryItems = queryItems
+    guard
+      var components = URLComponents(
+        url: options?.baseURL ?? configuration.baseURL, resolvingAgainstBaseURL: false)
+    else {
+      throw OpenRouterError.invalidURL(path.description)
     }
-    guard let url = components?.url else {
-      throw OpenRouterError.invalidURL(path)
+    let separator = components.percentEncodedPath.hasSuffix("/") ? "" : "/"
+    let encodedPath: String
+    switch path {
+    case .raw(let value): encodedPath = percentEncodedRawPath(value)
+    case .preEscaped(let value): encodedPath = value
+    }
+    components.percentEncodedPath += "\(separator)\(encodedPath)"
+    if !queryItems.isEmpty {
+      components.queryItems = queryItems
+    }
+    guard let url = components.url else {
+      throw OpenRouterError.invalidURL(path.description)
     }
 
     var request = URLRequest(url: url)
     request.httpMethod = "GET"
     request.timeoutInterval = options?.timeout ?? configuration.timeout
-    request.setValue("application/json", forHTTPHeaderField: "Accept")
+    request.setValue(accept, forHTTPHeaderField: "Accept")
     request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
 
     applyCommonHeaders(to: &request)
@@ -243,6 +299,12 @@ struct HTTPTransport: @unchecked Sendable {
     for (key, value) in headers {
       request.setValue(value, forHTTPHeaderField: key)
     }
+  }
+
+  private func percentEncodedRawPath(_ path: String) -> String {
+    let allowed = CharacterSet(
+      charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~/")
+    return path.addingPercentEncoding(withAllowedCharacters: allowed) ?? path
   }
 
   private func execute(request: URLRequest, options: RequestOptions?) async throws -> (

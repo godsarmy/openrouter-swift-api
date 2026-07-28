@@ -4,13 +4,13 @@ All notable changes to this package will be documented in this file.
 
 This project follows semantic versioning once public releases are tagged.
 
-## Unreleased
+## Unreleased (v0.2.0)
 
-- Added TypeScript SDK parity tracking in `PLAN.md`.
-- Added typed providers and endpoints resources.
-- Added debug logging hooks for request/response/retry events.
-- Added additional `OpenRouterError` convenience helpers.
-- Documented current API limitations and deferred Responses API parity.
+- Added Anthropic-compatible Messages creation and SSE streaming APIs.
+- Expanded the beta Responses API with typed/raw events, function tools, stateless function-call/output replay, and reasoning replay support.
+- Added reranking and embedding-model discovery APIs.
+- Added audio speech synthesis and multipart audio transcription APIs.
+- Added the complete video workflow: job creation, polling, buffered content download with Content-Type, and video-model capability discovery.
 
 ## 0.1.0-rc.1
 

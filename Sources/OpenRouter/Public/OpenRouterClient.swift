@@ -181,7 +181,35 @@ public struct OpenRouterClient: Sendable {
   public func getVideos(jobId: String, options: RequestOptions? = nil) async throws -> VideoResponse
   {
     try await transport.get(
-      path: "videos/\(jobId)", responseType: VideoResponse.self, options: options)
+      path: .preEscaped("videos/\(escapePathSegment(jobId))"),
+      responseType: VideoResponse.self,
+      options: options
+    )
+  }
+
+  public func listVideosContent(
+    _ request: VideoContentRequest,
+    options: RequestOptions? = nil
+  ) async throws -> VideoContentResponse {
+    var queryItems: [URLQueryItem] = []
+    if let index = request.index { queryItems.append(.init(name: "index", value: String(index))) }
+    let response = try await transport.getData(
+      path: .preEscaped("videos/\(escapePathSegment(request.jobID))/content"),
+      queryItems: queryItems, accept: "application/octet-stream", options: options)
+    return .init(data: response.data, contentType: response.contentType)
+  }
+
+  public func listVideosModels(options: RequestOptions? = nil) async throws
+    -> VideoModelsListResponse
+  {
+    try await transport.get(
+      path: "videos/models", responseType: VideoModelsListResponse.self, options: options)
+  }
+
+  private func escapePathSegment(_ value: String) -> String {
+    let allowed = CharacterSet(
+      charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~")
+    return value.addingPercentEncoding(withAllowedCharacters: allowed) ?? value
   }
 
   private func makeAudioTranscriptionMultipartBody(
@@ -259,13 +287,13 @@ public struct OpenRouterClient: Sendable {
     MessagesStreamEvent, Error
   > {
     makeIncrementalStream(
-      transport: transport, path: "messages", request: request, prepare: { $0.stream = true }
-    ) { data, eventName in
-      let event = try JSONDecoder().decode(MessagesStreamEvent.self, from: data).withEventName(
-        eventName)
-      if event.type == "error" { throw OpenRouterError.messageStreamError(from: event) }
-      return event
-    }
+      transport: transport, path: "messages", request: request, prepare: { $0.stream = true },
+      decode: { data, eventName in
+        let event = try JSONDecoder().decode(MessagesStreamEvent.self, from: data).withEventName(
+          eventName)
+        if event.type == "error" { throw OpenRouterError.messageStreamError(from: event) }
+        return event
+      })
   }
 
   public func createResponseStream(
@@ -280,14 +308,14 @@ public struct OpenRouterClient: Sendable {
     request: ResponsesRequest
   ) -> AsyncThrowingStream<ResponsesStreamEvent, Error> {
     return makeIncrementalStream(
-      transport: transport, path: "responses", request: request, prepare: { $0.stream = true }
-    ) { data, _ in
-      let event = try JSONDecoder().decode(ResponsesStreamEvent.self, from: data)
-      if ["response.failed", "response.error", "error"].contains(event.type) {
-        throw OpenRouterError.streamEventError(from: event)
-      }
-      return event
-    }
+      transport: transport, path: "responses", request: request, prepare: { $0.stream = true },
+      decode: { data, _ in
+        let event = try JSONDecoder().decode(ResponsesStreamEvent.self, from: data)
+        if ["response.failed", "response.error", "error"].contains(event.type) {
+          throw OpenRouterError.streamEventError(from: event)
+        }
+        return event
+      })
   }
 
   public func createCompletion(
@@ -364,7 +392,8 @@ public struct OpenRouterClient: Sendable {
     options: RequestOptions? = nil
   ) async throws -> ModelEndpointsResponse {
     try await transport.get(
-      path: "models/\(author)/\(slug)/endpoints",
+      path: .preEscaped(
+        "models/\(escapePathSegment(author))/\(escapePathSegment(slug))/endpoints"),
       responseType: ModelEndpointsResponse.self,
       options: options
     )
@@ -584,6 +613,23 @@ extension OpenRouterClient {
 
     public func get(jobId: String, options: RequestOptions? = nil) async throws -> VideoResponse {
       try await client.getVideos(jobId: jobId, options: options)
+    }
+
+    public func content(
+      _ request: VideoContentRequest,
+      options: RequestOptions? = nil
+    ) async throws -> VideoContentResponse {
+      try await client.listVideosContent(request, options: options)
+    }
+
+    public var models: ModelsResource { ModelsResource(client: client) }
+
+    public struct ModelsResource: Sendable {
+      fileprivate let client: OpenRouterClient
+
+      public func list(options: RequestOptions? = nil) async throws -> VideoModelsListResponse {
+        try await client.listVideosModels(options: options)
+      }
     }
   }
 

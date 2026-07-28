@@ -125,6 +125,26 @@ let endpoints = try await client.endpoints.list(author: "openai", slug: "gpt-4o-
 let zdrEndpoints = try await client.endpoints.listZDR()
 ```
 
+## Media APIs
+
+- Text-to-speech: `client.audio.speech(_:)` creates speech and returns audio `Data`.
+- Transcription: `client.audio.transcribe(_:)` uploads an `AudioTranscriptionFile` and returns typed text, usage, and the raw response payload.
+- Video: `client.videos.create(_:)` creates a job, `client.videos.get(jobId:)` polls it, and `client.videos.models.list()` discovers video-model capabilities.
+- Video content: `client.videos.content(_:)` downloads a completed video as buffered `Data` and preserves its response `Content-Type` in `VideoContentResponse`. It buffers the complete file in memory; for large downloads, prefer the completed job's unsigned URLs.
+
+### Live video certification smoke test
+
+The full video workflow test creates provider work, can take up to 10 minutes, and incurs provider cost. It is opt-in and skipped by default, including under a normal `swift test` run. Run it only with a supported configured model and an intentional content download:
+
+```bash
+OPENROUTER_RUN_INTEGRATION=true \
+OPENROUTER_RUN_VIDEO_INTEGRATION=true \
+OPENROUTER_RUN_VIDEO_CONTENT_DOWNLOAD=true \
+OPENROUTER_API_KEY="<your-key>" \
+OPENROUTER_VIDEO_MODEL="<supported-video-model>" \
+swift test --filter OpenRouterIntegrationTests/testIntegrationVideoWorkflow
+```
+
 ## Tool calling and structured outputs
 
 ```swift
@@ -172,26 +192,24 @@ let structured = try await client.chat.send(.init(
 
 ## Current limitations
 
-- Beta Responses API SSE streaming is available via `client.responses.stream` with forward-compatible raw typed events, including text and function argument deltas. Provider-specific beta event fields may still require `rawPayload`.
-- The Swift SDK prioritizes mobile-relevant TypeScript SDK resources; broader resources such as organization/workspaces, guardrails, TTS/STT, video generation, analytics, and beta namespaces are not yet implemented.
+- The Responses API remains beta. SSE streaming is available via `client.responses.stream` with forward-compatible raw typed events, including text and function argument deltas; provider-specific beta event fields may still require `rawPayload`.
+- Broader resources such as organization/workspaces, guardrails, analytics, and other beta namespaces are not yet implemented.
 - The SSE parser supports OpenRouter chat streams and has basic multi-line frame parsing helpers; broader SSE metadata is currently ignored by the streaming client.
 
 ## Roadmap
 
 Endpoint coverage is tracked in [`APIs.md`](APIs.md). Remaining non-endpoint follow-ups:
 
-- Tag the first release (`v0.1.0`) after final API review.
-- Optionally add a formal lint/format CI check; formatting is currently run manually with `swift format`.
 - Track additional beta Responses event fields as OpenRouter confirms them.
 - Consider a higher-level Swift-friendly typed tool helper while keeping raw chat/tool APIs canonical.
 - Add pagination helpers only after paginated resources are implemented.
 
-## v0.1.0 API review notes
+## v0.2.0 API review notes
 
 - Current public APIs are expected to remain source-compatible through `0.x` where practical.
 - Flat client methods remain available alongside resource namespaces for compatibility.
 - `JSONValue` remains the escape hatch for raw/forward-compatible payloads.
-- Broader beta/resource coverage is intentionally excluded from the first release candidate.
+- Broader beta/resource coverage remains intentionally incremental.
 
 ## Versioning policy
 

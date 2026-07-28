@@ -864,6 +864,83 @@ public struct VideoUsage: Codable, Sendable, Equatable {
   }
 }
 
+public struct VideoContentRequest: Sendable, Equatable {
+  public var jobID: String
+  public var index: Int?
+  public init(jobID: String, index: Int? = nil) {
+    self.jobID = jobID
+    self.index = index
+  }
+}
+
+public struct VideoContentResponse: Sendable, Equatable {
+  public var data: Data
+  public var contentType: String?
+  public init(data: Data, contentType: String? = nil) {
+    self.data = data
+    self.contentType = contentType
+  }
+}
+
+public struct VideoModelsListResponse: Codable, Sendable, Equatable {
+  public var data: [VideoModel]
+  public init(data: [VideoModel]) { self.data = data }
+}
+
+public struct VideoModel: Codable, Sendable, Equatable {
+  public var id: String
+  public var canonicalSlug: String?
+  public var name: String
+  public var description: String?
+  public var created: Int?
+  public var generateAudio: Bool?
+  public var pricingSKUs: JSONValue?
+  public var seed: Bool?
+  public var supportedAspectRatios: [String]?
+  public var supportedDurations: [Int]?
+  public var supportedFrameImages: [String]?
+  public var supportedResolutions: [String]?
+  public var supportedSizes: [String]?
+  public var allowedPassthroughParameters: [String]?
+
+  enum CodingKeys: String, CodingKey {
+    case id, name, description, created, seed
+    case canonicalSlug = "canonical_slug"
+    case generateAudio = "generate_audio"
+    case pricingSKUs = "pricing_skus"
+    case supportedAspectRatios = "supported_aspect_ratios"
+    case supportedDurations = "supported_durations"
+    case supportedFrameImages = "supported_frame_images"
+    case supportedResolutions = "supported_resolutions"
+    case supportedSizes = "supported_sizes"
+    case allowedPassthroughParameters = "allowed_passthrough_parameters"
+  }
+
+  public init(
+    id: String, name: String, canonicalSlug: String? = nil, description: String? = nil,
+    created: Int? = nil, generateAudio: Bool? = nil, pricingSKUs: JSONValue? = nil,
+    seed: Bool? = nil, supportedAspectRatios: [String]? = nil,
+    supportedDurations: [Int]? = nil, supportedFrameImages: [String]? = nil,
+    supportedResolutions: [String]? = nil, supportedSizes: [String]? = nil,
+    allowedPassthroughParameters: [String]? = nil
+  ) {
+    self.id = id
+    self.name = name
+    self.canonicalSlug = canonicalSlug
+    self.description = description
+    self.created = created
+    self.generateAudio = generateAudio
+    self.pricingSKUs = pricingSKUs
+    self.seed = seed
+    self.supportedAspectRatios = supportedAspectRatios
+    self.supportedDurations = supportedDurations
+    self.supportedFrameImages = supportedFrameImages
+    self.supportedResolutions = supportedResolutions
+    self.supportedSizes = supportedSizes
+    self.allowedPassthroughParameters = allowedPassthroughParameters
+  }
+}
+
 public struct ResponsesRequest: Codable, Sendable, Equatable {
   public var model: String
   public var input: ResponsesInput
@@ -2650,8 +2727,18 @@ public enum MessagesContentBlock: Codable, Sendable, Equatable {
   case raw(JSONValue)
   case unknown(type: String, rawPayload: JSONValue)
   private enum Keys: String, CodingKey {
-    case type, text, source, id, name, input, toolUseID = "tool_use_id", content, thinking,
-      signature, data, isError = "is_error"
+    case type
+    case text
+    case source
+    case id
+    case name
+    case input
+    case toolUseID = "tool_use_id"
+    case content
+    case thinking
+    case signature
+    case data
+    case isError = "is_error"
   }
   public init(from decoder: Decoder) throws {
     let raw = try JSONValue(from: decoder)

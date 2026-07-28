@@ -4,7 +4,6 @@ This file tracks which OpenRouter API endpoints are implemented by this Swift SD
 
 Source reviewed:
 
-- Reference tracker: `/home/godsarmy/github/openrouter-zig/APIs.md`
 - API reference overview: <https://openrouter.ai/docs/api/reference/overview>
 - OpenAPI spec: <https://openrouter.ai/openapi.json>
 - Audio API announcement: <https://openrouter.ai/blog/announcing-audio-apis>
@@ -29,10 +28,16 @@ Status legend:
 |---|---|---|---|---|
 | [x] | POST | `/chat/completions` | `client.chat.send`, `client.chat.stream`, `client.createChatCompletion*` | Non-streaming and SSE streaming chat completions, plus client-side fallback helpers. |
 | [x] | POST | `/responses` | `client.responses.create`, `client.responses.stream`, `client.createResponse*` | Non-streaming and beta SSE Responses API, including flat function tools and stateless function-call/output and reasoning replay. Raw typed events expose text and function argument deltas. |
+| [x] | POST | `/messages` | `client.messages.create`, `client.messages.stream`, `client.createMessage*` | Anthropic-compatible messages with typed content/tools and SSE streaming. |
 | [x] | POST | `/embeddings` | `client.embeddings.create`, `client.createEmbeddings` | Text embedding requests. |
 | [x] | GET | `/embeddings/models` | `client.embeddings.listModels`, `client.listEmbeddingsModels` | Lists embedding models with pagination. |
+| [x] | POST | `/rerank` | `client.rerank.create`, `client.createRerank` | Reranks documents by relevance. |
 | [x] | POST | `/audio/speech` | `client.audio.speech`, `client.createAudioSpeech` | Creates speech and returns raw audio bytes. |
+| [x] | POST | `/audio/transcriptions` | `client.audio.transcribe`, `client.createAudioTranscriptions` | Creates an audio transcription with multipart upload. |
 | [x] | POST | `/videos` | `client.videos.create`, `client.createVideos` | Creates an asynchronous video generation job. |
+| [x] | GET | `/videos/{jobId}` | `client.videos.get`, `client.getVideos` | Polls a video generation job. |
+| [x] | GET | `/videos/{jobId}/content` | `client.videos.content`, `client.listVideosContent` | Downloads buffered video data and its Content-Type. |
+| [x] | GET | `/videos/models` | `client.videos.models.list`, `client.listVideosModels` | Lists video generation model capabilities. |
 | [x] | POST | `/completions` | `client.createCompletion` | Legacy OpenAI-compatible text completions endpoint. |
 | [x] | GET | `/generation` | `client.generations.get`, `client.getGeneration`, `client.getGenerationRaw` | Gets request and usage metadata for a generation. |
 | [x] | GET | `/generation/content` | `client.generations.content`, `client.listGenerationContent`, `client.listGenerationContentRaw` | Gets stored prompt/completion content for a generation. |
@@ -56,8 +61,8 @@ Status legend:
 | [x] | POST | `/audio/transcriptions` | `createAudioTranscriptions` | Create a transcription from audio. | Implemented in `OpenRouterClient.createAudioTranscriptions`; resource alias: `client.audio.transcribe`. |
 | [x] | POST | `/videos` | `createVideos` | Submit a video generation request. | Implemented in `OpenRouterClient.createVideos`; resource alias: `client.videos.create`. |
 | [x] | GET | `/videos/{jobId}` | `getVideos` | Poll video generation job status. | Implemented in `OpenRouterClient.getVideos`; resource alias: `client.videos.get`. |
-| [ ] | GET | `/videos/{jobId}/content` | `listVideosContent` | Download generated video content. |  |
-| [ ] | GET | `/videos/models` | `listVideosModels` | List video generation models. |  |
+| [x] | GET | `/videos/{jobId}/content` | `listVideosContent` | Download generated video content. | Implemented in `OpenRouterClient.listVideosContent`; resource alias: `client.videos.content`. |
+| [x] | GET | `/videos/models` | `listVideosModels` | List video generation models. | Implemented in `OpenRouterClient.listVideosModels`; resource alias: `client.videos.models.list`. |
 
 ## OpenAI-Compatible Legacy Endpoints
 
