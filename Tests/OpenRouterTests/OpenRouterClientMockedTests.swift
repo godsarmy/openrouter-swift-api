@@ -7,6 +7,33 @@ import XCTest
   import FoundationNetworking
 #endif
 
+func requestBodyData(_ request: URLRequest) throws -> Data? {
+  if let body = request.httpBody {
+    return body
+  }
+
+  guard let stream = request.httpBodyStream else {
+    return nil
+  }
+
+  stream.open()
+  defer { stream.close() }
+
+  var body = Data()
+  var buffer = [UInt8](repeating: 0, count: 4_096)
+  while true {
+    let count = stream.read(&buffer, maxLength: buffer.count)
+    if count > 0 {
+      body.append(buffer, count: count)
+    } else if count == 0 {
+      return body
+    } else {
+      throw stream.streamError
+        ?? NSError(domain: "OpenRouterTests", code: 1, userInfo: nil)
+    }
+  }
+}
+
 final class OpenRouterClientMockedTests: XCTestCase {
   override class func setUp() {
     super.setUp()
@@ -118,7 +145,7 @@ final class OpenRouterClientMockedTests: XCTestCase {
     URLProtocolStub.handler = { request in
       XCTAssertEqual(request.httpMethod, "POST")
       XCTAssertEqual(request.url?.path, "/api/v1/responses")
-      let body = try XCTUnwrap(request.httpBody)
+      let body = try XCTUnwrap(requestBodyData(request))
       let json = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
       XCTAssertEqual(json["stream"] as? Bool, true)
       let response = HTTPURLResponse(
@@ -218,7 +245,7 @@ final class OpenRouterClientMockedTests: XCTestCase {
       """.data(using: .utf8)!
     URLProtocolStub.handler = { request in
       XCTAssertEqual(request.url?.path, "/api/v1/messages")
-      let body = try XCTUnwrap(request.httpBody)
+      let body = try XCTUnwrap(requestBodyData(request))
       XCTAssertEqual(
         (try JSONSerialization.jsonObject(with: body) as? [String: Any])?["stream"] as? Bool, true)
       let response = HTTPURLResponse(
@@ -299,7 +326,7 @@ final class OpenRouterClientMockedTests: XCTestCase {
       """.data(using: .utf8)!
 
     URLProtocolStub.handler = { request in
-      let payload = try XCTUnwrap(request.httpBody)
+      let payload = try XCTUnwrap(requestBodyData(request))
       let json = try XCTUnwrap(JSONSerialization.jsonObject(with: payload) as? [String: Any])
       let model = try XCTUnwrap(json["model"] as? String)
 
@@ -590,7 +617,8 @@ final class OpenRouterClientMockedTests: XCTestCase {
     var chunks: [ChatCompletionChunk] = []
     for try await chunk in stream { chunks.append(chunk) }
 
-    let body = try XCTUnwrap(URLProtocolStub.lastRequest?.httpBody)
+    let request = try XCTUnwrap(URLProtocolStub.lastRequest)
+    let body = try XCTUnwrap(requestBodyData(request))
     let object = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
     let streamOptions = try XCTUnwrap(object["stream_options"] as? [String: Any])
     XCTAssertEqual(streamOptions["include_usage"] as? Bool, true)

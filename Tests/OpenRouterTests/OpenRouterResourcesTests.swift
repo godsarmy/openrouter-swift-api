@@ -77,7 +77,7 @@ final class OpenRouterResourcesTests: XCTestCase {
         workspaceID.uuidString)
       let contentType = try XCTUnwrap(request.value(forHTTPHeaderField: "Content-Type"))
       XCTAssertTrue(contentType.hasPrefix("multipart/form-data; boundary="))
-      let body = try XCTUnwrap(request.httpBody)
+      let body = try XCTUnwrap(requestBodyData(request))
       let payload = String(decoding: body, as: UTF8.self)
       XCTAssertTrue(payload.contains("name=\"file\"; filename=\"unsafe%22name.txt\""))
       XCTAssertTrue(payload.contains("Content-Type: text/plain"))
@@ -176,7 +176,7 @@ final class OpenRouterResourcesTests: XCTestCase {
       XCTAssertEqual(request.url?.path, "/api/v1/audio/speech")
       XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-key")
       XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "audio/mpeg, audio/pcm")
-      let body = try XCTUnwrap(request.httpBody)
+      let body = try XCTUnwrap(requestBodyData(request))
       let json = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
       XCTAssertEqual(json["model"] as? String, "openai/gpt-4o-mini-tts")
       XCTAssertEqual(json["input"] as? String, "Hello")
@@ -226,7 +226,7 @@ final class OpenRouterResourcesTests: XCTestCase {
       XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-key")
       let contentType = try XCTUnwrap(request.value(forHTTPHeaderField: "Content-Type"))
       XCTAssertTrue(contentType.hasPrefix("multipart/form-data; boundary="))
-      let body = try XCTUnwrap(request.httpBody)
+      let body = try XCTUnwrap(requestBodyData(request))
       let payload = String(decoding: body, as: UTF8.self)
       XCTAssertTrue(payload.contains("name=\"file\"; filename=\"sample.wav\""))
       XCTAssertTrue(payload.contains("Content-Type: audio/wav"))
@@ -303,7 +303,8 @@ final class OpenRouterResourcesTests: XCTestCase {
       XCTAssertEqual(request.url?.path, "/api/v1/videos")
       XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-key")
       let json = try XCTUnwrap(
-        JSONSerialization.jsonObject(with: try XCTUnwrap(request.httpBody)) as? [String: Any])
+        JSONSerialization.jsonObject(with: try XCTUnwrap(requestBodyData(request)))
+          as? [String: Any])
       XCTAssertEqual(json["model"] as? String, "google/veo-3")
       XCTAssertEqual(json["prompt"] as? String, "A mountain sunrise")
       XCTAssertEqual(json["aspect_ratio"] as? String, "16:9")
@@ -527,7 +528,7 @@ final class OpenRouterResourcesTests: XCTestCase {
       XCTAssertEqual(request.url?.path, "/api/v1/responses")
       XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-key")
 
-      let payload = try XCTUnwrap(request.httpBody)
+      let payload = try XCTUnwrap(requestBodyData(request))
       let json = try XCTUnwrap(JSONSerialization.jsonObject(with: payload) as? [String: Any])
       XCTAssertEqual(json["model"] as? String, "openai/o4-mini")
       XCTAssertEqual(json["input"] as? String, "Hello, world!")
@@ -600,7 +601,8 @@ final class OpenRouterResourcesTests: XCTestCase {
       XCTAssertEqual(request.url?.path, "/api/v1/rerank")
       XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-key")
       let json = try XCTUnwrap(
-        JSONSerialization.jsonObject(with: try XCTUnwrap(request.httpBody)) as? [String: Any])
+        JSONSerialization.jsonObject(with: try XCTUnwrap(requestBodyData(request)))
+          as? [String: Any])
       XCTAssertEqual(json["top_n"] as? Int, 1)
       let response = HTTPURLResponse(
         url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
@@ -629,7 +631,7 @@ final class OpenRouterResourcesTests: XCTestCase {
     URLProtocolResourcesStub.handler = { request in
       XCTAssertEqual(request.httpMethod, "POST")
       XCTAssertEqual(request.url?.path, "/api/v1/responses")
-      let body = try XCTUnwrap(request.httpBody)
+      let body = try XCTUnwrap(requestBodyData(request))
       let json = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
       let tool = try XCTUnwrap((json["tools"] as? [[String: Any]])?.first)
       XCTAssertEqual(tool["type"] as? String, "function")
