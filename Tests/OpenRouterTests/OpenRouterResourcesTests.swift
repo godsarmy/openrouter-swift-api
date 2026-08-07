@@ -40,6 +40,25 @@ final class OpenRouterResourcesTests: XCTestCase {
     XCTAssertEqual(result.data.first?.pricing?.inputCacheRead, "0.01")
   }
 
+  func testListModelsCountBuildsRequestDecodesResponseAndSupportsResourceAlias() async throws {
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.httpMethod, "GET")
+      XCTAssertEqual(request.url?.path, "/api/v1/models/count")
+      let components = try XCTUnwrap(
+        URLComponents(url: request.url!, resolvingAgainstBaseURL: false))
+      XCTAssertEqual(
+        components.queryItems?.first(where: { $0.name == "output_modalities" })?.value,
+        "image")
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      return (response, #"{"data":{"count":42}}"#.data(using: .utf8)!)
+    }
+
+    let client = makeClient()
+    let result = try await client.models.count(outputModalities: "image")
+    XCTAssertEqual(result.data.count, 42)
+  }
+
   func testGetModelDecodesDetailsAndEscapesPathSegments() async throws {
     URLProtocolResourcesStub.handler = { request in
       XCTAssertEqual(request.httpMethod, "GET")

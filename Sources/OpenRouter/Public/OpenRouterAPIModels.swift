@@ -2323,6 +2323,22 @@ public struct ModelsResponse: Codable, Sendable, Equatable {
   }
 }
 
+public struct ModelsCountResponse: Codable, Sendable, Equatable {
+  public var data: ModelsCount
+
+  public init(data: ModelsCount) {
+    self.data = data
+  }
+}
+
+public struct ModelsCount: Codable, Sendable, Equatable {
+  public var count: Int
+
+  public init(count: Int) {
+    self.count = count
+  }
+}
+
 /// A paginated list of embedding-capable models.
 public struct EmbeddingsModelsResponse: Codable, Sendable, Equatable {
   public var data: [OpenRouterModel]
