@@ -47,6 +47,7 @@ Status legend:
 | [x] | GET | `/model/{author}/{slug}` | `client.models.get`, `client.getModel` | Gets full details for one model. |
 | [x] | GET | `/models/count` | `client.models.count`, `client.listModelsCount` | Gets the total available model count, optionally filtered by output modalities. |
 | [x] | GET | `/credits` | `client.credits.get`, `client.getCredits` | Gets remaining credits and usage. Requires a management API key. |
+| [x] | GET | `/key` | `client.keys.current`, `client.getCurrentKey` | Gets usage, limits, and lifecycle metadata for the current key using ordinary bearer key authentication. |
 | [x] | GET | `/activity` | `client.activity.get`, `client.getUserActivity` | Gets activity data for a management API key with optional filters and grouping. |
 | [x] | GET | `/datasets/rankings-daily` | `client.datasets.rankingsDaily`, `client.getRankingsDaily` | Gets daily model rankings with optional filters and periods. |
 | [x] | GET | `/providers` | `client.providers.list`, `client.listProviders` | Lists available providers. |
@@ -102,7 +103,7 @@ Status legend:
 
 | Status | Method | Path | Operation | Description | SDK notes |
 |---|---|---|---|---|---|
-| [ ] | GET | `/key` | `getCurrentKey` | Get the current API key. |  |
+| [x] | GET | `/key` | `getCurrentKey` | Get usage, limits, and lifecycle metadata for the current API key. | Implemented in `OpenRouterClient.getCurrentKey`; resource alias: `client.keys.current`. Supports ordinary bearer API keys and does not expose key material. |
 | [ ] | GET | `/keys` | `list` | List API keys. |  |
 | [ ] | POST | `/keys` | `create` | Create a new API key. |  |
 | [ ] | GET | `/keys/{hash}` | `get` | Get a single API key. |  |

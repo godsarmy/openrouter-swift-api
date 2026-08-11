@@ -1,5 +1,102 @@
 import Foundation
 
+/// Metadata for the API key used to make the current request. This response never exposes key material.
+public struct CurrentKeyResponse: Codable, Sendable, Equatable {
+  public var data: CurrentKey
+
+  public init(data: CurrentKey) {
+    self.data = data
+  }
+}
+
+/// Usage, limits, and lifecycle metadata for the current API key. This type never contains key material.
+public struct CurrentKey: Codable, Sendable, Equatable {
+  public var label: String
+  public var limit: Double?
+  public var limitRemaining: Double?
+  public var limitReset: String?
+  public var includeBYOKInLimit: Bool
+  public var usage: Double
+  public var usageDaily: Double
+  public var usageWeekly: Double
+  public var usageMonthly: Double
+  public var byokUsage: Double
+  public var byokUsageDaily: Double
+  public var byokUsageWeekly: Double
+  public var byokUsageMonthly: Double
+  public var isFreeTier: Bool
+  public var isManagementKey: Bool
+  /// Deprecated provisioning indicator retained as optional for compatibility with older responses.
+  @available(*, deprecated, message: "This field is deprecated and may be removed by OpenRouter.")
+  public var isProvisioningKey: Bool?
+  public var creatorUserID: String?
+  public var expiresAt: String?
+  /// Raw, tolerant `rate_limit` metadata. It can be the documented object or a legacy numeric value.
+  public var rateLimit: JSONValue?
+
+  enum CodingKeys: String, CodingKey {
+    case label, limit, usage
+    case limitRemaining = "limit_remaining"
+    case limitReset = "limit_reset"
+    case includeBYOKInLimit = "include_byok_in_limit"
+    case usageDaily = "usage_daily"
+    case usageWeekly = "usage_weekly"
+    case usageMonthly = "usage_monthly"
+    case byokUsage = "byok_usage"
+    case byokUsageDaily = "byok_usage_daily"
+    case byokUsageWeekly = "byok_usage_weekly"
+    case byokUsageMonthly = "byok_usage_monthly"
+    case isFreeTier = "is_free_tier"
+    case isManagementKey = "is_management_key"
+    case isProvisioningKey = "is_provisioning_key"
+    case creatorUserID = "creator_user_id"
+    case expiresAt = "expires_at"
+    case rateLimit = "rate_limit"
+  }
+
+  public init(
+    label: String,
+    limit: Double?,
+    limitRemaining: Double?,
+    limitReset: String?,
+    includeBYOKInLimit: Bool,
+    usage: Double,
+    usageDaily: Double,
+    usageWeekly: Double,
+    usageMonthly: Double,
+    byokUsage: Double,
+    byokUsageDaily: Double,
+    byokUsageWeekly: Double,
+    byokUsageMonthly: Double,
+    isFreeTier: Bool,
+    isManagementKey: Bool,
+    creatorUserID: String?,
+    expiresAt: String?,
+    isProvisioningKey: Bool? = nil,
+    rateLimit: JSONValue? = nil
+  ) {
+    self.label = label
+    self.limit = limit
+    self.limitRemaining = limitRemaining
+    self.limitReset = limitReset
+    self.includeBYOKInLimit = includeBYOKInLimit
+    self.usage = usage
+    self.usageDaily = usageDaily
+    self.usageWeekly = usageWeekly
+    self.usageMonthly = usageMonthly
+    self.byokUsage = byokUsage
+    self.byokUsageDaily = byokUsageDaily
+    self.byokUsageWeekly = byokUsageWeekly
+    self.byokUsageMonthly = byokUsageMonthly
+    self.isFreeTier = isFreeTier
+    self.isManagementKey = isManagementKey
+    self.creatorUserID = creatorUserID
+    self.expiresAt = expiresAt
+    self.isProvisioningKey = isProvisioningKey
+    self.rateLimit = rateLimit
+  }
+}
+
 public struct ChatCompletionRequest: Codable, Sendable, Equatable {
   public var model: String
   public var models: [String]?

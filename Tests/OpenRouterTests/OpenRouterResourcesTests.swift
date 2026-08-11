@@ -891,6 +891,59 @@ final class OpenRouterResourcesTests: XCTestCase {
     XCTAssertEqual(result.data.first?.contextLength, 32000)
   }
 
+  func testGetCurrentKeyBuildsRequestPassesOptionsAndDecodesMetadata() async throws {
+    let baseURL = URL(string: "https://example.test/custom/api/")!
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.httpMethod, "GET")
+      XCTAssertEqual(request.url?.path, "/custom/api/key")
+      XCTAssertNil(request.url?.query)
+      XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-key")
+      XCTAssertEqual(request.value(forHTTPHeaderField: "X-Test"), "passed")
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      let body =
+        #"{"data":{"label":"Current key","limit":100,"limit_remaining":75.5,"limit_reset":"2026-08-12T00:00:00Z","include_byok_in_limit":true,"usage":24.5,"usage_daily":2.5,"usage_weekly":10,"usage_monthly":24.5,"byok_usage":3,"byok_usage_daily":0.5,"byok_usage_weekly":1,"byok_usage_monthly":3,"is_free_tier":false,"is_management_key":true,"is_provisioning_key":null,"creator_user_id":null,"expires_at":null,"rate_limit":{"requests":100}}}"#
+        .data(using: .utf8)!
+      return (response, body)
+    }
+
+    let result = try await makeClient().keys.current(
+      options: .init(baseURL: baseURL, extraHeaders: ["X-Test": "passed"]))
+    XCTAssertEqual(result.data.label, "Current key")
+    XCTAssertEqual(result.data.limit, 100)
+    XCTAssertEqual(result.data.limitRemaining, 75.5)
+    XCTAssertEqual(result.data.limitReset, "2026-08-12T00:00:00Z")
+    XCTAssertTrue(result.data.includeBYOKInLimit)
+    XCTAssertEqual(result.data.usage, 24.5)
+    XCTAssertEqual(result.data.usageDaily, 2.5)
+    XCTAssertEqual(result.data.usageWeekly, 10)
+    XCTAssertEqual(result.data.usageMonthly, 24.5)
+    XCTAssertEqual(result.data.byokUsage, 3)
+    XCTAssertEqual(result.data.byokUsageDaily, 0.5)
+    XCTAssertEqual(result.data.byokUsageWeekly, 1)
+    XCTAssertEqual(result.data.byokUsageMonthly, 3)
+    XCTAssertFalse(result.data.isFreeTier)
+    XCTAssertTrue(result.data.isManagementKey)
+    XCTAssertNil(result.data.creatorUserID)
+    XCTAssertNil(result.data.expiresAt)
+    XCTAssertEqual(result.data.rateLimit, .object(["requests": .number(100)]))
+  }
+
+  func testGetCurrentKeyDecodesLegacyNumericRateLimit() async throws {
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.url?.path, "/api/v1/key")
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      let body =
+        #"{"data":{"label":"Legacy","limit":null,"limit_remaining":null,"limit_reset":null,"include_byok_in_limit":false,"usage":0,"usage_daily":0,"usage_weekly":0,"usage_monthly":0,"byok_usage":0,"byok_usage_daily":0,"byok_usage_weekly":0,"byok_usage_monthly":0,"is_free_tier":true,"is_management_key":false,"rate_limit":-1}}"#
+        .data(using: .utf8)!
+      return (response, body)
+    }
+
+    let result = try await makeClient().getCurrentKey()
+    XCTAssertEqual(result.data.rateLimit, .number(-1))
+  }
+
   private func makeClient() -> OpenRouterClient {
     let config = URLSessionConfiguration.ephemeral
     config.protocolClasses = [URLProtocolResourcesStub.self]

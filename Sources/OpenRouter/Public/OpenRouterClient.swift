@@ -463,6 +463,10 @@ public struct OpenRouterClient: Sendable {
     try await transport.get(path: "credits", responseType: CreditsResponse.self, options: options)
   }
 
+  public func getCurrentKey(options: RequestOptions? = nil) async throws -> CurrentKeyResponse {
+    try await transport.get(path: "key", responseType: CurrentKeyResponse.self, options: options)
+  }
+
   public func getUserActivity(
     date: String? = nil,
     apiKeyHash: String? = nil,
@@ -645,6 +649,7 @@ extension OpenRouterClient {
   public var generations: GenerationsResource { GenerationsResource(client: self) }
   public var models: ModelsResource { ModelsResource(client: self) }
   public var credits: CreditsResource { CreditsResource(client: self) }
+  public var keys: KeysResource { KeysResource(client: self) }
   public var activity: ActivityResource { ActivityResource(client: self) }
   public var datasets: DatasetsResource { DatasetsResource(client: self) }
   public var providers: ProvidersResource { ProvidersResource(client: self) }
@@ -834,6 +839,15 @@ extension OpenRouterClient {
 
     public func get(options: RequestOptions? = nil) async throws -> CreditsResponse {
       try await client.getCredits(options: options)
+    }
+  }
+
+  /// Accesses metadata for the key used to authenticate the current client.
+  public struct KeysResource: Sendable {
+    fileprivate let client: OpenRouterClient
+
+    public func current(options: RequestOptions? = nil) async throws -> CurrentKeyResponse {
+      try await client.getCurrentKey(options: options)
     }
   }
 
