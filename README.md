@@ -119,6 +119,7 @@ let generationContentRaw = try await client.listGenerationContentRaw(id: "gen_12
 let models = try await client.models.list()
 let userModels = try await client.models.listUser(offset: 0, limit: 25)
 let credits = try await client.credits.get()
+let activity = try await client.activity.get(date: "2026-08-10", groupBy: "workspace")
 
 // providers / endpoints
 let providers = try await client.providers.list()

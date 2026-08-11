@@ -463,6 +463,28 @@ public struct OpenRouterClient: Sendable {
     try await transport.get(path: "credits", responseType: CreditsResponse.self, options: options)
   }
 
+  public func getUserActivity(
+    date: String? = nil,
+    apiKeyHash: String? = nil,
+    userID: String? = nil,
+    groupBy: String? = nil,
+    workspaceID: String? = nil,
+    options: RequestOptions? = nil
+  ) async throws -> ActivityResponse {
+    var queryItems: [URLQueryItem] = []
+    if let date { queryItems.append(URLQueryItem(name: "date", value: date)) }
+    if let apiKeyHash { queryItems.append(URLQueryItem(name: "api_key_hash", value: apiKeyHash)) }
+    if let userID { queryItems.append(URLQueryItem(name: "user_id", value: userID)) }
+    if let groupBy { queryItems.append(URLQueryItem(name: "group_by", value: groupBy)) }
+    if let workspaceID { queryItems.append(URLQueryItem(name: "workspace_id", value: workspaceID)) }
+    return try await transport.get(
+      path: "activity",
+      queryItems: queryItems,
+      responseType: ActivityResponse.self,
+      options: options
+    )
+  }
+
   public func listProviders(options: RequestOptions? = nil) async throws -> ProvidersResponse {
     try await transport.get(
       path: "providers", responseType: ProvidersResponse.self, options: options)
@@ -593,6 +615,7 @@ extension OpenRouterClient {
   public var generations: GenerationsResource { GenerationsResource(client: self) }
   public var models: ModelsResource { ModelsResource(client: self) }
   public var credits: CreditsResource { CreditsResource(client: self) }
+  public var activity: ActivityResource { ActivityResource(client: self) }
   public var providers: ProvidersResource { ProvidersResource(client: self) }
   public var endpoints: EndpointsResource { EndpointsResource(client: self) }
   public var files: FilesResource { FilesResource(client: self) }
@@ -780,6 +803,28 @@ extension OpenRouterClient {
 
     public func get(options: RequestOptions? = nil) async throws -> CreditsResponse {
       try await client.getCredits(options: options)
+    }
+  }
+
+  public struct ActivityResource: Sendable {
+    fileprivate let client: OpenRouterClient
+
+    public func get(
+      date: String? = nil,
+      apiKeyHash: String? = nil,
+      userID: String? = nil,
+      groupBy: String? = nil,
+      workspaceID: String? = nil,
+      options: RequestOptions? = nil
+    ) async throws -> ActivityResponse {
+      try await client.getUserActivity(
+        date: date,
+        apiKeyHash: apiKeyHash,
+        userID: userID,
+        groupBy: groupBy,
+        workspaceID: workspaceID,
+        options: options
+      )
     }
   }
 

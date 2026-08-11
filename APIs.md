@@ -47,6 +47,7 @@ Status legend:
 | [x] | GET | `/model/{author}/{slug}` | `client.models.get`, `client.getModel` | Gets full details for one model. |
 | [x] | GET | `/models/count` | `client.models.count`, `client.listModelsCount` | Gets the total available model count, optionally filtered by output modalities. |
 | [x] | GET | `/credits` | `client.credits.get`, `client.getCredits` | Gets remaining credits and usage. Requires a management API key. |
+| [x] | GET | `/activity` | `client.activity.get`, `client.getUserActivity` | Gets activity data for a management API key with optional filters and grouping. |
 | [x] | GET | `/providers` | `client.providers.list`, `client.listProviders` | Lists available providers. |
 | [x] | GET | `/models/{author}/{slug}/endpoints` | `client.endpoints.list`, `client.listModelEndpoints` | Lists endpoints for a specific model. |
 | [x] | GET | `/endpoints/zdr` | `client.endpoints.listZDR`, `client.listZDREndpoints` | Previews Zero Data Retention endpoint availability. |
@@ -93,7 +94,7 @@ Status legend:
 | [x] | GET | `/credits` | `getCredits` | Get remaining credits. | Implemented in `OpenRouterClient.getCredits`; resource alias: `client.credits.get`. Requires a management API key. |
 | [x] | GET | `/generation` | `getGeneration` | Get request and usage metadata for a generation. | Implemented in `OpenRouterClient.getGeneration`; resource alias: `client.generations.get`. Also has `getGenerationRaw`. |
 | [x] | GET | `/generation/content` | `listGenerationContent` | Get stored prompt/completion content for a generation. | Implemented in `OpenRouterClient.listGenerationContent`; resource alias: `client.generations.content`. Also has `listGenerationContentRaw`. |
-| [ ] | GET | `/activity` | `getUserActivity` | Get user activity grouped by endpoint. Requires a management API key. |  |
+| [x] | GET | `/activity` | `getUserActivity` | Get user activity grouped by endpoint. Requires a management API key. | Implemented in `OpenRouterClient.getUserActivity`; resource alias: `client.activity.get`. Supports optional date, API key, user, workspace filters, and grouping. |
 | [ ] | GET | `/datasets/rankings-daily` | `getRankingsDaily` | Get daily token totals for top models. |  |
 
 ## API Keys, Auth, and BYOK

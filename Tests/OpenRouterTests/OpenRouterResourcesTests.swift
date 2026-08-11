@@ -537,6 +537,57 @@ final class OpenRouterResourcesTests: XCTestCase {
     XCTAssertEqual(result.data?.totalUsage, 12.3)
   }
 
+  func testGetUserActivityBuildsRequestAndDecodesTypedItems() async throws {
+    let baseURL = URL(string: "https://example.test/custom/api/")!
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.httpMethod, "GET")
+      XCTAssertEqual(request.url?.path, "/custom/api/activity")
+      XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-key")
+      XCTAssertEqual(
+        request.url?.query,
+        "date=2026-08-10&api_key_hash=key_hash&user_id=user_1&group_by=workspace&workspace_id=workspace_1"
+      )
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      let body =
+        #"{"data":[{"date":"2026-08-10","model":"openai/gpt-4o-mini","model_permaslug":"gpt-4o-mini","endpoint_id":"endpoint_1","provider_name":"OpenAI","usage":1.25,"byok_usage_inference":0.5,"requests":3,"prompt_tokens":100,"completion_tokens":50,"reasoning_tokens":10,"workspace_id":"workspace_1"}]}"#
+        .data(using: .utf8)!
+      return (response, body)
+    }
+
+    let result = try await makeClient().getUserActivity(
+      date: "2026-08-10",
+      apiKeyHash: "key_hash",
+      userID: "user_1",
+      groupBy: "workspace",
+      workspaceID: "workspace_1",
+      options: .init(baseURL: baseURL)
+    )
+    let item = try XCTUnwrap(result.data.first)
+    XCTAssertEqual(item.modelPermaslug, "gpt-4o-mini")
+    XCTAssertEqual(item.byokUsageInference, 0.5)
+    XCTAssertEqual(item.reasoningTokens, 10)
+    XCTAssertEqual(item.workspaceID, "workspace_1")
+  }
+
+  func testActivityResourceOmitsNilQueryItems() async throws {
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.httpMethod, "GET")
+      XCTAssertEqual(request.url?.path, "/api/v1/activity")
+      XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-key")
+      XCTAssertNil(request.url?.query)
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      return (
+        response,
+        #"{"data":[]}"#.data(using: .utf8)!
+      )
+    }
+
+    let result = try await makeClient().activity.get()
+    XCTAssertTrue(result.data.isEmpty)
+  }
+
   func testResourceNamespacesRouteToExpectedEndpoints() async throws {
     let client = makeClient()
 

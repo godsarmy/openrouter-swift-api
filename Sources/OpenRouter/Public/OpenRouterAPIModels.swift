@@ -2366,6 +2366,69 @@ public struct ModelsCount: Codable, Sendable, Equatable {
   }
 }
 
+public struct ActivityResponse: Codable, Sendable, Equatable {
+  public var data: [ActivityItem]
+
+  public init(data: [ActivityItem]) {
+    self.data = data
+  }
+}
+
+public struct ActivityItem: Codable, Sendable, Equatable {
+  public var date: String
+  public var model: String
+  public var modelPermaslug: String
+  public var endpointID: String
+  public var providerName: String
+  public var usage: Double
+  public var byokUsageInference: Double
+  public var requests: Int
+  public var promptTokens: Int
+  public var completionTokens: Int
+  public var reasoningTokens: Int
+  public var workspaceID: String?
+
+  enum CodingKeys: String, CodingKey {
+    case date, model, usage, requests
+    case modelPermaslug = "model_permaslug"
+    case endpointID = "endpoint_id"
+    case providerName = "provider_name"
+    case byokUsageInference = "byok_usage_inference"
+    case promptTokens = "prompt_tokens"
+    case completionTokens = "completion_tokens"
+    case reasoningTokens = "reasoning_tokens"
+    case workspaceID = "workspace_id"
+  }
+
+  public init(
+    date: String,
+    model: String,
+    modelPermaslug: String,
+    endpointID: String,
+    providerName: String,
+    usage: Double,
+    byokUsageInference: Double,
+    requests: Int,
+    promptTokens: Int,
+    completionTokens: Int,
+    reasoningTokens: Int,
+    workspaceID: String? = nil
+  ) {
+    self.date = date
+    self.model = model
+    self.modelPermaslug = modelPermaslug
+    self.endpointID = endpointID
+    self.providerName = providerName
+    self.usage = usage
+    self.byokUsageInference = byokUsageInference
+    self.requests = requests
+    self.promptTokens = promptTokens
+    self.completionTokens = completionTokens
+    self.reasoningTokens = reasoningTokens
+    self.workspaceID = workspaceID
+  }
+}
+
 /// A paginated list of embedding-capable models.
 public struct EmbeddingsModelsResponse: Codable, Sendable, Equatable {
   public var data: [OpenRouterModel]
