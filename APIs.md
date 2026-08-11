@@ -43,6 +43,7 @@ Status legend:
 | [x] | GET | `/generation` | `client.generations.get`, `client.getGeneration`, `client.getGenerationRaw` | Gets request and usage metadata for a generation. |
 | [x] | GET | `/generation/content` | `client.generations.content`, `client.listGenerationContent`, `client.listGenerationContentRaw` | Gets stored prompt/completion content for a generation. |
 | [x] | GET | `/models` | `client.models.list`, `client.listModels` | Lists available models. |
+| [x] | GET | `/models/user` | `client.models.listUser`, `client.listModelsUser` | Lists user-filtered models with optional `offset` and `limit` pagination. |
 | [x] | GET | `/model/{author}/{slug}` | `client.models.get`, `client.getModel` | Gets full details for one model. |
 | [x] | GET | `/models/count` | `client.models.count`, `client.listModelsCount` | Gets the total available model count, optionally filtered by output modalities. |
 | [x] | GET | `/credits` | `client.credits.get`, `client.getCredits` | Gets remaining credits and usage. Requires a management API key. |
@@ -80,7 +81,7 @@ Status legend:
 | [x] | GET | `/models` | `getModels` | List all models and their properties. | Implemented in `OpenRouterClient.listModels`; resource alias: `client.models.list`. |
 | [x] | GET | `/model/{author}/{slug}` | `getModelBySlug` | Get full details for one model. | Implemented in `OpenRouterClient.getModel`; resource alias: `client.models.get`. Distinct from `/models/{author}/{slug}/endpoints`. |
 | [x] | GET | `/models/count` | `listModelsCount` | Get the total count of available models. | Implemented in `OpenRouterClient.listModelsCount`; resource alias: `client.models.count`. Supports optional `output_modalities`. |
-| [ ] | GET | `/models/user` | `listModelsUser` | List models filtered by user preferences, privacy, or guardrails. |  |
+| [x] | GET | `/models/user` | `listModelsUser` | List models filtered by user preferences, privacy, or guardrails. | Implemented in `OpenRouterClient.listModelsUser`; resource alias: `client.models.listUser`. Supports optional `offset` and `limit` pagination. |
 | [x] | GET | `/models/{author}/{slug}/endpoints` | `listEndpoints` | List endpoints for a specific model. | Implemented in `OpenRouterClient.listModelEndpoints`; resource alias: `client.endpoints.list`. |
 | [x] | GET | `/providers` | `listProviders` | List all providers. | Implemented in `OpenRouterClient.listProviders`; resource alias: `client.providers.list`. |
 | [x] | GET | `/endpoints/zdr` | `listEndpointsZdr` | Preview Zero Data Retention impact on available endpoints. | Implemented in `OpenRouterClient.listZDREndpoints`; resource alias: `client.endpoints.listZDR`. |

@@ -2323,6 +2323,33 @@ public struct ModelsResponse: Codable, Sendable, Equatable {
   }
 }
 
+/// A paginated list of models filtered for the authenticated user.
+public struct UserModelsResponse: Codable, Sendable, Equatable {
+  public var data: [OpenRouterModel]
+  public var links: Links
+  public var totalCount: Int
+
+  enum CodingKeys: String, CodingKey {
+    case data
+    case links
+    case totalCount = "total_count"
+  }
+
+  public init(data: [OpenRouterModel], links: Links, totalCount: Int) {
+    self.data = data
+    self.links = links
+    self.totalCount = totalCount
+  }
+
+  public struct Links: Codable, Sendable, Equatable {
+    public var next: String?
+
+    public init(next: String? = nil) {
+      self.next = next
+    }
+  }
+}
+
 public struct ModelsCountResponse: Codable, Sendable, Equatable {
   public var data: ModelsCount
 

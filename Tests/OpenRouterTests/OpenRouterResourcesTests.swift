@@ -40,6 +40,50 @@ final class OpenRouterResourcesTests: XCTestCase {
     XCTAssertEqual(result.data.first?.pricing?.inputCacheRead, "0.01")
   }
 
+  func testListModelsUserBuildsRequestAndDecodesPagination() async throws {
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.httpMethod, "GET")
+      XCTAssertEqual(request.url?.path, "/api/v1/models/user")
+      XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-key")
+      let components = try XCTUnwrap(
+        URLComponents(url: try XCTUnwrap(request.url), resolvingAgainstBaseURL: false))
+      XCTAssertEqual(components.queryItems?.first(where: { $0.name == "offset" })?.value, "10")
+      XCTAssertEqual(components.queryItems?.first(where: { $0.name == "limit" })?.value, "25")
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      let body =
+        #"{"data":[{"id":"openai/gpt-4o-mini","name":"GPT-4o mini","context_length":128000}],"links":{"next":"cursor-2"},"total_count":42}"#
+        .data(using: .utf8)!
+      return (response, body)
+    }
+
+    let result = try await makeClient().listModelsUser(offset: 10, limit: 25)
+    XCTAssertEqual(result.data.first?.id, "openai/gpt-4o-mini")
+    XCTAssertEqual(result.data.first?.contextLength, 128000)
+    XCTAssertEqual(result.links.next, "cursor-2")
+    XCTAssertEqual(result.totalCount, 42)
+  }
+
+  func testModelsResourceListsUserWithoutNilQueryItems() async throws {
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.httpMethod, "GET")
+      XCTAssertEqual(request.url?.path, "/api/v1/models/user")
+      XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-key")
+      XCTAssertNil(request.url?.query)
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      return (
+        response,
+        #"{"data":[],"links":{"next":null},"total_count":0}"#.data(using: .utf8)!
+      )
+    }
+
+    let result = try await makeClient().models.listUser()
+    XCTAssertTrue(result.data.isEmpty)
+    XCTAssertNil(result.links.next)
+    XCTAssertEqual(result.totalCount, 0)
+  }
+
   func testListModelsCountBuildsRequestDecodesResponseAndSupportsResourceAlias() async throws {
     URLProtocolResourcesStub.handler = { request in
       XCTAssertEqual(request.httpMethod, "GET")

@@ -417,6 +417,22 @@ public struct OpenRouterClient: Sendable {
     try await transport.get(path: "models", responseType: ModelsResponse.self, options: options)
   }
 
+  public func listModelsUser(
+    offset: Int? = nil,
+    limit: Int? = nil,
+    options: RequestOptions? = nil
+  ) async throws -> UserModelsResponse {
+    var queryItems: [URLQueryItem] = []
+    if let offset { queryItems.append(URLQueryItem(name: "offset", value: String(offset))) }
+    if let limit { queryItems.append(URLQueryItem(name: "limit", value: String(limit))) }
+    return try await transport.get(
+      path: "models/user",
+      queryItems: queryItems,
+      responseType: UserModelsResponse.self,
+      options: options
+    )
+  }
+
   public func listModelsCount(
     outputModalities: String? = nil,
     options: RequestOptions? = nil
@@ -723,6 +739,14 @@ extension OpenRouterClient {
 
     public func list(options: RequestOptions? = nil) async throws -> ModelsResponse {
       try await client.listModels(options: options)
+    }
+
+    public func listUser(
+      offset: Int? = nil,
+      limit: Int? = nil,
+      options: RequestOptions? = nil
+    ) async throws -> UserModelsResponse {
+      try await client.listModelsUser(offset: offset, limit: limit, options: options)
     }
 
     public func count(
