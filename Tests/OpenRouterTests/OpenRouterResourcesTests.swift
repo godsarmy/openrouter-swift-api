@@ -944,6 +944,68 @@ final class OpenRouterResourcesTests: XCTestCase {
     XCTAssertEqual(result.data.rateLimit, .number(-1))
   }
 
+  func testListAPIKeysBuildsManagementRequestAndDecodesTypedMetadata() async throws {
+    let workspaceID = UUID(uuidString: "12345678-1234-1234-1234-123456789ABC")!
+    let baseURL = URL(string: "https://example.test/management/")!
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.httpMethod, "GET")
+      XCTAssertEqual(request.url?.path, "/management/keys")
+      XCTAssertEqual(
+        request.url?.query,
+        "include_disabled=false&offset=10&workspace_id=12345678-1234-1234-1234-123456789ABC")
+      XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-key")
+      XCTAssertEqual(request.value(forHTTPHeaderField: "X-Management-Test"), "passed")
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      let body =
+        #"{"data":[{"hash":"hash_1","name":"Service","label":"Production","disabled":false,"limit":100,"limit_remaining":75.5,"limit_reset":"2026-08-12T00:00:00Z","include_byok_in_limit":true,"usage":24.5,"usage_daily":2.5,"usage_weekly":10,"usage_monthly":24.5,"byok_usage":3,"byok_usage_daily":0.5,"byok_usage_weekly":1,"byok_usage_monthly":3,"created_at":"2026-01-01T00:00:00Z","updated_at":null,"creator_user_id":null,"workspace_id":"workspace_1","expires_at":null}]}"#
+        .data(using: .utf8)!
+      return (response, body)
+    }
+
+    let result = try await makeClient().keys.list(
+      includeDisabled: false,
+      offset: 10,
+      workspaceID: workspaceID,
+      options: .init(baseURL: baseURL, extraHeaders: ["X-Management-Test": "passed"]))
+    let key = try XCTUnwrap(result.data.first)
+    XCTAssertEqual(key.hash, "hash_1")
+    XCTAssertEqual(key.name, "Service")
+    XCTAssertEqual(key.label, "Production")
+    XCTAssertFalse(key.disabled)
+    XCTAssertEqual(key.limit, 100)
+    XCTAssertEqual(key.limitRemaining, 75.5)
+    XCTAssertEqual(key.limitReset, "2026-08-12T00:00:00Z")
+    XCTAssertTrue(key.includeBYOKInLimit)
+    XCTAssertEqual(key.usage, 24.5)
+    XCTAssertEqual(key.usageDaily, 2.5)
+    XCTAssertEqual(key.usageWeekly, 10)
+    XCTAssertEqual(key.usageMonthly, 24.5)
+    XCTAssertEqual(key.byokUsage, 3)
+    XCTAssertEqual(key.byokUsageDaily, 0.5)
+    XCTAssertEqual(key.byokUsageWeekly, 1)
+    XCTAssertEqual(key.byokUsageMonthly, 3)
+    XCTAssertEqual(key.createdAt, "2026-01-01T00:00:00Z")
+    XCTAssertNil(key.updatedAt)
+    XCTAssertNil(key.creatorUserID)
+    XCTAssertEqual(key.workspaceID, "workspace_1")
+    XCTAssertNil(key.expiresAt)
+  }
+
+  func testListAPIKeysOmitsAllNilQueries() async throws {
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.httpMethod, "GET")
+      XCTAssertEqual(request.url?.path, "/api/v1/keys")
+      XCTAssertNil(request.url?.query)
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      return (response, #"{"data":[]}"#.data(using: .utf8)!)
+    }
+
+    let result = try await makeClient().listAPIKeys()
+    XCTAssertTrue(result.data.isEmpty)
+  }
+
   private func makeClient() -> OpenRouterClient {
     let config = URLSessionConfiguration.ephemeral
     config.protocolClasses = [URLProtocolResourcesStub.self]

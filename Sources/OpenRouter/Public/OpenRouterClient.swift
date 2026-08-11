@@ -467,6 +467,24 @@ public struct OpenRouterClient: Sendable {
     try await transport.get(path: "key", responseType: CurrentKeyResponse.self, options: options)
   }
 
+  public func listAPIKeys(
+    includeDisabled: Bool? = nil,
+    offset: Int? = nil,
+    workspaceID: UUID? = nil,
+    options: RequestOptions? = nil
+  ) async throws -> APIKeysResponse {
+    var queryItems: [URLQueryItem] = []
+    if let includeDisabled {
+      queryItems.append(.init(name: "include_disabled", value: includeDisabled ? "true" : "false"))
+    }
+    if let offset { queryItems.append(.init(name: "offset", value: String(offset))) }
+    if let workspaceID {
+      queryItems.append(.init(name: "workspace_id", value: workspaceID.uuidString))
+    }
+    return try await transport.get(
+      path: "keys", queryItems: queryItems, responseType: APIKeysResponse.self, options: options)
+  }
+
   public func getUserActivity(
     date: String? = nil,
     apiKeyHash: String? = nil,
@@ -848,6 +866,17 @@ extension OpenRouterClient {
 
     public func current(options: RequestOptions? = nil) async throws -> CurrentKeyResponse {
       try await client.getCurrentKey(options: options)
+    }
+
+    public func list(
+      includeDisabled: Bool? = nil,
+      offset: Int? = nil,
+      workspaceID: UUID? = nil,
+      options: RequestOptions? = nil
+    ) async throws -> APIKeysResponse {
+      try await client.listAPIKeys(
+        includeDisabled: includeDisabled, offset: offset, workspaceID: workspaceID, options: options
+      )
     }
   }
 

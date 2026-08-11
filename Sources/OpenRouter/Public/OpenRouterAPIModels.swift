@@ -9,6 +9,105 @@ public struct CurrentKeyResponse: Codable, Sendable, Equatable {
   }
 }
 
+/// A management API key's metadata. This type never contains plaintext key material.
+public struct APIKeysResponse: Codable, Sendable, Equatable {
+  public var data: [ManagedAPIKey]
+
+  public init(data: [ManagedAPIKey]) {
+    self.data = data
+  }
+}
+
+/// Management metadata for an API key. This type never contains plaintext key material.
+public struct ManagedAPIKey: Codable, Sendable, Equatable {
+  public var hash: String
+  public var name: String
+  public var label: String
+  public var disabled: Bool
+  public var limit: Double?
+  public var limitRemaining: Double?
+  public var limitReset: String?
+  public var includeBYOKInLimit: Bool
+  public var usage: Double
+  public var usageDaily: Double
+  public var usageWeekly: Double
+  public var usageMonthly: Double
+  public var byokUsage: Double
+  public var byokUsageDaily: Double
+  public var byokUsageWeekly: Double
+  public var byokUsageMonthly: Double
+  public var createdAt: String
+  public var updatedAt: String?
+  public var creatorUserID: String?
+  public var workspaceID: String
+  public var expiresAt: String?
+
+  enum CodingKeys: String, CodingKey {
+    case hash, name, label, disabled, limit, usage
+    case limitRemaining = "limit_remaining"
+    case limitReset = "limit_reset"
+    case includeBYOKInLimit = "include_byok_in_limit"
+    case usageDaily = "usage_daily"
+    case usageWeekly = "usage_weekly"
+    case usageMonthly = "usage_monthly"
+    case byokUsage = "byok_usage"
+    case byokUsageDaily = "byok_usage_daily"
+    case byokUsageWeekly = "byok_usage_weekly"
+    case byokUsageMonthly = "byok_usage_monthly"
+    case createdAt = "created_at"
+    case updatedAt = "updated_at"
+    case creatorUserID = "creator_user_id"
+    case workspaceID = "workspace_id"
+    case expiresAt = "expires_at"
+  }
+
+  public init(
+    hash: String,
+    name: String,
+    label: String,
+    disabled: Bool,
+    limit: Double?,
+    limitRemaining: Double?,
+    limitReset: String?,
+    includeBYOKInLimit: Bool,
+    usage: Double,
+    usageDaily: Double,
+    usageWeekly: Double,
+    usageMonthly: Double,
+    byokUsage: Double,
+    byokUsageDaily: Double,
+    byokUsageWeekly: Double,
+    byokUsageMonthly: Double,
+    createdAt: String,
+    updatedAt: String?,
+    creatorUserID: String?,
+    workspaceID: String,
+    expiresAt: String?
+  ) {
+    self.hash = hash
+    self.name = name
+    self.label = label
+    self.disabled = disabled
+    self.limit = limit
+    self.limitRemaining = limitRemaining
+    self.limitReset = limitReset
+    self.includeBYOKInLimit = includeBYOKInLimit
+    self.usage = usage
+    self.usageDaily = usageDaily
+    self.usageWeekly = usageWeekly
+    self.usageMonthly = usageMonthly
+    self.byokUsage = byokUsage
+    self.byokUsageDaily = byokUsageDaily
+    self.byokUsageWeekly = byokUsageWeekly
+    self.byokUsageMonthly = byokUsageMonthly
+    self.createdAt = createdAt
+    self.updatedAt = updatedAt
+    self.creatorUserID = creatorUserID
+    self.workspaceID = workspaceID
+    self.expiresAt = expiresAt
+  }
+}
+
 /// Usage, limits, and lifecycle metadata for the current API key. This type never contains key material.
 public struct CurrentKey: Codable, Sendable, Equatable {
   public var label: String
