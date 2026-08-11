@@ -485,6 +485,36 @@ public struct OpenRouterClient: Sendable {
     )
   }
 
+  public func getRankingsDaily(
+    startDate: String? = nil,
+    endDate: String? = nil,
+    period: String? = nil,
+    modality: String? = nil,
+    contextBucket: String? = nil,
+    category: String? = nil,
+    languageType: String? = nil,
+    options: RequestOptions? = nil
+  ) async throws -> RankingsDailyResponse {
+    var queryItems: [URLQueryItem] = []
+    if let startDate { queryItems.append(URLQueryItem(name: "start_date", value: startDate)) }
+    if let endDate { queryItems.append(URLQueryItem(name: "end_date", value: endDate)) }
+    if let period { queryItems.append(URLQueryItem(name: "period", value: period)) }
+    if let modality { queryItems.append(URLQueryItem(name: "modality", value: modality)) }
+    if let contextBucket {
+      queryItems.append(URLQueryItem(name: "context_bucket", value: contextBucket))
+    }
+    if let category { queryItems.append(URLQueryItem(name: "category", value: category)) }
+    if let languageType {
+      queryItems.append(URLQueryItem(name: "language_type", value: languageType))
+    }
+    return try await transport.get(
+      path: "datasets/rankings-daily",
+      queryItems: queryItems,
+      responseType: RankingsDailyResponse.self,
+      options: options
+    )
+  }
+
   public func listProviders(options: RequestOptions? = nil) async throws -> ProvidersResponse {
     try await transport.get(
       path: "providers", responseType: ProvidersResponse.self, options: options)
@@ -616,6 +646,7 @@ extension OpenRouterClient {
   public var models: ModelsResource { ModelsResource(client: self) }
   public var credits: CreditsResource { CreditsResource(client: self) }
   public var activity: ActivityResource { ActivityResource(client: self) }
+  public var datasets: DatasetsResource { DatasetsResource(client: self) }
   public var providers: ProvidersResource { ProvidersResource(client: self) }
   public var endpoints: EndpointsResource { EndpointsResource(client: self) }
   public var files: FilesResource { FilesResource(client: self) }
@@ -825,6 +856,26 @@ extension OpenRouterClient {
         workspaceID: workspaceID,
         options: options
       )
+    }
+  }
+
+  public struct DatasetsResource: Sendable {
+    fileprivate let client: OpenRouterClient
+
+    public func rankingsDaily(
+      startDate: String? = nil,
+      endDate: String? = nil,
+      period: String? = nil,
+      modality: String? = nil,
+      contextBucket: String? = nil,
+      category: String? = nil,
+      languageType: String? = nil,
+      options: RequestOptions? = nil
+    ) async throws -> RankingsDailyResponse {
+      try await client.getRankingsDaily(
+        startDate: startDate, endDate: endDate, period: period, modality: modality,
+        contextBucket: contextBucket, category: category, languageType: languageType,
+        options: options)
     }
   }
 

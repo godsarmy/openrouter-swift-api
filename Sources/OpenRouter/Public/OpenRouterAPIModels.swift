@@ -2429,6 +2429,55 @@ public struct ActivityItem: Codable, Sendable, Equatable {
   }
 }
 
+public struct RankingsDailyResponse: Codable, Sendable, Equatable {
+  public var data: [RankingsDailyItem]
+  public var meta: RankingsDailyMeta
+
+  public init(data: [RankingsDailyItem], meta: RankingsDailyMeta) {
+    self.data = data
+    self.meta = meta
+  }
+}
+
+public struct RankingsDailyItem: Codable, Sendable, Equatable {
+  public var date: String
+  public var modelPermaslug: String
+  public var totalTokens: String
+
+  enum CodingKeys: String, CodingKey {
+    case date
+    case modelPermaslug = "model_permaslug"
+    case totalTokens = "total_tokens"
+  }
+
+  public init(date: String, modelPermaslug: String, totalTokens: String) {
+    self.date = date
+    self.modelPermaslug = modelPermaslug
+    self.totalTokens = totalTokens
+  }
+}
+
+public struct RankingsDailyMeta: Codable, Sendable, Equatable {
+  public var asOf: String
+  public var version: String
+  public var startDate: String
+  public var endDate: String
+
+  enum CodingKeys: String, CodingKey {
+    case version
+    case asOf = "as_of"
+    case startDate = "start_date"
+    case endDate = "end_date"
+  }
+
+  public init(asOf: String, version: String, startDate: String, endDate: String) {
+    self.asOf = asOf
+    self.version = version
+    self.startDate = startDate
+    self.endDate = endDate
+  }
+}
+
 /// A paginated list of embedding-capable models.
 public struct EmbeddingsModelsResponse: Codable, Sendable, Equatable {
   public var data: [OpenRouterModel]

@@ -588,6 +588,56 @@ final class OpenRouterResourcesTests: XCTestCase {
     XCTAssertTrue(result.data.isEmpty)
   }
 
+  func testGetRankingsDailyBuildsRequestAndDecodesTypedResponse() async throws {
+    let baseURL = URL(string: "https://example.test/custom/api/")!
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.httpMethod, "GET")
+      XCTAssertEqual(request.url?.path, "/custom/api/datasets/rankings-daily")
+      XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-key")
+      XCTAssertEqual(
+        request.url?.query,
+        "start_date=2026-08-01&end_date=2026-08-10&period=week&modality=text&context_bucket=100K&category=programming&language_type=natural"
+      )
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      let body =
+        #"{"data":[{"date":"2026-08-10","model_permaslug":"openai/gpt-4o-mini","total_tokens":"123456789012345678901234567890"},{"date":"2026-08-10","model_permaslug":"other","total_tokens":"42"}],"meta":{"as_of":"2026-08-11T00:00:00Z","version":"v1","start_date":"2026-08-01","end_date":"2026-08-10"}}"#
+        .data(using: .utf8)!
+      return (response, body)
+    }
+
+    // The SDK forwards all supplied filters without enforcing cross-filter constraints.
+    let result = try await makeClient().getRankingsDaily(
+      startDate: "2026-08-01", endDate: "2026-08-10", period: "week", modality: "text",
+      contextBucket: "100K", category: "programming", languageType: "natural",
+      options: .init(baseURL: baseURL))
+    XCTAssertEqual(result.data.first?.modelPermaslug, "openai/gpt-4o-mini")
+    XCTAssertEqual(result.data.first?.totalTokens, "123456789012345678901234567890")
+    XCTAssertEqual(result.data.last?.modelPermaslug, "other")
+    XCTAssertEqual(result.meta.asOf, "2026-08-11T00:00:00Z")
+    XCTAssertEqual(result.meta.endDate, "2026-08-10")
+  }
+
+  func testDatasetsResourceRankingsDailyOmitsNilQueryItems() async throws {
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.httpMethod, "GET")
+      XCTAssertEqual(request.url?.path, "/api/v1/datasets/rankings-daily")
+      XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-key")
+      XCTAssertNil(request.url?.query)
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      return (
+        response,
+        #"{"data":[],"meta":{"as_of":"2026-08-11T00:00:00Z","version":"v1","start_date":"2026-08-11","end_date":"2026-08-11"}}"#
+          .data(using: .utf8)!
+      )
+    }
+
+    let result = try await makeClient().datasets.rankingsDaily()
+    XCTAssertTrue(result.data.isEmpty)
+    XCTAssertEqual(result.meta.version, "v1")
+  }
+
   func testResourceNamespacesRouteToExpectedEndpoints() async throws {
     let client = makeClient()
 
