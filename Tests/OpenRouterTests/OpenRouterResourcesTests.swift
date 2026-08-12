@@ -1006,6 +1006,51 @@ final class OpenRouterResourcesTests: XCTestCase {
     XCTAssertTrue(result.data.isEmpty)
   }
 
+  func testGetAPIKeyEscapesHashPassesOptionsAndDecodesMetadata() async throws {
+    let baseURL = URL(string: "https://example.test/management/")!
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.httpMethod, "GET")
+      XCTAssertEqual(
+        URLComponents(url: try XCTUnwrap(request.url), resolvingAgainstBaseURL: false)?
+          .percentEncodedPath,
+        "/management/keys/hash%20%2F%252F%3Fx%23%E9%9B%AA")
+      XCTAssertNil(request.url?.query)
+      XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-key")
+      XCTAssertEqual(request.value(forHTTPHeaderField: "X-Management-Test"), "passed")
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      let body =
+        #"{"data":{"hash":"hash_1","name":"Service","label":"Production","disabled":false,"limit":null,"limit_remaining":null,"limit_reset":null,"include_byok_in_limit":true,"usage":24.5,"usage_daily":2.5,"usage_weekly":10,"usage_monthly":24.5,"byok_usage":3,"byok_usage_daily":0.5,"byok_usage_weekly":1,"byok_usage_monthly":3,"created_at":"2026-01-01T00:00:00Z","updated_at":null,"creator_user_id":null,"workspace_id":"workspace_1","expires_at":null}}"#
+        .data(using: .utf8)!
+      return (response, body)
+    }
+
+    let result = try await makeClient().keys.get(
+      hash: "hash /%2F?x#雪",
+      options: .init(baseURL: baseURL, extraHeaders: ["X-Management-Test": "passed"]))
+    XCTAssertEqual(result.data.hash, "hash_1")
+    XCTAssertEqual(result.data.name, "Service")
+    XCTAssertEqual(result.data.label, "Production")
+    XCTAssertFalse(result.data.disabled)
+    XCTAssertNil(result.data.limit)
+    XCTAssertNil(result.data.limitRemaining)
+    XCTAssertNil(result.data.limitReset)
+    XCTAssertTrue(result.data.includeBYOKInLimit)
+    XCTAssertEqual(result.data.usage, 24.5)
+    XCTAssertEqual(result.data.usageDaily, 2.5)
+    XCTAssertEqual(result.data.usageWeekly, 10)
+    XCTAssertEqual(result.data.usageMonthly, 24.5)
+    XCTAssertEqual(result.data.byokUsage, 3)
+    XCTAssertEqual(result.data.byokUsageDaily, 0.5)
+    XCTAssertEqual(result.data.byokUsageWeekly, 1)
+    XCTAssertEqual(result.data.byokUsageMonthly, 3)
+    XCTAssertEqual(result.data.createdAt, "2026-01-01T00:00:00Z")
+    XCTAssertNil(result.data.updatedAt)
+    XCTAssertNil(result.data.creatorUserID)
+    XCTAssertEqual(result.data.workspaceID, "workspace_1")
+    XCTAssertNil(result.data.expiresAt)
+  }
+
   func testCreateAPIKeyBuildsManagementRequestDecodesResponseAndRedactsDescription() async throws {
     let workspaceID = UUID(uuidString: "12345678-1234-1234-1234-123456789ABC")!
     let baseURL = URL(string: "https://example.test/management/")!

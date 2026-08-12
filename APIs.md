@@ -49,6 +49,7 @@ Status legend:
 | [x] | GET | `/credits` | `client.credits.get`, `client.getCredits` | Gets remaining credits and usage. Requires a management API key. |
 | [x] | GET | `/key` | `client.keys.current`, `client.getCurrentKey` | Gets usage, limits, and lifecycle metadata for the current key using ordinary bearer key authentication. |
 | [x] | GET | `/keys` | `client.keys.list`, `client.listAPIKeys` | Lists management API key metadata with optional disabled, offset, and workspace filters. Requires a management key. |
+| [x] | GET | `/keys/{hash}` | `client.keys.get`, `client.getAPIKey` | Gets management API key metadata. Requires a management key; no plaintext secret is returned. |
 | [x] | POST | `/keys` | `client.keys.create`, `client.createAPIKey` | Creates a management API key and returns its one-time plaintext secret response. Requires a management key. |
 | [x] | GET | `/activity` | `client.activity.get`, `client.getUserActivity` | Gets activity data for a management API key with optional filters and grouping. |
 | [x] | GET | `/datasets/rankings-daily` | `client.datasets.rankingsDaily`, `client.getRankingsDaily` | Gets daily model rankings with optional filters and periods. |
@@ -108,7 +109,7 @@ Status legend:
 | [x] | GET | `/key` | `getCurrentKey` | Get usage, limits, and lifecycle metadata for the current API key. | Implemented in `OpenRouterClient.getCurrentKey`; resource alias: `client.keys.current`. Supports ordinary bearer API keys and does not expose key material. |
 | [x] | GET | `/keys` | `list` | List API key metadata. | Implemented in `OpenRouterClient.listAPIKeys`; resource alias: `client.keys.list`. Requires a management key and supports `include_disabled`, `offset`, and `workspace_id` filters. |
 | [x] | POST | `/keys` | `create` | Create a new API key. | Implemented in `OpenRouterClient.createAPIKey`; resource alias: `client.keys.create`. Requires a management key; the plaintext key response is returned once and must be stored securely. |
-| [ ] | GET | `/keys/{hash}` | `get` | Get a single API key. |  |
+| [x] | GET | `/keys/{hash}` | `get` | Get a single API key. | Implemented in `OpenRouterClient.getAPIKey`; resource alias: `client.keys.get`. Requires a management key and returns metadata only, never plaintext key material. |
 | [ ] | PATCH | `/keys/{hash}` | `update` | Update an API key. |  |
 | [ ] | DELETE | `/keys/{hash}` | `delete` | Delete an API key. |  |
 | [ ] | POST | `/auth/keys/code` | `createAuthKeysCode` | Create an authorization code. |  |

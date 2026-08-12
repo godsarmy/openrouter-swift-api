@@ -18,6 +18,15 @@ public struct APIKeysResponse: Codable, Sendable, Equatable {
   }
 }
 
+/// Metadata for one management API key. This response never exposes plaintext key material.
+public struct APIKeyResponse: Codable, Sendable, Equatable {
+  public var data: ManagedAPIKey
+
+  public init(data: ManagedAPIKey) {
+    self.data = data
+  }
+}
+
 public struct CreateAPIKeyRequest: Codable, Sendable, Equatable {
   public var name: String
   public var creatorUserID: String?

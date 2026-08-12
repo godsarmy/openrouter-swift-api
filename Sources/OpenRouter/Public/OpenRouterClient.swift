@@ -485,6 +485,15 @@ public struct OpenRouterClient: Sendable {
       path: "keys", queryItems: queryItems, responseType: APIKeysResponse.self, options: options)
   }
 
+  public func getAPIKey(hash: String, options: RequestOptions? = nil) async throws -> APIKeyResponse
+  {
+    try await transport.get(
+      path: .preEscaped("keys/\(escapePathSegment(hash))"),
+      responseType: APIKeyResponse.self,
+      options: options
+    )
+  }
+
   public func createAPIKey(
     _ request: CreateAPIKeyRequest,
     options: RequestOptions? = nil
@@ -885,6 +894,10 @@ extension OpenRouterClient {
       try await client.listAPIKeys(
         includeDisabled: includeDisabled, offset: offset, workspaceID: workspaceID, options: options
       )
+    }
+
+    public func get(hash: String, options: RequestOptions? = nil) async throws -> APIKeyResponse {
+      try await client.getAPIKey(hash: hash, options: options)
     }
 
     public func create(
