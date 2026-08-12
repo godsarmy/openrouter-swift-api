@@ -485,6 +485,14 @@ public struct OpenRouterClient: Sendable {
       path: "keys", queryItems: queryItems, responseType: APIKeysResponse.self, options: options)
   }
 
+  public func createAPIKey(
+    _ request: CreateAPIKeyRequest,
+    options: RequestOptions? = nil
+  ) async throws -> CreateAPIKeyResponse {
+    try await transport.post(
+      path: "keys", requestBody: request, responseType: CreateAPIKeyResponse.self, options: options)
+  }
+
   public func getUserActivity(
     date: String? = nil,
     apiKeyHash: String? = nil,
@@ -877,6 +885,13 @@ extension OpenRouterClient {
       try await client.listAPIKeys(
         includeDisabled: includeDisabled, offset: offset, workspaceID: workspaceID, options: options
       )
+    }
+
+    public func create(
+      _ request: CreateAPIKeyRequest,
+      options: RequestOptions? = nil
+    ) async throws -> CreateAPIKeyResponse {
+      try await client.createAPIKey(request, options: options)
     }
   }
 

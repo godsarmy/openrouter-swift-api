@@ -1006,6 +1006,52 @@ final class OpenRouterResourcesTests: XCTestCase {
     XCTAssertTrue(result.data.isEmpty)
   }
 
+  func testCreateAPIKeyBuildsManagementRequestDecodesResponseAndRedactsDescription() async throws {
+    let workspaceID = UUID(uuidString: "12345678-1234-1234-1234-123456789ABC")!
+    let baseURL = URL(string: "https://example.test/management/")!
+    let fakeSecret = "test-once-secret-123"
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.httpMethod, "POST")
+      XCTAssertEqual(request.url?.path, "/management/keys")
+      XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-key")
+      XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/json")
+      XCTAssertEqual(request.value(forHTTPHeaderField: "X-Management-Test"), "passed")
+      let body = try XCTUnwrap(requestBodyData(request))
+      let json = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
+      XCTAssertEqual(json["name"] as? String, "Service integration")
+      XCTAssertEqual(json["creator_user_id"] as? String, "user_1")
+      XCTAssertEqual(json["expires_at"] as? String, "2027-01-01T00:00:00Z")
+      XCTAssertEqual(json["include_byok_in_limit"] as? Bool, true)
+      XCTAssertEqual(json["limit"] as? Double, 100)
+      XCTAssertEqual(json["limit_reset"] as? String, "monthly")
+      XCTAssertEqual(json["workspace_id"] as? String, workspaceID.uuidString)
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 201, httpVersion: nil, headerFields: nil)!
+      let responseBody =
+        #"{"data":{"hash":"hash_1","name":"Service integration","label":"Service integration","disabled":false,"limit":100,"limit_remaining":100,"limit_reset":"monthly","include_byok_in_limit":true,"usage":0,"usage_daily":0,"usage_weekly":0,"usage_monthly":0,"byok_usage":0,"byok_usage_daily":0,"byok_usage_weekly":0,"byok_usage_monthly":0,"created_at":"2026-01-01T00:00:00Z","updated_at":null,"creator_user_id":"user_1","workspace_id":"workspace_1","expires_at":"2027-01-01T00:00:00Z"},"key":"test-once-secret-123"}"#
+        .data(using: .utf8)!
+      return (response, responseBody)
+    }
+
+    let result = try await makeClient().keys.create(
+      .init(
+        name: "Service integration", creatorUserID: "user_1", expiresAt: "2027-01-01T00:00:00Z",
+        includeBYOKInLimit: true, limit: 100, limitReset: "monthly", workspaceID: workspaceID),
+      options: .init(baseURL: baseURL, extraHeaders: ["X-Management-Test": "passed"]))
+    XCTAssertEqual(result.data.hash, "hash_1")
+    XCTAssertEqual(result.data.creatorUserID, "user_1")
+    XCTAssertEqual(result.key, fakeSecret)
+    XCTAssertFalse(result.description.contains(fakeSecret))
+    XCTAssertTrue(result.description.contains("[REDACTED]"))
+  }
+
+  func testCreateAPIKeyMinimalRequestOmitsOptionalFields() throws {
+    let data = try JSONEncoder().encode(CreateAPIKeyRequest(name: "Minimal"))
+    let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+    XCTAssertEqual(json.count, 1)
+    XCTAssertEqual(json["name"] as? String, "Minimal")
+  }
+
   private func makeClient() -> OpenRouterClient {
     let config = URLSessionConfiguration.ephemeral
     config.protocolClasses = [URLProtocolResourcesStub.self]

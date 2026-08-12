@@ -18,6 +18,57 @@ public struct APIKeysResponse: Codable, Sendable, Equatable {
   }
 }
 
+public struct CreateAPIKeyRequest: Codable, Sendable, Equatable {
+  public var name: String
+  public var creatorUserID: String?
+  public var expiresAt: String?
+  public var includeBYOKInLimit: Bool?
+  public var limit: Double?
+  public var limitReset: String?
+  public var workspaceID: UUID?
+
+  enum CodingKeys: String, CodingKey {
+    case name, limit
+    case creatorUserID = "creator_user_id"
+    case expiresAt = "expires_at"
+    case includeBYOKInLimit = "include_byok_in_limit"
+    case limitReset = "limit_reset"
+    case workspaceID = "workspace_id"
+  }
+
+  public init(
+    name: String,
+    creatorUserID: String? = nil,
+    expiresAt: String? = nil,
+    includeBYOKInLimit: Bool? = nil,
+    limit: Double? = nil,
+    limitReset: String? = nil,
+    workspaceID: UUID? = nil
+  ) {
+    self.name = name
+    self.creatorUserID = creatorUserID
+    self.expiresAt = expiresAt
+    self.includeBYOKInLimit = includeBYOKInLimit
+    self.limit = limit
+    self.limitReset = limitReset
+    self.workspaceID = workspaceID
+  }
+}
+
+/// A newly created API key and its metadata. The plaintext `key` is returned only once; handle and store it securely.
+public struct CreateAPIKeyResponse: Codable, Sendable, Equatable, CustomStringConvertible {
+  public var data: ManagedAPIKey
+  public var key: String
+
+  public init(data: ManagedAPIKey, key: String) {
+    self.data = data
+    self.key = key
+  }
+
+  /// Redacts the one-time plaintext key to prevent accidental logging.
+  public var description: String { "CreateAPIKeyResponse(key: [REDACTED])" }
+}
+
 /// Management metadata for an API key. This type never contains plaintext key material.
 public struct ManagedAPIKey: Codable, Sendable, Equatable {
   public var hash: String
