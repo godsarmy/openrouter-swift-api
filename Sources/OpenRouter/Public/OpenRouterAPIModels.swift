@@ -64,6 +64,66 @@ public struct CreateAPIKeyRequest: Codable, Sendable, Equatable {
   }
 }
 
+/// A field update that can be left unchanged, assigned a value, or explicitly cleared.
+public enum APIKeyPatchField<Value> {
+  case unchanged
+  case value(Value)
+  case null
+}
+
+extension APIKeyPatchField: Sendable where Value: Sendable {}
+extension APIKeyPatchField: Equatable where Value: Equatable {}
+
+/// Changes to management API key metadata. Use `.null` to clear nullable limit fields.
+public struct UpdateAPIKeyRequest: Encodable, Sendable, Equatable {
+  public var name: String?
+  public var disabled: Bool?
+  public var includeBYOKInLimit: Bool?
+  public var limit: APIKeyPatchField<Double>
+  public var limitReset: APIKeyPatchField<String>
+
+  enum CodingKeys: String, CodingKey {
+    case name, disabled, limit
+    case includeBYOKInLimit = "include_byok_in_limit"
+    case limitReset = "limit_reset"
+  }
+
+  public init(
+    name: String? = nil,
+    disabled: Bool? = nil,
+    includeBYOKInLimit: Bool? = nil,
+    limit: APIKeyPatchField<Double> = .unchanged,
+    limitReset: APIKeyPatchField<String> = .unchanged
+  ) {
+    self.name = name
+    self.disabled = disabled
+    self.includeBYOKInLimit = includeBYOKInLimit
+    self.limit = limit
+    self.limitReset = limitReset
+  }
+
+  public func encode(to encoder: Encoder) throws {
+    var container = encoder.container(keyedBy: CodingKeys.self)
+    try container.encodeIfPresent(name, forKey: .name)
+    try container.encodeIfPresent(disabled, forKey: .disabled)
+    try container.encodeIfPresent(includeBYOKInLimit, forKey: .includeBYOKInLimit)
+    try encode(limit, forKey: .limit, in: &container)
+    try encode(limitReset, forKey: .limitReset, in: &container)
+  }
+
+  private func encode<Value: Encodable>(
+    _ field: APIKeyPatchField<Value>,
+    forKey key: CodingKeys,
+    in container: inout KeyedEncodingContainer<CodingKeys>
+  ) throws {
+    switch field {
+    case .unchanged: break
+    case .value(let value): try container.encode(value, forKey: key)
+    case .null: try container.encodeNil(forKey: key)
+    }
+  }
+}
+
 /// A newly created API key and its metadata. The plaintext `key` is returned only once; handle and store it securely.
 public struct CreateAPIKeyResponse: Codable, Sendable, Equatable, CustomStringConvertible {
   public var data: ManagedAPIKey

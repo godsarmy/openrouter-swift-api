@@ -51,6 +51,7 @@ Status legend:
 | [x] | GET | `/keys` | `client.keys.list`, `client.listAPIKeys` | Lists management API key metadata with optional disabled, offset, and workspace filters. Requires a management key. |
 | [x] | GET | `/keys/{hash}` | `client.keys.get`, `client.getAPIKey` | Gets management API key metadata. Requires a management key; no plaintext secret is returned. |
 | [x] | POST | `/keys` | `client.keys.create`, `client.createAPIKey` | Creates a management API key and returns its one-time plaintext secret response. Requires a management key. |
+| [x] | PATCH | `/keys/{hash}` | `client.keys.update`, `client.updateAPIKey` | Updates management key metadata. Nullable `limit` and `limit_reset` can be explicitly cleared; no plaintext secret is returned. |
 | [x] | GET | `/activity` | `client.activity.get`, `client.getUserActivity` | Gets activity data for a management API key with optional filters and grouping. |
 | [x] | GET | `/datasets/rankings-daily` | `client.datasets.rankingsDaily`, `client.getRankingsDaily` | Gets daily model rankings with optional filters and periods. |
 | [x] | GET | `/providers` | `client.providers.list`, `client.listProviders` | Lists available providers. |
@@ -110,7 +111,7 @@ Status legend:
 | [x] | GET | `/keys` | `list` | List API key metadata. | Implemented in `OpenRouterClient.listAPIKeys`; resource alias: `client.keys.list`. Requires a management key and supports `include_disabled`, `offset`, and `workspace_id` filters. |
 | [x] | POST | `/keys` | `create` | Create a new API key. | Implemented in `OpenRouterClient.createAPIKey`; resource alias: `client.keys.create`. Requires a management key; the plaintext key response is returned once and must be stored securely. |
 | [x] | GET | `/keys/{hash}` | `get` | Get a single API key. | Implemented in `OpenRouterClient.getAPIKey`; resource alias: `client.keys.get`. Requires a management key and returns metadata only, never plaintext key material. |
-| [ ] | PATCH | `/keys/{hash}` | `update` | Update an API key. |  |
+| [x] | PATCH | `/keys/{hash}` | `update` | Update an API key. | Implemented in `OpenRouterClient.updateAPIKey`; resource alias: `client.keys.update`. Requires a management key, returns metadata only, and supports explicit null to clear nullable `limit` and `limit_reset`. |
 | [ ] | DELETE | `/keys/{hash}` | `delete` | Delete an API key. |  |
 | [ ] | POST | `/auth/keys/code` | `createAuthKeysCode` | Create an authorization code. |  |
 | [ ] | POST | `/auth/keys` | `exchangeAuthCodeForAPIKey` | Exchange an authorization code for an API key. |  |

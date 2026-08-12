@@ -1097,6 +1097,63 @@ final class OpenRouterResourcesTests: XCTestCase {
     XCTAssertEqual(json["name"] as? String, "Minimal")
   }
 
+  func testUpdateAPIKeyBuildsPatchRequestEscapesHashAndDecodesMetadata() async throws {
+    let baseURL = URL(string: "https://example.test/management/")!
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.httpMethod, "PATCH")
+      XCTAssertEqual(
+        URLComponents(url: try XCTUnwrap(request.url), resolvingAgainstBaseURL: false)?
+          .percentEncodedPath,
+        "/management/keys/hash%20%2F%252F%3Fx%23%E9%9B%AA")
+      XCTAssertNil(request.url?.query)
+      XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-key")
+      XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/json")
+      XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "application/json")
+      XCTAssertEqual(request.value(forHTTPHeaderField: "X-Management-Test"), "passed")
+      let json = try XCTUnwrap(
+        JSONSerialization.jsonObject(with: try XCTUnwrap(requestBodyData(request)))
+          as? [String: Any])
+      XCTAssertEqual(json["name"] as? String, "Renamed")
+      XCTAssertEqual(json["disabled"] as? Bool, true)
+      XCTAssertEqual(json["include_byok_in_limit"] as? Bool, false)
+      XCTAssertEqual(json["limit"] as? Double, 25)
+      XCTAssertEqual(json["limit_reset"] as? String, "monthly")
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      return (
+        response,
+        #"{"data":{"hash":"hash_1","name":"Renamed","label":"Production","disabled":true,"limit":25,"limit_remaining":20,"limit_reset":"monthly","include_byok_in_limit":false,"usage":5,"usage_daily":1,"usage_weekly":2,"usage_monthly":5,"byok_usage":0,"byok_usage_daily":0,"byok_usage_weekly":0,"byok_usage_monthly":0,"created_at":"2026-01-01T00:00:00Z","updated_at":"2026-08-11T00:00:00Z","creator_user_id":null,"workspace_id":"workspace_1","expires_at":null}}"#
+          .data(using: .utf8)!
+      )
+    }
+
+    let result = try await makeClient().keys.update(
+      hash: "hash /%2F?x#雪",
+      .init(
+        name: "Renamed", disabled: true, includeBYOKInLimit: false,
+        limit: .value(25), limitReset: .value("monthly")
+      ),
+      options: .init(baseURL: baseURL, extraHeaders: ["X-Management-Test": "passed"])
+    )
+    XCTAssertEqual(result.data.hash, "hash_1")
+    XCTAssertTrue(result.data.disabled)
+    XCTAssertEqual(result.data.limit, 25)
+  }
+
+  func testUpdateAPIKeyRequestOmitsUnchangedFieldsAndEncodesExplicitNulls() throws {
+    let unchanged =
+      try JSONSerialization.jsonObject(
+        with: JSONEncoder().encode(UpdateAPIKeyRequest())) as? [String: Any]
+    XCTAssertEqual(unchanged?.count, 0)
+
+    let data = try JSONEncoder().encode(
+      UpdateAPIKeyRequest(limit: .null, limitReset: .null))
+    let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+    XCTAssertEqual(json.count, 2)
+    XCTAssertTrue(json["limit"] is NSNull)
+    XCTAssertTrue(json["limit_reset"] is NSNull)
+  }
+
   private func makeClient() -> OpenRouterClient {
     let config = URLSessionConfiguration.ephemeral
     config.protocolClasses = [URLProtocolResourcesStub.self]

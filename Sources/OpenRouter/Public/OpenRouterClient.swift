@@ -502,6 +502,19 @@ public struct OpenRouterClient: Sendable {
       path: "keys", requestBody: request, responseType: CreateAPIKeyResponse.self, options: options)
   }
 
+  public func updateAPIKey(
+    hash: String,
+    _ request: UpdateAPIKeyRequest,
+    options: RequestOptions? = nil
+  ) async throws -> APIKeyResponse {
+    try await transport.patch(
+      path: .preEscaped("keys/\(escapePathSegment(hash))"),
+      requestBody: request,
+      responseType: APIKeyResponse.self,
+      options: options
+    )
+  }
+
   public func getUserActivity(
     date: String? = nil,
     apiKeyHash: String? = nil,
@@ -905,6 +918,14 @@ extension OpenRouterClient {
       options: RequestOptions? = nil
     ) async throws -> CreateAPIKeyResponse {
       try await client.createAPIKey(request, options: options)
+    }
+
+    public func update(
+      hash: String,
+      _ request: UpdateAPIKeyRequest,
+      options: RequestOptions? = nil
+    ) async throws -> APIKeyResponse {
+      try await client.updateAPIKey(hash: hash, request, options: options)
     }
   }
 
