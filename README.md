@@ -125,6 +125,8 @@ let managedKey = try await client.keys.get(hash: "hash_example_metadata_only")
 let disabledKey = try await client.keys.update(
   hash: "hash_example_metadata_only", .init(disabled: true)
 )
+// Destructive and permanent: only run after confirming the target key.
+// let confirmation = try await client.keys.delete(hash: "hash_example_metadata_only")
 let createdKey = try await client.keys.create(.init(name: "Service integration"))
 // `createdKey.key` is returned once; store it securely without logging or printing it.
 let activity = try await client.activity.get(date: "2026-08-10", groupBy: "workspace")

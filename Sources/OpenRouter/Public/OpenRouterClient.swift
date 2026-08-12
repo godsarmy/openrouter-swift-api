@@ -515,6 +515,17 @@ public struct OpenRouterClient: Sendable {
     )
   }
 
+  public func deleteAPIKey(
+    hash: String,
+    options: RequestOptions? = nil
+  ) async throws -> DeleteAPIKeyResponse {
+    try await transport.delete(
+      path: .preEscaped("keys/\(escapePathSegment(hash))"),
+      responseType: DeleteAPIKeyResponse.self,
+      options: options
+    )
+  }
+
   public func getUserActivity(
     date: String? = nil,
     apiKeyHash: String? = nil,
@@ -926,6 +937,13 @@ extension OpenRouterClient {
       options: RequestOptions? = nil
     ) async throws -> APIKeyResponse {
       try await client.updateAPIKey(hash: hash, request, options: options)
+    }
+
+    public func delete(
+      hash: String,
+      options: RequestOptions? = nil
+    ) async throws -> DeleteAPIKeyResponse {
+      try await client.deleteAPIKey(hash: hash, options: options)
     }
   }
 

@@ -27,6 +27,15 @@ public struct APIKeyResponse: Codable, Sendable, Equatable {
   }
 }
 
+/// Confirmation returned after permanently deleting a management API key.
+public struct DeleteAPIKeyResponse: Codable, Sendable, Equatable {
+  public var deleted: Bool
+
+  public init(deleted: Bool) {
+    self.deleted = deleted
+  }
+}
+
 public struct CreateAPIKeyRequest: Codable, Sendable, Equatable {
   public var name: String
   public var creatorUserID: String?

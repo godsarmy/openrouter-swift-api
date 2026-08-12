@@ -1154,6 +1154,32 @@ final class OpenRouterResourcesTests: XCTestCase {
     XCTAssertTrue(json["limit_reset"] is NSNull)
   }
 
+  func testDeleteAPIKeyBuildsBodylessRequestEscapesHashAndDecodesConfirmation() async throws {
+    let baseURL = URL(string: "https://example.test/management/")!
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.httpMethod, "DELETE")
+      XCTAssertEqual(
+        URLComponents(url: try XCTUnwrap(request.url), resolvingAgainstBaseURL: false)?
+          .percentEncodedPath,
+        "/management/keys/hash%20%2F%252F%3Fx%23%E9%9B%AA")
+      XCTAssertNil(request.url?.query)
+      XCTAssertNil(try requestBodyData(request))
+      XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "application/json")
+      XCTAssertNil(request.value(forHTTPHeaderField: "Content-Type"))
+      XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-key")
+      XCTAssertEqual(request.value(forHTTPHeaderField: "X-Management-Test"), "passed")
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      return (response, #"{"deleted":true}"#.data(using: .utf8)!)
+    }
+
+    let result = try await makeClient().keys.delete(
+      hash: "hash /%2F?x#雪",
+      options: .init(baseURL: baseURL, extraHeaders: ["X-Management-Test": "passed"])
+    )
+    XCTAssertTrue(result.deleted)
+  }
+
   private func makeClient() -> OpenRouterClient {
     let config = URLSessionConfiguration.ephemeral
     config.protocolClasses = [URLProtocolResourcesStub.self]

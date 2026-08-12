@@ -60,6 +60,17 @@ struct HTTPTransport: @unchecked Sendable {
     return try decodeResponse(data: data, response: response, responseType: responseType)
   }
 
+  func delete<Response: Decodable>(
+    path: HTTPPath,
+    responseType: Response.Type,
+    options: RequestOptions? = nil
+  ) async throws -> Response {
+    let request = try buildDeleteRequest(path: path, options: options)
+    log(.init(message: "request", method: "DELETE", path: redactedPath(from: request)))
+    let (data, response) = try await execute(request: request, options: options)
+    return try decodeResponse(data: data, response: response, responseType: responseType)
+  }
+
   func postMultipart<Response: Decodable>(
     path: String,
     body: Data,
@@ -253,6 +264,42 @@ struct HTTPTransport: @unchecked Sendable {
     applyCommonHeaders(to: &request)
     applyExtraHeaders(options?.extraHeaders ?? [:], to: &request)
     request.httpBody = try JSONEncoder().encode(body)
+    return request
+  }
+
+  func buildDeleteRequest(
+    path: HTTPPath,
+    options: RequestOptions? = nil
+  ) throws -> URLRequest {
+    guard let apiKey = configuration.apiKey, !apiKey.isEmpty else {
+      throw OpenRouterError.missingAPIKey
+    }
+
+    guard
+      var components = URLComponents(
+        url: options?.baseURL ?? configuration.baseURL, resolvingAgainstBaseURL: false
+      )
+    else {
+      throw OpenRouterError.invalidURL(path.description)
+    }
+    let separator = components.percentEncodedPath.hasSuffix("/") ? "" : "/"
+    let encodedPath: String
+    switch path {
+    case .raw(let value): encodedPath = percentEncodedRawPath(value)
+    case .preEscaped(let value): encodedPath = value
+    }
+    components.percentEncodedPath += "\(separator)\(encodedPath)"
+    guard let url = components.url else {
+      throw OpenRouterError.invalidURL(path.description)
+    }
+
+    var request = URLRequest(url: url)
+    request.httpMethod = "DELETE"
+    request.timeoutInterval = options?.timeout ?? configuration.timeout
+    request.setValue("application/json", forHTTPHeaderField: "Accept")
+    request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+    applyCommonHeaders(to: &request)
+    applyExtraHeaders(options?.extraHeaders ?? [:], to: &request)
     return request
   }
 
