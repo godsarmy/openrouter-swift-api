@@ -331,8 +331,7 @@ public struct CurrentKey: Codable, Sendable, Equatable {
   public var byokUsageMonthly: Double
   public var isFreeTier: Bool
   public var isManagementKey: Bool
-  /// Deprecated provisioning indicator retained as optional for compatibility with older responses.
-  @available(*, deprecated, message: "This field is deprecated and may be removed by OpenRouter.")
+  /// Deprecated provisioning indicator retained for wire compatibility; OpenRouter may remove it.
   public var isProvisioningKey: Bool?
   public var creatorUserID: String?
   public var expiresAt: String?
