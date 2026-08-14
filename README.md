@@ -129,6 +129,14 @@ let disabledKey = try await client.keys.update(
 // let confirmation = try await client.keys.delete(hash: "hash_example_metadata_only")
 let createdKey = try await client.keys.create(.init(name: "Service integration"))
 // `createdKey.key` is returned once; store it securely without logging or printing it.
+// Authorization codes require a management key. Prefer S256 PKCE; codes are short-lived and single-use.
+let authCodeRequest = CreateAuthKeysCodeRequest(
+  callbackURL: "https://example.com/openrouter/callback",
+  codeChallenge: "base64url-sha256-challenge",
+  codeChallengeMethod: "S256"
+)
+// Do not print or persist the returned authorization code.
+// let authCode = try await client.auth.keys.createCode(authCodeRequest)
 let activity = try await client.activity.get(date: "2026-08-10", groupBy: "workspace")
 let rankings = try await client.datasets.rankingsDaily(period: "week", modality: "text")
 

@@ -1,5 +1,82 @@
 import Foundation
 
+/// Parameters for creating a short-lived, single-use authorization code with a management key.
+public struct CreateAuthKeysCodeRequest: Codable, Sendable, Equatable {
+  public var callbackURL: String
+  public var codeChallenge: String?
+  public var codeChallengeMethod: String?
+  public var expiresAt: String?
+  public var keyLabel: String?
+  public var limit: Double?
+  public var usageLimitType: String?
+  public var workspaceID: UUID?
+
+  enum CodingKeys: String, CodingKey {
+    case callbackURL = "callback_url"
+    case codeChallenge = "code_challenge"
+    case codeChallengeMethod = "code_challenge_method"
+    case expiresAt = "expires_at"
+    case keyLabel = "key_label"
+    case limit
+    case usageLimitType = "usage_limit_type"
+    case workspaceID = "workspace_id"
+  }
+
+  public init(
+    callbackURL: String,
+    codeChallenge: String? = nil,
+    codeChallengeMethod: String? = nil,
+    expiresAt: String? = nil,
+    keyLabel: String? = nil,
+    limit: Double? = nil,
+    usageLimitType: String? = nil,
+    workspaceID: UUID? = nil
+  ) {
+    self.callbackURL = callbackURL
+    self.codeChallenge = codeChallenge
+    self.codeChallengeMethod = codeChallengeMethod
+    self.expiresAt = expiresAt
+    self.keyLabel = keyLabel
+    self.limit = limit
+    self.usageLimitType = usageLimitType
+    self.workspaceID = workspaceID
+  }
+}
+
+/// A single-use authorization code response. The code expires after approximately 10 minutes.
+public struct CreateAuthKeysCodeResponse: Codable, Sendable, Equatable, CustomStringConvertible {
+  public var data: AuthKeysCode
+
+  public init(data: AuthKeysCode) {
+    self.data = data
+  }
+
+  /// Redacts the short-lived authorization credential to prevent accidental logging.
+  public var description: String { "CreateAuthKeysCodeResponse(id: [REDACTED])" }
+}
+
+/// A short-lived, sensitive authorization credential. Do not log or persist its `id`.
+public struct AuthKeysCode: Codable, Sendable, Equatable, CustomStringConvertible {
+  public var id: String
+  public var appID: Int
+  public var createdAt: String
+
+  enum CodingKeys: String, CodingKey {
+    case id
+    case appID = "app_id"
+    case createdAt = "created_at"
+  }
+
+  public init(id: String, appID: Int, createdAt: String) {
+    self.id = id
+    self.appID = appID
+    self.createdAt = createdAt
+  }
+
+  /// Redacts the authorization code identifier to prevent accidental logging.
+  public var description: String { "AuthKeysCode(id: [REDACTED])" }
+}
+
 /// Metadata for the API key used to make the current request. This response never exposes key material.
 public struct CurrentKeyResponse: Codable, Sendable, Equatable {
   public var data: CurrentKey

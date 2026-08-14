@@ -467,6 +467,18 @@ public struct OpenRouterClient: Sendable {
     try await transport.get(path: "key", responseType: CurrentKeyResponse.self, options: options)
   }
 
+  public func createAuthKeysCode(
+    _ request: CreateAuthKeysCodeRequest,
+    options: RequestOptions? = nil
+  ) async throws -> CreateAuthKeysCodeResponse {
+    try await transport.post(
+      path: "auth/keys/code",
+      requestBody: request,
+      responseType: CreateAuthKeysCodeResponse.self,
+      options: options
+    )
+  }
+
   public func listAPIKeys(
     includeDisabled: Bool? = nil,
     offset: Int? = nil,
@@ -709,6 +721,7 @@ extension OpenRouterClient {
   public var models: ModelsResource { ModelsResource(client: self) }
   public var credits: CreditsResource { CreditsResource(client: self) }
   public var keys: KeysResource { KeysResource(client: self) }
+  public var auth: AuthResource { AuthResource(client: self) }
   public var activity: ActivityResource { ActivityResource(client: self) }
   public var datasets: DatasetsResource { DatasetsResource(client: self) }
   public var providers: ProvidersResource { ProvidersResource(client: self) }
@@ -944,6 +957,23 @@ extension OpenRouterClient {
       options: RequestOptions? = nil
     ) async throws -> DeleteAPIKeyResponse {
       try await client.deleteAPIKey(hash: hash, options: options)
+    }
+  }
+
+  /// Management-key authorization-code operations.
+  public struct AuthResource: Sendable {
+    fileprivate let client: OpenRouterClient
+    public var keys: KeysResource { KeysResource(client: client) }
+
+    public struct KeysResource: Sendable {
+      fileprivate let client: OpenRouterClient
+
+      public func createCode(
+        _ request: CreateAuthKeysCodeRequest,
+        options: RequestOptions? = nil
+      ) async throws -> CreateAuthKeysCodeResponse {
+        try await client.createAuthKeysCode(request, options: options)
+      }
     }
   }
 

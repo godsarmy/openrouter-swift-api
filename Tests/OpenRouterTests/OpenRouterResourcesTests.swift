@@ -1180,6 +1180,68 @@ final class OpenRouterResourcesTests: XCTestCase {
     XCTAssertTrue(result.deleted)
   }
 
+  func testCreateAuthKeysCodeBuildsManagementRequestDecodesResponseAndRedactsCode() async throws {
+    let workspaceID = UUID(uuidString: "12345678-1234-1234-1234-123456789ABC")!
+    let baseURL = URL(string: "https://example.test/management/")!
+    let fakeCodeID = "test-code-id"
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.httpMethod, "POST")
+      XCTAssertEqual(request.url?.path, "/management/auth/keys/code")
+      XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-key")
+      XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/json")
+      XCTAssertEqual(request.value(forHTTPHeaderField: "X-Management-Test"), "passed")
+      let json = try XCTUnwrap(
+        JSONSerialization.jsonObject(with: try XCTUnwrap(requestBodyData(request)))
+          as? [String: Any])
+      XCTAssertEqual(json["callback_url"] as? String, "https://example.com/callback")
+      XCTAssertEqual(
+        json["code_challenge"] as? String,
+        "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk")
+      XCTAssertEqual(json["code_challenge_method"] as? String, "S256")
+      XCTAssertEqual(json["expires_at"] as? String, "2027-01-01T00:00:00Z")
+      XCTAssertEqual(json["key_label"] as? String, "Example app")
+      XCTAssertEqual(json["limit"] as? Double, 10)
+      XCTAssertEqual(json["usage_limit_type"] as? String, "monthly")
+      XCTAssertEqual(json["workspace_id"] as? String, workspaceID.uuidString)
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      return (
+        response,
+        #"{"data":{"id":"test-code-id","app_id":42,"created_at":"2026-08-11T00:00:00Z"}}"#
+          .data(using: .utf8)!
+      )
+    }
+
+    let result = try await makeClient().auth.keys.createCode(
+      .init(
+        callbackURL: "https://example.com/callback",
+        codeChallenge: "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk",
+        codeChallengeMethod: "S256",
+        expiresAt: "2027-01-01T00:00:00Z",
+        keyLabel: "Example app",
+        limit: 10,
+        usageLimitType: "monthly",
+        workspaceID: workspaceID
+      ),
+      options: .init(baseURL: baseURL, extraHeaders: ["X-Management-Test": "passed"])
+    )
+    XCTAssertEqual(result.data.id, fakeCodeID)
+    XCTAssertEqual(result.data.appID, 42)
+    XCTAssertEqual(result.data.createdAt, "2026-08-11T00:00:00Z")
+    XCTAssertFalse(result.description.contains(fakeCodeID))
+    XCTAssertTrue(result.description.contains("[REDACTED]"))
+    XCTAssertFalse(result.data.description.contains(fakeCodeID))
+    XCTAssertTrue(result.data.description.contains("[REDACTED]"))
+  }
+
+  func testCreateAuthKeysCodeMinimalRequestOmitsOptionalFields() throws {
+    let data = try JSONEncoder().encode(
+      CreateAuthKeysCodeRequest(callbackURL: "https://example.com/callback"))
+    let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+    XCTAssertEqual(json.count, 1)
+    XCTAssertEqual(json["callback_url"] as? String, "https://example.com/callback")
+  }
+
   private func makeClient() -> OpenRouterClient {
     let config = URLSessionConfiguration.ephemeral
     config.protocolClasses = [URLProtocolResourcesStub.self]
