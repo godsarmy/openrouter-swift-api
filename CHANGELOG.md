@@ -4,6 +4,16 @@ All notable changes to this package will be documented in this file.
 
 This project follows semantic versioning once public releases are tagged.
 
+## 0.3.0 - 2026-08-13
+
+- Added model detail, model count, and user-filtered model discovery APIs.
+- Added file uploads with optional workspace targeting.
+- Added user activity analytics and daily model-ranking datasets.
+- Added current-key metadata and complete management API-key CRUD support.
+- Added authorization-code creation with optional PKCE and redacted credential descriptions.
+- Added reusable typed PATCH and DELETE transport support with safe dynamic path escaping.
+- Improved request-body handling and cross-platform macOS/Linux test coverage.
+
 ## 0.2.0 - 2026-07-27
 
 - Added Anthropic-compatible Messages creation and SSE streaming APIs.
