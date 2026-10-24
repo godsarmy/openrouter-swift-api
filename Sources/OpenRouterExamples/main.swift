@@ -283,6 +283,8 @@ private struct CLI {
     case .text:
       if let first = response.choices.first {
         switch first.message.content {
+        case .null:
+          break
         case .text(let text):
           print(text)
         case .parts(let parts):

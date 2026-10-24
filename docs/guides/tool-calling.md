@@ -113,8 +113,11 @@ Pass a custom `JSONDecoder` or `JSONEncoder` to customize coding strategies.
 Results are JSON text inside a `.tool` message. A Swift `String` result is therefore
 a JSON-quoted string, not raw text; use `ChatMessage` directly for raw-text results.
 The helper handles complete non-streaming calls only, not streaming fragments.
-The current chat models also cannot decode assistant `content: null`; that
-existing limitation is not changed by this helper.
+Assistant tool-call messages may contain `content: null`. The SDK represents this
+as `Content.null` and preserves it when replaying the original assistant message;
+it is distinct from empty text or an empty parts array. An omitted `content` key
+is still rejected. When switching exhaustively on `Content`, handle `.null`
+alongside `.text` and `.parts`.
 
 See [Responses API](responses.md) for an example
 of stateless function-call/output replay and [structured output](structured-output.md)

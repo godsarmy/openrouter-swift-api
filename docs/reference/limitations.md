@@ -20,7 +20,8 @@ tags: [limitations, beta, roadmap, sse]
 - [Video content](../guides/media.md) downloads buffer the entire file in memory.
 - [Typed chat tools](../guides/tool-calling.md) handle complete non-streaming
   calls, not streaming tool-call assembly. Schemas remain explicit; applications
-  own validation and execution. Chat messages with `content: null` are not currently supported.
+  own validation and execution. Explicit `content: null` is supported as
+  `Content.null`, but chat messages with an omitted `content` key are still rejected.
 - Linux/WSL builds do not replace testing on Apple platforms.
 
 ## Deferred work

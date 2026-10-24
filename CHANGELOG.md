@@ -6,6 +6,7 @@ This project follows semantic versioning once public releases are tagged.
 
 ## Unreleased
 
+- Added `Content.null` to decode and replay chat tool-call messages with explicit null content. Downstream exhaustive switches over `Content` must handle the new case; missing content remains rejected.
 - Added `TypedChatTool` for typed chat function arguments and JSON tool results, with explicit schemas and application-controlled execution.
 - Added unauthenticated authorization-code exchange with optional PKCE via `auth.keys.exchange` and `exchangeAuthCodeForAPIKey`.
 - Added credential-redacted exchange models and support for creating a client without an API key for exchange only.

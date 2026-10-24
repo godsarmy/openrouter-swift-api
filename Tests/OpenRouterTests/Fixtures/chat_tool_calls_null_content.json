@@ -1,0 +1,44 @@
+{
+  "id": "gen-null-tools",
+  "model": "test/model",
+  "choices": [
+    {
+      "index": 0,
+      "finish_reason": "tool_calls",
+      "reasoning": "Look up both cities.",
+      "message": {
+        "role": "assistant",
+        "name": "city_assistant",
+        "content": null,
+        "tool_calls": [
+          {
+            "id": "call_東京",
+            "type": "function",
+            "function": {
+              "name": "weather",
+              "arguments": "{\"city\":\"東京 🌸\"}"
+            }
+          },
+          {
+            "id": "call_paris",
+            "type": "function",
+            "function": {
+              "name": "forecast",
+              "arguments": "{\"city\":\"Paris\"}"
+            }
+          }
+        ],
+        "annotations": [
+          {
+            "type": "url_citation",
+            "url_citation": {
+              "title": "Weather source",
+              "url": "https://example.com/weather"
+            }
+          }
+        ],
+        "audio": {"data": "YXVkaW8=", "transcript": "Checking weather"}
+      }
+    }
+  ]
+}

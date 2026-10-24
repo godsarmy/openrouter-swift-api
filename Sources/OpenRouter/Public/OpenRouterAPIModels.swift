@@ -718,11 +718,16 @@ public struct ChatMessage: Codable, Sendable, Equatable {
 }
 
 public enum Content: Codable, Sendable, Equatable {
+  case null
   case text(String)
   case parts([ContentPart])
 
   public init(from decoder: Decoder) throws {
     let single = try decoder.singleValueContainer()
+    if single.decodeNil() {
+      self = .null
+      return
+    }
     if let value = try? single.decode(String.self) {
       self = .text(value)
       return
@@ -733,13 +738,16 @@ public enum Content: Codable, Sendable, Equatable {
     }
     throw DecodingError.typeMismatch(
       Content.self,
-      .init(codingPath: decoder.codingPath, debugDescription: "Expected string or array content")
+      .init(
+        codingPath: decoder.codingPath, debugDescription: "Expected null, string or array content")
     )
   }
 
   public func encode(to encoder: Encoder) throws {
     var single = encoder.singleValueContainer()
     switch self {
+    case .null:
+      try single.encodeNil()
     case .text(let value):
       try single.encode(value)
     case .parts(let parts):
