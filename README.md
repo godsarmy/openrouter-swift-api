@@ -49,12 +49,15 @@ can incur charges; see [building and testing](docs/development/building-and-test
 
 ## Roadmap
 
+Typed chat argument/result helpers are available; see
+[tool calling](docs/guides/tool-calling.md). Raw chat/tool APIs remain canonical,
+and applications retain control of execution.
+
 Endpoint coverage and deferred namespaces are tracked in
 [Endpoint coverage](docs/reference/endpoint-coverage.md). Remaining follow-ups:
 
 - Track additional beta Responses event fields as OpenRouter confirms them;
   provider-specific fields may still require raw payload access.
-- Consider a higher-level Swift-friendly typed tool helper while keeping raw chat/tool APIs canonical.
 - Consider pagination helpers as paginated-resource coverage grows; supported
   endpoint pagination parameters are already exposed individually.
 - Organization/workspaces, guardrails, BYOK, and

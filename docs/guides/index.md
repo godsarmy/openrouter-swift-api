@@ -2,7 +2,7 @@
 
 - [Chat](chat.md) - Send chat requests and discover optional request features.
 - [Streaming](streaming.md) - Consume chat streams and understand SSE limitations.
-- [Tool calling](tool-calling.md) - Describe function tools in chat requests.
+- [Tool calling](tool-calling.md) - Declare tools and use typed arguments and results.
 - [Structured output](structured-output.md) - Request JSON-schema-constrained chat output.
 - [Multimodal content](multimodal.md) - Represent text, image, file, and audio message parts.
 - [Responses API](responses.md) - Use beta Responses creation, streaming, and stateless tool replay.

@@ -18,13 +18,15 @@ tags: [limitations, beta, roadmap, sse]
   streams and basic multiline frame parsing helpers; broader SSE metadata is
   currently ignored by the streaming client.
 - [Video content](../guides/media.md) downloads buffer the entire file in memory.
+- [Typed chat tools](../guides/tool-calling.md) handle complete non-streaming
+  calls, not streaming tool-call assembly. Schemas remain explicit; applications
+  own validation and execution. Chat messages with `content: null` are not currently supported.
 - Linux/WSL builds do not replace testing on Apple platforms.
 
 ## Deferred work
 
-Track additional beta Responses fields as OpenRouter confirms them. Consider a
-higher-level Swift-friendly typed tool helper while keeping raw chat/tool APIs
-canonical. Pagination helpers remain deferred; individual supported pagination
+Track additional beta Responses fields as OpenRouter confirms them.
+Pagination helpers remain deferred; individual supported pagination
 parameters are documented in the endpoint tracker.
 
 The project-level roadmap remains in the [repository README](../../README.md).
