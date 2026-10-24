@@ -24,3 +24,7 @@ playground.xcworkspace
 # Secrets / local env
 .env
 .env.*
+
+# Documentation tooling
+.venv-docs/
+__pycache__/

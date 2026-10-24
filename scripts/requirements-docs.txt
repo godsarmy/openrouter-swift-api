@@ -1,0 +1,2 @@
+# Documentation checks only; not a Swift package dependency.
+PyYAML==6.0.3
