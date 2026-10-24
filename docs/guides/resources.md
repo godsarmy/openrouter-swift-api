@@ -73,7 +73,13 @@ let authCodeRequest = CreateAuthKeysCodeRequest(
 
 Exchange does **not** require a management key or any bearer key. Use
 `OpenRouterClient()` before the user has connected their account. Exchange also
-omits the Authorization header when a key or extra Authorization header is configured.
+omits the Authorization header when a client API key or request-level extra
+Authorization header is configured. If an injected `URLSession` has an
+Authorization entry in its configuration's `httpAdditionalHeaders`, exchange
+throws `OpenRouterError.unauthenticatedSessionRequired` before sending. Header
+names are checked case-insensitively. Create a session without that entry for
+exchange; changing the configuration after creating the session is insufficient.
+Custom session delegates and protocols remain responsible for not adding credentials.
 
 1. Generate a cryptographically random, per-attempt PKCE verifier (43–128
    URL-safe characters). Keep it private until exchange. Compute the S256

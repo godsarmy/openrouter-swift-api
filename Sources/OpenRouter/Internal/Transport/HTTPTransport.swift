@@ -163,6 +163,13 @@ struct HTTPTransport: @unchecked Sendable {
     requiresAPIKey: Bool = true,
     options: RequestOptions? = nil
   ) throws -> URLRequest {
+    if !requiresAPIKey,
+      session.configuration.httpAdditionalHeaders?.keys.contains(where: {
+        ($0 as? String)?.caseInsensitiveCompare("Authorization") == .orderedSame
+      }) == true
+    {
+      throw OpenRouterError.unauthenticatedSessionRequired
+    }
     if requiresAPIKey && (configuration.apiKey?.isEmpty ?? true) {
       throw OpenRouterError.missingAPIKey
     }

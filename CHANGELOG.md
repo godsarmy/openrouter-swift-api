@@ -8,6 +8,7 @@ This project follows semantic versioning once public releases are tagged.
 
 - Added unauthenticated authorization-code exchange with optional PKCE via `auth.keys.exchange` and `exchangeAuthCodeForAPIKey`.
 - Added credential-redacted exchange models and support for creating a client without an API key for exchange only.
+- Reject authorization-code exchange before sending when an injected session has a session-level Authorization header; added credential-free debug logging regression tests.
 
 ## 0.3.0 - 2026-08-13
 

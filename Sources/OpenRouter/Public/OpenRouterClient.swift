@@ -469,6 +469,7 @@ public struct OpenRouterClient: Sendable {
   }
 
   /// Exchanges a code without sending a bearer key, even when this client has one configured.
+  /// Throws `OpenRouterError.unauthenticatedSessionRequired` if the session has an Authorization header.
   public func exchangeAuthCodeForAPIKey(
     _ request: ExchangeAuthCodeForAPIKeyRequest,
     options: RequestOptions? = nil
@@ -1202,6 +1203,9 @@ public struct ChatCompletionFallbackPolicy: Sendable, Equatable {
 public enum OpenRouterError: Error, Equatable {
   case notImplemented(String)
   case missingAPIKey
+  /// Remove session-level Authorization from `URLSessionConfiguration.httpAdditionalHeaders`
+  /// before creating the session used for authorization code exchange.
+  case unauthenticatedSessionRequired
   case invalidURL(String)
   case invalidResponse
   case decodingFailed(statusCode: Int, underlying: String)
@@ -1213,6 +1217,8 @@ public enum OpenRouterError: Error, Equatable {
     case (.notImplemented(let a), .notImplemented(let b)):
       a == b
     case (.missingAPIKey, .missingAPIKey):
+      true
+    case (.unauthenticatedSessionRequired, .unauthenticatedSessionRequired):
       true
     case (.invalidURL(let a), .invalidURL(let b)):
       a == b
