@@ -1,5 +1,50 @@
 import Foundation
 
+/// Exchanges a single-use authorization code, optionally proving possession of a PKCE verifier.
+public struct ExchangeAuthCodeForAPIKeyRequest: Codable, Sendable, Equatable,
+  CustomStringConvertible
+{
+  public var code: String
+  public var codeVerifier: String?
+  public var codeChallengeMethod: String?
+
+  enum CodingKeys: String, CodingKey {
+    case code
+    case codeVerifier = "code_verifier"
+    case codeChallengeMethod = "code_challenge_method"
+  }
+
+  public init(code: String, codeVerifier: String? = nil, codeChallengeMethod: String? = nil) {
+    self.code = code
+    self.codeVerifier = codeVerifier
+    self.codeChallengeMethod = codeChallengeMethod
+  }
+
+  public var description: String {
+    "ExchangeAuthCodeForAPIKeyRequest(code: [REDACTED], codeVerifier: [REDACTED])"
+  }
+}
+
+/// The exchanged plaintext API key. Store `key` securely; do not log it.
+public struct ExchangeAuthCodeForAPIKeyResponse: Codable, Sendable, Equatable,
+  CustomStringConvertible
+{
+  public var key: String
+  public var userID: String?
+
+  enum CodingKeys: String, CodingKey {
+    case key
+    case userID = "user_id"
+  }
+
+  public init(key: String, userID: String? = nil) {
+    self.key = key
+    self.userID = userID
+  }
+
+  public var description: String { "ExchangeAuthCodeForAPIKeyResponse(key: [REDACTED])" }
+}
+
 /// Parameters for creating a short-lived, single-use authorization code with a management key.
 public struct CreateAuthKeysCodeRequest: Codable, Sendable, Equatable {
   public var callbackURL: String

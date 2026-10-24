@@ -28,9 +28,11 @@ struct HTTPTransport: @unchecked Sendable {
     path: String,
     requestBody: Request,
     responseType: Response.Type,
+    requiresAPIKey: Bool = true,
     options: RequestOptions? = nil
   ) async throws -> Response {
-    let request = try buildRequest(path: path, body: requestBody, options: options)
+    let request = try buildRequest(
+      path: path, body: requestBody, requiresAPIKey: requiresAPIKey, options: options)
     log(.init(message: "request", method: "POST", path: redactedPath(from: request)))
     let (data, response) = try await execute(request: request, options: options)
     return try decodeResponse(data: data, response: response, responseType: responseType)
@@ -158,9 +160,10 @@ struct HTTPTransport: @unchecked Sendable {
     path: String,
     body: Body,
     accept: String = "application/json",
+    requiresAPIKey: Bool = true,
     options: RequestOptions? = nil
   ) throws -> URLRequest {
-    guard let apiKey = configuration.apiKey, !apiKey.isEmpty else {
+    if requiresAPIKey && (configuration.apiKey?.isEmpty ?? true) {
       throw OpenRouterError.missingAPIKey
     }
 
@@ -171,10 +174,15 @@ struct HTTPTransport: @unchecked Sendable {
     request.timeoutInterval = options?.timeout ?? configuration.timeout
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
     request.setValue(accept, forHTTPHeaderField: "Accept")
-    request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+    if requiresAPIKey, let apiKey = configuration.apiKey {
+      request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+    }
 
     applyCommonHeaders(to: &request)
     applyExtraHeaders(options?.extraHeaders ?? [:], to: &request)
+    if !requiresAPIKey {
+      request.setValue(nil, forHTTPHeaderField: "Authorization")
+    }
 
     if let body = body as? ResponseCacheConfigProviding,
       let responseCache = body.responseCacheConfig

@@ -1242,6 +1242,114 @@ final class OpenRouterResourcesTests: XCTestCase {
     XCTAssertEqual(json["callback_url"] as? String, "https://example.com/callback")
   }
 
+  func testExchangeAuthCodeBuildsUnauthenticatedPKCERequestAndDecodesResponse() async throws {
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.httpMethod, "POST")
+      XCTAssertEqual(request.url?.path, "/oauth/auth/keys")
+      XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
+      XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/json")
+      XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "application/json")
+      XCTAssertEqual(request.value(forHTTPHeaderField: "X-Exchange-Test"), "passed")
+      XCTAssertEqual(request.timeoutInterval, 15)
+      let json = try XCTUnwrap(
+        JSONSerialization.jsonObject(with: try XCTUnwrap(requestBodyData(request)))
+          as? [String: String])
+      XCTAssertEqual(
+        json,
+        [
+          "code": "test-code", "code_verifier": "test-verifier", "code_challenge_method": "S256",
+        ])
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      return (response, Data(#"{"key":"test-exchanged-key","user_id":"user-test"}"#.utf8))
+    }
+
+    // Even a configured management key or explicit header must not be sent to exchange.
+    let result = try await makeClient().auth.keys.exchange(
+      .init(code: "test-code", codeVerifier: "test-verifier", codeChallengeMethod: "S256"),
+      options: .init(
+        timeout: 15, baseURL: URL(string: "https://example.test/oauth/"),
+        extraHeaders: ["authorization": "Bearer must-not-send", "X-Exchange-Test": "passed"])
+    )
+    XCTAssertEqual(result.key, "test-exchanged-key")
+    XCTAssertEqual(result.userID, "user-test")
+  }
+
+  func testExchangeAuthCodeWithoutAPIKeyAndWithoutPKCE() async throws {
+    URLProtocolResourcesStub.handler = { request in
+      XCTAssertEqual(request.url?.path, "/api/v1/auth/keys")
+      XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
+      let json = try XCTUnwrap(
+        JSONSerialization.jsonObject(with: try XCTUnwrap(requestBodyData(request)))
+          as? [String: String])
+      XCTAssertEqual(json, ["code": "test-code"])
+      let response = HTTPURLResponse(
+        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+      return (response, Data(#"{"key":"test-exchanged-key","user_id":null}"#.utf8))
+    }
+    let config = URLSessionConfiguration.ephemeral
+    config.protocolClasses = [URLProtocolResourcesStub.self]
+    let client = OpenRouterClient(session: URLSession(configuration: config))
+    let result = try await client.exchangeAuthCodeForAPIKey(.init(code: "test-code"))
+    XCTAssertEqual(result.key, "test-exchanged-key")
+    XCTAssertNil(result.userID)
+
+    do {
+      _ = try await client.createAuthKeysCode(.init(callbackURL: "https://example.com/callback"))
+      XCTFail("Code creation must still require a management key")
+    } catch {
+      XCTAssertEqual(error as? OpenRouterError, .missingAPIKey)
+    }
+    do {
+      _ = try await client.chat.send(.init(model: "test-model", messages: [.user("Hello")]))
+      XCTFail("Chat must still require an API key")
+    } catch {
+      XCTAssertEqual(error as? OpenRouterError, .missingAPIKey)
+    }
+  }
+
+  func testExchangeAuthCodeMapsInvalidAndExpiredCodeErrors() async throws {
+    for status in [400, 403] {
+      URLProtocolResourcesStub.handler = { request in
+        let response = HTTPURLResponse(
+          url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!
+        return (
+          response,
+          Data("{\"error\":{\"code\":\(status),\"message\":\"Invalid or expired code\"}}".utf8)
+        )
+      }
+      do {
+        _ = try await makeClient().auth.keys.exchange(.init(code: "invalid-code"))
+        XCTFail("Expected exchange error")
+      } catch let OpenRouterError.apiError(statusCode, code, message, _) {
+        XCTAssertEqual(statusCode, status)
+        XCTAssertEqual(code, status)
+        XCTAssertEqual(message, "Invalid or expired code")
+      }
+    }
+  }
+
+  func testExchangeAuthCodeModelsRoundTripAndRedactCredentials() throws {
+    let request = ExchangeAuthCodeForAPIKeyRequest(
+      code: "sensitive-code", codeVerifier: "sensitive-verifier", codeChallengeMethod: "plain")
+    XCTAssertEqual(
+      try JSONDecoder().decode(
+        ExchangeAuthCodeForAPIKeyRequest.self, from: JSONEncoder().encode(request)), request)
+    let response = ExchangeAuthCodeForAPIKeyResponse(key: "sensitive-key", userID: "user-test")
+    XCTAssertEqual(
+      try JSONDecoder().decode(
+        ExchangeAuthCodeForAPIKeyResponse.self, from: JSONEncoder().encode(response)), response)
+    for description in [String(describing: request), String(reflecting: request)] {
+      XCTAssertFalse(description.contains("sensitive-code"))
+      XCTAssertFalse(description.contains("sensitive-verifier"))
+      XCTAssertTrue(description.contains("[REDACTED]"))
+    }
+    for description in [String(describing: response), String(reflecting: response)] {
+      XCTAssertFalse(description.contains("sensitive-key"))
+      XCTAssertTrue(description.contains("[REDACTED]"))
+    }
+  }
+
   private func makeClient() -> OpenRouterClient {
     let config = URLSessionConfiguration.ephemeral
     config.protocolClasses = [URLProtocolResourcesStub.self]

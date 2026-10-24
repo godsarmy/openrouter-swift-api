@@ -69,6 +69,7 @@ Status legend:
 | [x] | PATCH | `/keys/{hash}` | `client.keys.update`, `client.updateAPIKey` | Updates management key metadata. Nullable `limit` and `limit_reset` can be explicitly cleared; no plaintext secret is returned. |
 | [x] | DELETE | `/keys/{hash}` | `client.keys.delete`, `client.deleteAPIKey` | Permanently deletes a management API key and returns a typed deletion confirmation. Requires a management key. |
 | [x] | POST | `/auth/keys/code` | `client.auth.keys.createCode`, `client.createAuthKeysCode` | Creates a management-key authorization code with optional PKCE; codes are single-use and expire after approximately 10 minutes. |
+| [x] | POST | `/auth/keys` | `client.auth.keys.exchange`, `client.exchangeAuthCodeForAPIKey` | Exchanges a code with optional PKCE for a plaintext API key and nullable user ID. No bearer authentication is sent. |
 | [x] | GET | `/activity` | `client.activity.get`, `client.getUserActivity` | Gets activity data for a management API key with optional filters and grouping. |
 | [x] | GET | `/datasets/rankings-daily` | `client.datasets.rankingsDaily`, `client.getRankingsDaily` | Gets daily model rankings with optional filters and periods. |
 | [x] | GET | `/providers` | `client.providers.list`, `client.listProviders` | Lists available providers. |
@@ -131,7 +132,7 @@ Status legend:
 | [x] | PATCH | `/keys/{hash}` | `update` | Update an API key. | Implemented in `OpenRouterClient.updateAPIKey`; resource alias: `client.keys.update`. Requires a management key, returns metadata only, and supports explicit null to clear nullable `limit` and `limit_reset`. |
 | [x] | DELETE | `/keys/{hash}` | `delete` | Permanently delete an API key. | Implemented in `OpenRouterClient.deleteAPIKey`; resource alias: `client.keys.delete`. Requires a management key and returns `DeleteAPIKeyResponse(deleted: true)` on successful confirmation. |
 | [x] | POST | `/auth/keys/code` | `createAuthKeysCode` | Create an authorization code. | Implemented in `OpenRouterClient.createAuthKeysCode`; resource alias: `client.auth.keys.createCode`. Requires a management key; supports PKCE and returns a single-use code that expires after approximately 10 minutes. |
-| [ ] | POST | `/auth/keys` | `exchangeAuthCodeForAPIKey` | Exchange an authorization code for an API key. |  |
+| [x] | POST | `/auth/keys` | `exchangeAuthCodeForAPIKey` | Exchange an authorization code for an API key. | Implemented in `OpenRouterClient.exchangeAuthCodeForAPIKey`; resource alias: `client.auth.keys.exchange`. Supports optional PKCE verifier/method, requires no bearer key, and redacts credential descriptions. |
 | [ ] | GET | `/byok` | `listBYOKKeys` | List BYOK provider credentials. Requires management auth. |  |
 | [ ] | POST | `/byok` | `createBYOKKey` | Create a BYOK provider credential. |  |
 | [ ] | GET | `/byok/{id}` | `getBYOKKey` | Get a BYOK provider credential. |  |

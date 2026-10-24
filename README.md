@@ -57,5 +57,5 @@ Endpoint coverage and deferred namespaces are tracked in
 - Consider a higher-level Swift-friendly typed tool helper while keeping raw chat/tool APIs canonical.
 - Consider pagination helpers as paginated-resource coverage grows; supported
   endpoint pagination parameters are already exposed individually.
-- Organization/workspaces, guardrails, BYOK, authorization-code exchange, and
+- Organization/workspaces, guardrails, BYOK, and
   other unimplemented namespaces remain deferred; see the tracker for details.

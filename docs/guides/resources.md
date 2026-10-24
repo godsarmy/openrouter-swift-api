@@ -3,6 +3,11 @@ type: Guide
 title: Resource examples
 description: Access generation metadata, discovery, keys, activity, and reranking.
 tags: [resources, models, keys, authentication, rerank]
+sources:
+  - resource: https://openrouter.ai/docs/use-cases/oauth-pkce
+    title: OpenRouter OAuth PKCE guide
+  - resource: https://openrouter.ai/openapi.json
+    title: OpenRouter OpenAPI specification
 ---
 
 # Resource examples
@@ -64,8 +69,47 @@ let authCodeRequest = CreateAuthKeysCodeRequest(
 // let authCode = try await client.auth.keys.createCode(authCodeRequest)
 ```
 
-Authorization-code exchange is not yet implemented; see
-[endpoint coverage](../reference/endpoint-coverage.md).
+## Authorization-code exchange with PKCE
+
+Exchange does **not** require a management key or any bearer key. Use
+`OpenRouterClient()` before the user has connected their account. Exchange also
+omits the Authorization header when a key or extra Authorization header is configured.
+
+1. Generate a cryptographically random, per-attempt PKCE verifier (43–128
+   URL-safe characters). Keep it private until exchange. Compute the S256
+   challenge as base64url(SHA256(verifier)), without padding. The SDK does not
+   generate these values or handle browser redirects.
+2. Open `https://openrouter.ai/auth` with URL-encoded `callback_url`,
+   `code_challenge`, `code_challenge_method=S256`, and an unpredictable `state`.
+   Save the state locally and verify that the callback's state matches before
+   accepting its `code`. Alternatively, a trusted backend can create a code
+   using the management-key API above with the same challenge.
+3. Exchange the code promptly using the **original verifier**, not the challenge:
+
+```swift
+let authClient = OpenRouterClient()
+// Replace these placeholders with the validated callback code and saved verifier.
+let exchanged = try await authClient.auth.keys.exchange(.init(
+  code: "<code-from-callback>",
+  codeVerifier: "<original-random-verifier>",
+  codeChallengeMethod: "S256"
+))
+// Store exchanged.key securely (for example, in Keychain); never print it.
+let userClient = OpenRouterClient(apiKey: exchanged.key)
+```
+
+The flat alias is `authClient.exchangeAuthCodeForAPIKey`. The response contains
+`key` and optional `userID`. Codes are single-use and expire after approximately
+10 minutes. Restart authorization if the code is expired or already consumed.
+For codes created without PKCE, omit both optional PKCE fields; S256 is recommended.
+The request/response descriptions redact codes, verifiers, and keys, but encoding
+them to JSON still exposes their credentials. Do not log payloads.
+
+Invalid parameters or challenge methods return HTTP 400; invalid/expired codes
+or incorrect verifiers return HTTP 403, surfaced as `OpenRouterError.apiError`.
+Exchange uses the normal request options; retries are disabled by default.
+Avoid automatic retries because a code may have been consumed before a connection
+failure. See [endpoint coverage](../reference/endpoint-coverage.md) for aliases.
 
 ## Reranking
 

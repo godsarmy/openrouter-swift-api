@@ -8,8 +8,9 @@ public struct OpenRouterClient: Sendable {
   public let configuration: Configuration
   private let transport: HTTPTransport
 
+  /// Omit `apiKey` only for unauthenticated authorization-code exchange.
   public init(
-    apiKey: String,
+    apiKey: String = "",
     configuration: Configuration = .init(),
     session: URLSession = .shared
   ) {
@@ -465,6 +466,20 @@ public struct OpenRouterClient: Sendable {
 
   public func getCurrentKey(options: RequestOptions? = nil) async throws -> CurrentKeyResponse {
     try await transport.get(path: "key", responseType: CurrentKeyResponse.self, options: options)
+  }
+
+  /// Exchanges a code without sending a bearer key, even when this client has one configured.
+  public func exchangeAuthCodeForAPIKey(
+    _ request: ExchangeAuthCodeForAPIKeyRequest,
+    options: RequestOptions? = nil
+  ) async throws -> ExchangeAuthCodeForAPIKeyResponse {
+    try await transport.post(
+      path: "auth/keys",
+      requestBody: request,
+      responseType: ExchangeAuthCodeForAPIKeyResponse.self,
+      requiresAPIKey: false,
+      options: options
+    )
   }
 
   public func createAuthKeysCode(
@@ -960,13 +975,20 @@ extension OpenRouterClient {
     }
   }
 
-  /// Management-key authorization-code operations.
+  /// Authorization-code creation (management key) and unauthenticated exchange.
   public struct AuthResource: Sendable {
     fileprivate let client: OpenRouterClient
     public var keys: KeysResource { KeysResource(client: client) }
 
     public struct KeysResource: Sendable {
       fileprivate let client: OpenRouterClient
+
+      public func exchange(
+        _ request: ExchangeAuthCodeForAPIKeyRequest,
+        options: RequestOptions? = nil
+      ) async throws -> ExchangeAuthCodeForAPIKeyResponse {
+        try await client.exchangeAuthCodeForAPIKey(request, options: options)
+      }
 
       public func createCode(
         _ request: CreateAuthKeysCodeRequest,
