@@ -2,6 +2,7 @@
 
 ## 2026-10-25
 
+- **Update**: Documented terminal batch deletion, distinct upstream cleanup outcomes, irreversible-operation cautions, and the non-cancellation/billing boundaries; updated endpoint coverage.
 - **Creation**: Added batch processing guidance for inline requests, explicit costly submission, status/results, wire ordering, billing, and retention; updated navigation and endpoint coverage.
 - **Update**: Documented explicit file deletion, approval and retry cautions, confirmation handling, and updated endpoint coverage.
 - **Update**: Documented file retrieval, provider response shapes, pagination and download limits, and updated endpoint coverage without claiming provider-backed upload support.

@@ -224,6 +224,17 @@ public struct OpenRouterClient: Sendable {
       options: options)
   }
 
+  /// Irreversibly purges a terminal batch's requests and results; this is not cancellation.
+  /// Billing and audit records are not erased. The server checks eligibility without a client
+  /// status preflight (which would race with deletion). Default retries remain disabled.
+  public func deleteBatch(
+    id: String, options: RequestOptions? = nil
+  ) async throws -> BatchDeleteResponse {
+    try await transport.delete(
+      path: .preEscaped("batches/\(escapePathSegment(id))"),
+      responseType: BatchDeleteResponse.self, options: options)
+  }
+
   /// Lists files. The server validates limit (1...1000); cursors and provider filters are opaque.
   public func listFiles(
     limit: Int? = nil, cursor: String? = nil, workspaceID: UUID? = nil,
@@ -906,6 +917,15 @@ extension OpenRouterClient {
 
     public func get(id: String, options: RequestOptions? = nil) async throws -> BatchObject {
       try await client.getBatch(id: id, options: options)
+    }
+
+    /// Irreversibly purges terminal batch requests/results, not billing or audit records.
+    /// This is not cancellation; eligibility is checked by the server, without a status preflight.
+    /// Default retries remain disabled.
+    public func delete(
+      id: String, options: RequestOptions? = nil
+    ) async throws -> BatchDeleteResponse {
+      try await client.deleteBatch(id: id, options: options)
     }
   }
 

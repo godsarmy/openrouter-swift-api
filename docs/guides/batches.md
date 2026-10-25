@@ -1,7 +1,7 @@
 ---
 type: Guide
 title: Batch processing
-description: Submit inline batch requests and explicitly retrieve status and results.
+description: Submit inline requests, retrieve batch results, and explicitly purge terminal jobs.
 tags: [batches, asynchronous, inference, billing]
 sources:
   - resource: https://openrouter.ai/openapi.json
@@ -126,7 +126,48 @@ results** until credits cover the finalized charge. This surfaces as
 Save needed results: upstream requests/results expire 30 days after submission,
 after which retrieval returns HTTP 410. `expiresAt` is instead the assigned
 provider's processing deadline: it may exceed 24 hours or be null, and is not the
-result-retention deadline. Batch deletion remains unimplemented.
+result-retention deadline.
+
+## Delete a terminal batch
+
+**Deletion is irreversible and is not cancellation.** It removes a terminal job
+from the API and purges OpenRouter-held request/result artifacts. Download needed
+results first, verify the job ID, and obtain explicit approval. Billing, usage,
+and audit records are retained; do not treat deletion as a refund.
+
+```swift
+// Destructive: uncomment only after approval and saving required results.
+// let deletion = try await client.batches.delete(
+//   id: "<approved-terminal-batch-id>", options: .init(retries: RetryPolicy.none)
+// )
+```
+
+The flat alias is `client.deleteBatch(id:options:)`. Only `completed`, `failed`,
+`expired`, and `cancelled` batches are eligible. The server checks eligibility
+when handling DELETE; the SDK does not preflight the status or cancel active jobs.
+HTTP 409 can mean a nonterminal job, an unavailable required provider key, or a
+state change during deletion. HTTP 502 can mean an upstream batch/file cleanup
+failure. Neither is a successful confirmation.
+
+`BatchDeleteResponse` contains `id`, `object`, and `deletion`. Known responses
+require `object: "batch"` and `deletion.openrouter: "deleted"`. Check that the
+returned ID matches the approved target. Inspect `deletion.upstream` separately:
+
+| Upstream status | Meaning |
+|---|---|
+| `deleted` | The upstream target was removed. |
+| `unsupported` | The provider has no batch-delete API; supported file cleanup still runs. |
+| `not_applicable` | The batch never reached that target. |
+| Other string | Preserved for forward compatibility; do not infer upstream deletion. |
+
+The upstream entry is omitted when no provider was assigned. A successful HTTP
+200 confirms the reported OpenRouter cleanup, **not** that every provider target
+was deleted. The response retains `rawPayload`, including nested extensions;
+as with other raw-backed batch responses, typed mutations do not rewrite it.
+
+Retries default to disabled. After a transport failure, inspect the state rather
+than blindly repeating an irreversible request. The SDK never deletes jobs
+automatically during retrieval, polling, or file cleanup.
 
 See [endpoint coverage](../reference/endpoint-coverage.md) for current scope and
 [file retrieval](resources.md#file-retrieval) for separate file operations.

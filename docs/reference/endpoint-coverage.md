@@ -25,8 +25,8 @@ official OpenAPI specification (OpenAPI 3.1.0, `info.version: 1.0.0`).
 | Inventory | Unique method/path operations |
 |---|---:|
 | Listed in the current specification | 139 |
-| Current-spec operations implemented by the SDK | 42 |
-| Current-spec operations not implemented | 97 |
+| Current-spec operations implemented by the SDK | 43 |
+| Current-spec operations not implemented | 96 |
 | Additional SDK legacy operations absent from the specification | 1 |
 
 The earlier tracker omitted 72 current-spec operations; those are now included
@@ -83,6 +83,7 @@ Status legend:
 | [x] | POST | `/batches` | `client.batches.create`, `client.createBatch` | Submits inline requests for asynchronous validation/processing; HTTP 202. Can incur provider cost. |
 | [x] | GET | `/batches` | `client.batches.list`, `client.listBatches` | Lists workspace-scoped jobs with cursor, repeated status, and creation-time filters. |
 | [x] | GET | `/batches/{id}` | `client.batches.get`, `client.getBatch` | Retrieves typed metadata and endpoint-specific raw result bodies; payment/retention failures remain API errors. |
+| [x] | DELETE | `/batches/{id}` | `client.batches.delete`, `client.deleteBatch` | Irreversibly purges terminal-job artifacts, not cancellation. Reports OpenRouter and upstream outcomes separately. |
 | [x] | POST | `/videos` | `client.videos.create`, `client.createVideos` | Creates an asynchronous video generation job. |
 | [x] | GET | `/videos/{jobId}` | `client.videos.get`, `client.getVideos` | Polls a video generation job. |
 | [x] | GET | `/videos/{jobId}/content` | `client.videos.content`, `client.listVideosContent` | Downloads buffered video data and its Content-Type. |
@@ -222,6 +223,7 @@ Status legend:
 | [x] | POST | `/batches` | `createBatches` | Submit a batch. | Implemented in `OpenRouterClient.createBatch`; alias: `client.batches.create`. Inline requests with one endpoint/model; not an uploaded input file. Submission can incur charges. |
 | [x] | GET | `/batches` | `listBatches` | List jobs. | Implemented in `OpenRouterClient.listBatches`; alias: `client.batches.list`. Supports `limit`, `after`, repeated `status`, `created_after`, and `created_before`. |
 | [x] | GET | `/batches/{id}` | `getBatches` | Retrieve a job. | Implemented in `OpenRouterClient.getBatch`; alias: `client.batches.get`. Uses a safely escaped ID. Results remain JSON per submitted endpoint; no automatic polling or deletion. |
+| [x] | DELETE | `/batches/{id}` | `deleteBatch` | Purge terminal-job artifacts. | Implemented in `OpenRouterClient.deleteBatch`; alias: `client.batches.delete`. Not cancellation; billing/audit records remain. Typed per-target outcomes distinguish unsupported upstream deletion. |
 
 ## Files
 
@@ -247,14 +249,13 @@ the existing upload API.
 
 ## Additional spec-listed operations
 
-These 65 operations were missing from the earlier tracker and have no SDK
+These 64 operations were missing from the earlier tracker and have no SDK
 implementation. Names in the last column are upstream operation IDs, **not**
 existing Swift methods. Check each operation's schema, authentication,
 availability, and server override before implementing it.
 
 | Status | Method | Path | Upstream operation ID |
 |---|---|---|---|
-| [ ] | DELETE | `/batches/{id}` | `deleteBatch` |
 | [ ] | DELETE | `/external-users/{user}` | `deleteExternalUser` |
 | [ ] | DELETE | `/private-endpoints/{id}` | `deletePrivateEndpoint` |
 | [ ] | DELETE | `/scim/group-mappings/{id}` | `deleteScimGroupMapping` |

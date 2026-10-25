@@ -6,7 +6,8 @@ This project follows semantic versioning once public releases are tagged.
 
 ## Unreleased
 
-- Added explicit batch submission, listing, and retrieval with inline request models, pagination/status filters, and raw endpoint-specific results. No automatic polling, deletion, or live submission tests.
+- Added explicit terminal batch deletion with per-target cleanup outcomes. It is not cancellation, retains billing/audit records, and never runs automatically.
+- Added explicit batch submission, listing, and retrieval with inline request models, pagination/status filters, and raw endpoint-specific results. No automatic polling or live submission tests.
 - Added explicit irreversible file deletion with workspace/provider scoping and validated native/provider confirmation shapes; unknown shapes do not report confirmed success.
 - Added file listing, metadata retrieval, and buffered content downloads, with provider-shaped responses, pagination fields, and workspace/provider filters. Existing uploads remain unchanged; deletion is not included.
 - Added read-only workspace discovery via `workspaces.list` and `workspaces.get`, with typed settings, pagination metadata, and UUID-or-slug lookup.
