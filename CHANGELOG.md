@@ -6,6 +6,7 @@ This project follows semantic versioning once public releases are tagged.
 
 ## Unreleased
 
+- Added file listing, metadata retrieval, and buffered content downloads, with provider-shaped responses, pagination fields, and workspace/provider filters. Existing uploads remain unchanged; deletion is not included.
 - Added read-only workspace discovery via `workspaces.list` and `workspaces.get`, with typed settings, pagination metadata, and UUID-or-slug lookup.
 
 ## 0.4.0 - 2026-10-25

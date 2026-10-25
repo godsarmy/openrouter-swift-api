@@ -25,8 +25,8 @@ official OpenAPI specification (OpenAPI 3.1.0, `info.version: 1.0.0`).
 | Inventory | Unique method/path operations |
 |---|---:|
 | Listed in the current specification | 139 |
-| Current-spec operations implemented by the SDK | 35 |
-| Current-spec operations not implemented | 104 |
+| Current-spec operations implemented by the SDK | 38 |
+| Current-spec operations not implemented | 101 |
 | Additional SDK legacy operations absent from the specification | 1 |
 
 The earlier tracker omitted 72 current-spec operations; those are now included
@@ -76,6 +76,9 @@ Status legend:
 | [x] | POST | `/audio/speech` | `client.audio.speech`, `client.createAudioSpeech` | Creates speech and returns raw audio bytes. |
 | [x] | POST | `/audio/transcriptions` | `client.audio.transcribe`, `client.createAudioTranscriptions` | Creates an audio transcription with multipart upload. |
 | [x] | POST | `/files` | `client.files.upload`, `client.uploadFile` | Uploads a file with an optional workspace ID. |
+| [x] | GET | `/files` | `client.files.list`, `client.listFiles` | Lists files with workspace/provider filters and explicit pagination fields. |
+| [x] | GET | `/files/{file_id}` | `client.files.get`, `client.getFile` | Gets native or provider-shaped file metadata without changing the upload response type. |
+| [x] | GET | `/files/{file_id}/content` | `client.files.content`, `client.downloadFileContent` | Downloads buffered bytes and an optional Content-Type. Only server-created files are downloadable. |
 | [x] | POST | `/videos` | `client.videos.create`, `client.createVideos` | Creates an asynchronous video generation job. |
 | [x] | GET | `/videos/{jobId}` | `client.videos.get`, `client.getVideos` | Polls a video generation job. |
 | [x] | GET | `/videos/{jobId}/content` | `client.videos.content`, `client.listVideosContent` | Downloads buffered video data and its Content-Type. |
@@ -213,10 +216,13 @@ Status legend:
 | Status | Method | Path | Operation | Description | SDK notes |
 |---|---|---|---|---|---|
 | [x] | POST | `/files` | `uploadFile` | Upload a file for later API calls. | Implemented in `OpenRouterClient.uploadFile`; resource alias: `client.files.upload`. |
+| [x] | GET | `/files` | `listFiles` | List files. | Implemented in `OpenRouterClient.listFiles`; alias: `client.files.list`. Supports `limit`, `cursor`, `workspace_id`, `provider`, `after`, `after_id`, `before_id`, and `order`. |
+| [x] | GET | `/files/{file_id}` | `getFileMetadata` | Retrieve metadata. | Implemented in `OpenRouterClient.getFile`; alias: `client.files.get`. Supports workspace/provider filters and typed response-shape variants. |
+| [x] | GET | `/files/{file_id}/content` | `downloadFileContent` | Download file bytes. | Implemented in `OpenRouterClient.downloadFileContent`; alias: `client.files.content`. Supports workspace/provider filters; buffers the download and retains optional Content-Type. |
 
-File listing, metadata retrieval, content download, and deletion remain pending;
-see the additional inventory below. Upload support does not imply those methods
-are implemented.
+File deletion remains pending; see the additional inventory below. Upload remains
+native-storage-only in this SDK; the new retrieval provider option does not change
+the existing upload API.
 
 ## Preset Configuration Endpoints
 
@@ -228,7 +234,7 @@ are implemented.
 
 ## Additional spec-listed operations
 
-These 72 operations were missing from the earlier tracker and have no SDK
+These 69 operations were missing from the earlier tracker and have no SDK
 implementation. Names in the last column are upstream operation IDs, **not**
 existing Swift methods. Check each operation's schema, authentication,
 availability, and server override before implementing it.
@@ -255,9 +261,6 @@ availability, and server override before implementing it.
 | [ ] | GET | `/datasets/session-cost` | `getSessionCost` |
 | [ ] | GET | `/external-users` | `listExternalUsers` |
 | [ ] | GET | `/external-users/{user}` | `getExternalUser` |
-| [ ] | GET | `/files` | `listFiles` |
-| [ ] | GET | `/files/{file_id}` | `getFileMetadata` |
-| [ ] | GET | `/files/{file_id}/content` | `downloadFileContent` |
 | [ ] | GET | `/images/models` | `listImageModels` |
 | [ ] | GET | `/images/models/{author}/{slug}/endpoints` | `listImageModelEndpoints` |
 | [ ] | GET | `/oauth/jwks` | `listOauthJwks` |

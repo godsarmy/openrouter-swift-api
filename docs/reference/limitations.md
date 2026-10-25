@@ -17,7 +17,10 @@ tags: [limitations, beta, roadmap, sse]
 - The [streaming](../guides/streaming.md) SSE parser supports OpenRouter chat
   streams and basic multiline frame parsing helpers; broader SSE metadata is
   currently ignored by the streaming client.
-- [Video content](../guides/media.md) downloads buffer the entire file in memory.
+- [Video content](../guides/media.md) and [file content](../guides/resources.md#file-retrieval)
+  downloads buffer the entire file in memory. File downloads support server-created
+  files only; uploaded files return HTTP 400. Provider-backed uploads and file
+  deletion are not implemented; the existing upload API remains unchanged.
 - [Typed chat tools](../guides/tool-calling.md) handle complete calls. Streamed
   calls must first be finalized with the [manual accumulator](../guides/streaming.md#streaming-tool-calls),
   after normal stream exhaustion. It buffers arguments and does not itself

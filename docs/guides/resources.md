@@ -1,8 +1,8 @@
 ---
 type: Guide
 title: Resource examples
-description: Access generation metadata, discovery, workspaces, keys, activity, and reranking.
-tags: [resources, models, workspaces, keys, authentication, rerank]
+description: Access generation metadata, discovery, files, workspaces, keys, activity, and reranking.
+tags: [resources, models, files, workspaces, keys, authentication, rerank]
 sources:
   - resource: https://openrouter.ai/docs/use-cases/oauth-pkce
     title: OpenRouter OAuth PKCE guide
@@ -68,6 +68,63 @@ in this response does not provide APIs to change them. Workspace mutations,
 membership operations, and budget APIs remain unimplemented. These operations
 surface authentication/permission failures through the normal typed API errors;
 retrieving an unknown workspace can return HTTP 404.
+
+## File retrieval
+
+Use an API key with access to the requested workspace and, when applicable, the
+selected provider storage. These operations do not delete or modify files:
+
+```swift
+let filesPage = try await client.files.list(limit: 25, order: "asc")
+if let fileID = filesPage.data.first?.id {
+  let fileInfo = try await client.files.get(id: fileID)
+  if case .openRouter(let file) = fileInfo, file.downloadable {
+    let download = try await client.files.content(id: fileID)
+    let bytes = download.data
+    let contentType = download.contentType // May be absent.
+    // Consume bytes without assuming UTF-8 text.
+  }
+}
+if let nextCursor = filesPage.cursor {
+  let nextPage = try await client.files.list(limit: 25, cursor: nextCursor, order: "asc")
+  // Consume nextPage in your app; pagination is explicit.
+}
+```
+
+Flat aliases are `listFiles`, `getFile`, and `downloadFileContent`. All accept
+`RequestOptions`; each also accepts optional `workspaceID: UUID` and `provider`
+filters. Omit `provider` for OpenRouter storage; provider-backed access uses your
+configured provider credentials. This option selects storage, **not** response shape.
+
+### Shapes and pagination
+
+- Metadata is `FileResponse`: `.openRouter(FileMetadata)`,
+  `.anthropic(FileMetadata)`, `.openAI(OpenAIFileMetadata)`, or `.unknown(JSONValue)`.
+  `_shape` selects the response representation. Unknown string shapes retain raw
+  JSON; malformed known shapes fail decoding rather than silently falling back.
+- Untagged legacy payloads infer OpenAI from `object: "file"` or an integer
+  `created_at`; otherwise they decode as native metadata. Untagged native and
+  Anthropic payloads cannot be distinguished.
+- `FileListResponse` retains `hasMore`, `firstID`, `lastID`, optional `cursor`,
+  `shape`, `object`, and `rawPayload`. OpenRouter uses the opaque next-page cursor;
+  provider shapes may instead use ID-based pagination. Do not assume `cursor`
+  exists just because `hasMore` is true.
+- List parameters include `limit` (1–1000), `cursor`, `after`, `afterID`,
+  `beforeID`, and `order`. Parameters pass through unchanged. OpenRouter storage
+  supports only ascending order and does not support `beforeID`.
+- OpenAI metadata preserves integer `createdAt` and `bytes`; native metadata
+  retains a timestamp string and `sizeBytes`. `purpose` and `status` are open strings.
+- Raw-backed response models encode their `rawPayload`, matching existing
+  `FileMetadata` behavior. Editing a typed property alone does not rewrite that
+  payload. Known `FileResponse` cases emit the corresponding `_shape` on encoding.
+
+**Content downloads buffer the entire file in memory.** The upstream contract
+allows downloads only for server-created files; uploaded files return HTTP 400.
+Treat `downloadable` as metadata, not a guarantee that a later request will succeed.
+IDs are encoded as one path segment; the server validates the documented ID pattern
+(`^[\w-]+$`, 1–256 characters). HTTP errors use normal `OpenRouterError.apiError`
+handling. Existing `files.upload` still returns `FileMetadata` and does not expose
+provider-backed uploads. File deletion remains unimplemented.
 
 ## Key management and authorization codes
 
