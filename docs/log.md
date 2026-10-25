@@ -2,6 +2,7 @@
 
 ## 2026-10-25
 
+- **Correction**: Reconciled endpoint coverage with the current official OpenAPI inventory, added 72 omitted operations, distinguished legacy completions, and corrected method-aware file coverage and the alpha decision server override. Removed stale Zig-tracker wording and documented audit limits.
 - **Update**: Finalized v0.4.0 release-date and migration documentation.
 
 ## 2026-10-24

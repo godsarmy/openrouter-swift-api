@@ -17,7 +17,30 @@ and [current limitations](limitations.md) for usage and compatibility context.
 
 This file tracks which OpenRouter API endpoints are implemented by this Swift SDK.
 
-Source reviewed:
+## Audit source and scope
+
+Endpoint inventory checked on **2026-10-25** against a fresh download of the
+official OpenAPI specification (OpenAPI 3.1.0, `info.version: 1.0.0`).
+
+| Inventory | Unique method/path operations |
+|---|---:|
+| Listed in the current specification | 139 |
+| Current-spec operations implemented by the SDK | 33 |
+| Current-spec operations not implemented | 106 |
+| Additional SDK legacy operations absent from the specification | 1 |
+
+The earlier tracker omitted 72 current-spec operations; those are now listed
+below alongside the 34 already marked pending. Repeated summary/detail rows do
+not count as separate operations. Coverage is matched by **HTTP method and path**:
+`POST /files` upload does not implement `GET /files` listing.
+
+This is an endpoint-presence audit, not a complete request/response field-parity
+or live authorization audit. Spec-listed alpha and specialized management APIs
+are inventory entries, not a claim that every account can access them or that
+their contracts are stable. Absence from the spec alone does not prove that an
+existing endpoint was removed or deprecated.
+
+Sources:
 
 - API reference overview: <https://openrouter.ai/docs/api/reference/overview>
 - OpenAPI spec: <https://openrouter.ai/openapi.json>
@@ -30,7 +53,10 @@ Base URL:
 https://openrouter.ai/api/v1
 ```
 
-Endpoint paths below are relative to the base URL.
+Endpoint paths below are relative to the base URL, except
+`POST /api/alpha/decisions`: its operation-level server override is
+`https://openrouter.ai`, so its full URL is
+`https://openrouter.ai/api/alpha/decisions`.
 
 Status legend:
 
@@ -54,7 +80,7 @@ Status legend:
 | [x] | GET | `/videos/{jobId}` | `client.videos.get`, `client.getVideos` | Polls a video generation job. |
 | [x] | GET | `/videos/{jobId}/content` | `client.videos.content`, `client.listVideosContent` | Downloads buffered video data and its Content-Type. |
 | [x] | GET | `/videos/models` | `client.videos.models.list`, `client.listVideosModels` | Lists video generation model capabilities. |
-| [x] | POST | `/completions` | `client.createCompletion` | Legacy OpenAI-compatible text completions endpoint. |
+| [x] | POST | `/completions` | `client.createCompletion` | Legacy SDK support; absent from the audited current OpenAPI specification. |
 | [x] | GET | `/generation` | `client.generations.get`, `client.getGeneration`, `client.getGenerationRaw` | Gets request and usage metadata for a generation. |
 | [x] | GET | `/generation/content` | `client.generations.content`, `client.listGenerationContent`, `client.listGenerationContentRaw` | Gets stored prompt/completion content for a generation. |
 | [x] | GET | `/models` | `client.models.list`, `client.listModels` | Lists available models. |
@@ -97,7 +123,7 @@ Status legend:
 
 | Status | Method | Path | Operation | Description | SDK notes |
 |---|---|---|---|---|---|
-| [x] | POST | `/completions` | `createCompletion` | Create a legacy text completion. | Implemented in `OpenRouterClient.createCompletion`. This endpoint is implemented by the SDK even though it is not listed in the Zig tracker summary. |
+| [x] | POST | `/completions` | `createCompletion` | Create a legacy text completion. | Implemented in `OpenRouterClient.createCompletion`. Absent from the OpenAPI specification audited on 2026-10-25; retained as SDK compatibility support. Spec absence alone is not proof of deprecation or removal. |
 
 ## Models, Providers, and Routing Discovery
 
@@ -186,6 +212,10 @@ Status legend:
 |---|---|---|---|---|---|
 | [x] | POST | `/files` | `uploadFile` | Upload a file for later API calls. | Implemented in `OpenRouterClient.uploadFile`; resource alias: `client.files.upload`. |
 
+File listing, metadata retrieval, content download, and deletion remain pending;
+see the additional inventory below. Upload support does not imply those methods
+are implemented.
+
 ## Preset Configuration Endpoints
 
 | Status | Method | Path | Operation | Description | SDK notes |
@@ -193,6 +223,88 @@ Status legend:
 | [ ] | POST | `/presets/{slug}/chat/completions` | `createPresetsChatCompletions` | Create or update a preset from a chat-completions-shaped body. | Does not execute inference. |
 | [ ] | POST | `/presets/{slug}/messages` | `createPresetsMessages` | Create or update a preset from a Messages-shaped body. | Does not execute inference. |
 | [ ] | POST | `/presets/{slug}/responses` | `createPresetsResponses` | Create or update a preset from a Responses-shaped body. | Does not execute inference. |
+
+## Additional spec-listed operations
+
+These 72 operations were missing from the earlier tracker and have no SDK
+implementation. Names in the last column are upstream operation IDs, **not**
+existing Swift methods. Check each operation's schema, authentication,
+availability, and server override before implementing it.
+
+| Status | Method | Path | Upstream operation ID |
+|---|---|---|---|
+| [ ] | DELETE | `/batches/{id}` | `deleteBatch` |
+| [ ] | DELETE | `/external-users/{user}` | `deleteExternalUser` |
+| [ ] | DELETE | `/files/{file_id}` | `deleteFile` |
+| [ ] | DELETE | `/private-endpoints/{id}` | `deletePrivateEndpoint` |
+| [ ] | DELETE | `/scim/group-mappings/{id}` | `deleteScimGroupMapping` |
+| [ ] | DELETE | `/vault/interns/{internId}/secrets/{name}` | `deleteInternVaultSecret` |
+| [ ] | DELETE | `/vault/secrets/{name}` | `deleteVaultSecret` |
+| [ ] | DELETE | `/workspaces/{workspace_ref}/budgets/{interval}` | `deleteWorkspaceBudget` |
+| [ ] | GET | `/analytics/meta` | `getAnalyticsMeta` |
+| [ ] | GET | `/batches` | `listBatches` |
+| [ ] | GET | `/batches/{id}` | `getBatches` |
+| [ ] | GET | `/benchmarks` | `getBenchmarks` |
+| [ ] | GET | `/classifications/task` | `getTaskClassifications` |
+| [ ] | GET | `/containers/{container_id}/files` | `listContainerFiles` |
+| [ ] | GET | `/containers/{container_id}/files/{file_id}` | `getContainerFile` |
+| [ ] | GET | `/containers/{container_id}/files/{file_id}/content` | `downloadContainerFileContent` |
+| [ ] | GET | `/datasets/app-rankings` | `getAppRankings` |
+| [ ] | GET | `/datasets/session-cost` | `getSessionCost` |
+| [ ] | GET | `/external-users` | `listExternalUsers` |
+| [ ] | GET | `/external-users/{user}` | `getExternalUser` |
+| [ ] | GET | `/files` | `listFiles` |
+| [ ] | GET | `/files/{file_id}` | `getFileMetadata` |
+| [ ] | GET | `/files/{file_id}/content` | `downloadFileContent` |
+| [ ] | GET | `/images/models` | `listImageModels` |
+| [ ] | GET | `/images/models/{author}/{slug}/endpoints` | `listImageModelEndpoints` |
+| [ ] | GET | `/oauth/jwks` | `listOauthJwks` |
+| [ ] | GET | `/organization/settings` | `getOrganizationSettings` |
+| [ ] | GET | `/presets` | `listPresets` |
+| [ ] | GET | `/presets/{slug}` | `getPreset` |
+| [ ] | GET | `/presets/{slug}/versions` | `listPresetVersions` |
+| [ ] | GET | `/presets/{slug}/versions/{version}` | `getPresetVersion` |
+| [ ] | GET | `/private-endpoints` | `listPrivateEndpoints` |
+| [ ] | GET | `/private-endpoints/{id}` | `getPrivateEndpoint` |
+| [ ] | GET | `/scim/group-mappings` | `listScimGroupMappings` |
+| [ ] | GET | `/scim/group-mappings/{id}` | `getScimGroupMapping` |
+| [ ] | GET | `/scim/groups` | `listScimGroups` |
+| [ ] | GET | `/scim/sync-jobs/{id}` | `getScimSyncJob` |
+| [ ] | GET | `/tools` | `listTools` |
+| [ ] | GET | `/tools/{name}` | `getTool` |
+| [ ] | GET | `/vault/interns/{internId}/connections` | `listInternConnections` |
+| [ ] | GET | `/vault/interns/{internId}/effective-secrets` | `listInternEffectiveVaultSecrets` |
+| [ ] | GET | `/vault/interns/{internId}/secrets` | `listInternVaultSecrets` |
+| [ ] | GET | `/vault/secrets` | `listVaultSecrets` |
+| [ ] | GET | `/workspaces/{workspace_ref}/budgets` | `listWorkspaceBudgets` |
+| [ ] | GET | `/workspaces/{workspace_ref}/budgets/{interval}` | `getWorkspaceBudget` |
+| [ ] | GET | `/workspaces/{id}/members` | `listWorkspaceMembers` |
+| [ ] | PATCH | `/external-users/{user}` | `updateExternalUser` |
+| [ ] | PATCH | `/organization/settings` | `updateOrganizationSettings` |
+| [ ] | PATCH | `/private-endpoints/{id}` | `updatePrivateEndpoint` |
+| [ ] | PATCH | `/scim/group-mappings/{id}` | `updateScimGroupMapping` |
+| [ ] | POST | `/analytics/query` | `queryAnalytics` |
+| [ ] | POST | `/api/alpha/decisions` | `createApiAlphaDecisions` |
+| [ ] | POST | `/batches` | `createBatches` |
+| [ ] | POST | `/containers/{container_id}/files/{file_id}/promote` | `promoteContainerFile` |
+| [ ] | POST | `/credits/coinbase` | `createCoinbaseCharge` |
+| [ ] | POST | `/external-users` | `createExternalUser` |
+| [ ] | POST | `/generation/feedback` | `submitGenerationFeedback` |
+| [ ] | POST | `/images` | `createImages` |
+| [ ] | POST | `/oauth/token` | `createOauthToken` |
+| [ ] | POST | `/private-endpoints` | `createPrivateEndpoint` |
+| [ ] | POST | `/private-endpoints/{id}/activate` | `activatePrivateEndpoint` |
+| [ ] | POST | `/private-endpoints/{id}/disable` | `disablePrivateEndpoint` |
+| [ ] | POST | `/private-endpoints/{id}/enable` | `enablePrivateEndpoint` |
+| [ ] | POST | `/private-endpoints/{id}/validate` | `validatePrivateEndpoint` |
+| [ ] | POST | `/scim/group-mappings` | `createScimGroupMapping` |
+| [ ] | POST | `/scim/sync-jobs` | `createScimSyncJob` |
+| [ ] | POST | `/systemone` | `createSystemone` |
+| [ ] | POST | `/vault/interns/{internId}/secrets/copy` | `copyVaultSecretsToIntern` |
+| [ ] | PUT | `/private-endpoints/{id}/pricing` | `updatePrivateEndpointPricing` |
+| [ ] | PUT | `/vault/interns/{internId}/secrets/{name}` | `storeInternVaultSecret` |
+| [ ] | PUT | `/vault/secrets/{name}` | `storeVaultSecret` |
+| [ ] | PUT | `/workspaces/{workspace_ref}/budgets/{interval}` | `upsertWorkspaceBudget` |
 
 ## Notes
 
