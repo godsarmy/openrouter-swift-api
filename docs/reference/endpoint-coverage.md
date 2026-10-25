@@ -25,12 +25,12 @@ official OpenAPI specification (OpenAPI 3.1.0, `info.version: 1.0.0`).
 | Inventory | Unique method/path operations |
 |---|---:|
 | Listed in the current specification | 139 |
-| Current-spec operations implemented by the SDK | 33 |
-| Current-spec operations not implemented | 106 |
+| Current-spec operations implemented by the SDK | 35 |
+| Current-spec operations not implemented | 104 |
 | Additional SDK legacy operations absent from the specification | 1 |
 
-The earlier tracker omitted 72 current-spec operations; those are now listed
-below alongside the 34 already marked pending. Repeated summary/detail rows do
+The earlier tracker omitted 72 current-spec operations; those are now included
+below. Table statuses reflect subsequent SDK additions. Repeated summary/detail rows do
 not count as separate operations. Coverage is matched by **HTTP method and path**:
 `POST /files` upload does not implement `GET /files` listing.
 
@@ -101,6 +101,8 @@ Status legend:
 | [x] | GET | `/providers` | `client.providers.list`, `client.listProviders` | Lists available providers. |
 | [x] | GET | `/models/{author}/{slug}/endpoints` | `client.endpoints.list`, `client.listModelEndpoints` | Lists endpoints for a specific model. |
 | [x] | GET | `/endpoints/zdr` | `client.endpoints.listZDR`, `client.listZDREndpoints` | Previews Zero Data Retention endpoint availability. |
+| [x] | GET | `/workspaces` | `client.workspaces.list`, `client.listWorkspaces` | Lists workspaces with optional offset/limit pagination and a total count. Requires a management key. |
+| [x] | GET | `/workspaces/{id}` | `client.workspaces.get`, `client.getWorkspace` | Gets a workspace by UUID or slug, safely encoded as one path segment. Requires a management key. |
 
 ## Core Inference Endpoints
 
@@ -187,9 +189,9 @@ Status legend:
 
 | Status | Method | Path | Operation | Description | SDK notes |
 |---|---|---|---|---|---|
-| [ ] | GET | `/workspaces` | `listWorkspaces` | List workspaces. |  |
+| [x] | GET | `/workspaces` | `listWorkspaces` | List workspaces. | Implemented in `OpenRouterClient.listWorkspaces`; alias: `client.workspaces.list`. Optional `offset` and `limit`; typed `WorkspacesResponse` includes `totalCount`. Requires a management key. |
 | [ ] | POST | `/workspaces` | `createWorkspace` | Create a workspace. |  |
-| [ ] | GET | `/workspaces/{id}` | `getWorkspace` | Get a workspace. |  |
+| [x] | GET | `/workspaces/{id}` | `getWorkspace` | Get a workspace. | Implemented in `OpenRouterClient.getWorkspace`; alias: `client.workspaces.get`. Accepts a UUID or slug string; returns `WorkspaceResponse`. Requires a management key. |
 | [ ] | PATCH | `/workspaces/{id}` | `updateWorkspace` | Update a workspace. |  |
 | [ ] | DELETE | `/workspaces/{id}` | `deleteWorkspace` | Delete a workspace. |  |
 | [ ] | POST | `/workspaces/{id}/members/add` | `bulkAddWorkspaceMembers` | Bulk add members to a workspace. |  |

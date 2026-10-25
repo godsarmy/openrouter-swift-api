@@ -495,6 +495,42 @@ public struct OpenRouterClient: Sendable {
     )
   }
 
+  /// Lists workspaces using a management API key.
+  ///
+  /// - Parameters:
+  ///   - offset: Starting offset (API minimum: 0). Nil uses the server default.
+  ///   - limit: Page size (API range: 1...100; server default: 50).
+  ///     Nil uses the server default.
+  ///   - options: Per-request overrides.
+  public func listWorkspaces(
+    offset: Int? = nil,
+    limit: Int? = nil,
+    options: RequestOptions? = nil
+  ) async throws -> WorkspacesResponse {
+    var queryItems: [URLQueryItem] = []
+    if let offset { queryItems.append(.init(name: "offset", value: String(offset))) }
+    if let limit { queryItems.append(.init(name: "limit", value: String(limit))) }
+    return try await transport.get(
+      path: "workspaces", queryItems: queryItems, responseType: WorkspacesResponse.self,
+      options: options
+    )
+  }
+
+  /// Gets a workspace using a management API key.
+  ///
+  /// - Parameters:
+  ///   - id: The workspace UUID or slug, treated as a single path segment.
+  ///   - options: Per-request overrides.
+  public func getWorkspace(id: String, options: RequestOptions? = nil) async throws
+    -> WorkspaceResponse
+  {
+    try await transport.get(
+      path: .preEscaped("workspaces/\(escapePathSegment(id))"),
+      responseType: WorkspaceResponse.self,
+      options: options
+    )
+  }
+
   public func listAPIKeys(
     includeDisabled: Bool? = nil,
     offset: Int? = nil,
@@ -737,6 +773,7 @@ extension OpenRouterClient {
   public var models: ModelsResource { ModelsResource(client: self) }
   public var credits: CreditsResource { CreditsResource(client: self) }
   public var keys: KeysResource { KeysResource(client: self) }
+  public var workspaces: WorkspacesResource { WorkspacesResource(client: self) }
   public var auth: AuthResource { AuthResource(client: self) }
   public var activity: ActivityResource { ActivityResource(client: self) }
   public var datasets: DatasetsResource { DatasetsResource(client: self) }
@@ -927,6 +964,26 @@ extension OpenRouterClient {
 
     public func get(options: RequestOptions? = nil) async throws -> CreditsResponse {
       try await client.getCredits(options: options)
+    }
+  }
+
+  /// Read-only workspace endpoints requiring a management API key.
+  public struct WorkspacesResource: Sendable {
+    fileprivate let client: OpenRouterClient
+
+    /// Lists workspaces. Offset must be at least 0 and limit must be 1...100.
+    /// Nil pagination values use server defaults (limit: 50).
+    public func list(
+      offset: Int? = nil,
+      limit: Int? = nil,
+      options: RequestOptions? = nil
+    ) async throws -> WorkspacesResponse {
+      try await client.listWorkspaces(offset: offset, limit: limit, options: options)
+    }
+
+    /// Gets a workspace by UUID or slug, treated as a single path segment.
+    public func get(id: String, options: RequestOptions? = nil) async throws -> WorkspaceResponse {
+      try await client.getWorkspace(id: id, options: options)
     }
   }
 

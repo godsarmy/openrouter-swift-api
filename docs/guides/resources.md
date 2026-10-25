@@ -1,8 +1,8 @@
 ---
 type: Guide
 title: Resource examples
-description: Access generation metadata, discovery, keys, activity, and reranking.
-tags: [resources, models, keys, authentication, rerank]
+description: Access generation metadata, discovery, workspaces, keys, activity, and reranking.
+tags: [resources, models, workspaces, keys, authentication, rerank]
 sources:
   - resource: https://openrouter.ai/docs/use-cases/oauth-pkce
     title: OpenRouter OAuth PKCE guide
@@ -41,6 +41,33 @@ let zdrEndpoints = try await client.endpoints.listZDR()
 ```
 
 Credits and activity require a management API key.
+
+## Workspace discovery
+
+Use a client configured with a **management API key** to list or retrieve
+workspaces. Both operations are read-only:
+
+```swift
+let workspaces = try await client.workspaces.list(offset: 0, limit: 25)
+let totalWorkspaces = workspaces.totalCount
+let workspace = try await client.workspaces.get(id: "production")
+// `id` accepts a workspace UUID string or a slug, not a path.
+let workspaceID = workspace.data.id
+```
+
+Flat aliases are `client.listWorkspaces(offset:limit:options:)` and
+`client.getWorkspace(id:options:)`. Omit pagination parameters to use server
+defaults (offset 0, limit 50). The API accepts a nonnegative offset and a limit
+from 1 through 100. Parameters are passed through; the server validates bounds.
+`totalCount` is the total available count, not the size of the current page;
+pagination is manual.
+
+`Workspace` exposes names, defaults, logging settings, timestamps, and optional
+budget/tool settings. Nullable values remain optional; the presence of settings
+in this response does not provide APIs to change them. Workspace mutations,
+membership operations, and budget APIs remain unimplemented. These operations
+surface authentication/permission failures through the normal typed API errors;
+retrieving an unknown workspace can return HTTP 404.
 
 ## Key management and authorization codes
 

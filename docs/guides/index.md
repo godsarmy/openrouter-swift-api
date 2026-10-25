@@ -8,7 +8,7 @@
 - [Responses API](responses.md) - Use beta Responses creation, streaming, and stateless tool replay.
 - [Messages API](messages.md) - Use Anthropic-compatible messages and streaming events.
 - [Media APIs](media.md) - Work with speech, transcription, video jobs, and downloads.
-- [Resource examples](resources.md) - Access generation metadata, discovery, keys, activity, and reranking.
+- [Resource examples](resources.md) - Access generation metadata, discovery, workspaces, keys, activity, and reranking.
 
 ## Reference
 
