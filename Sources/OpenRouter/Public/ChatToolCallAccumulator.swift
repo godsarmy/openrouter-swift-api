@@ -35,6 +35,7 @@ public enum ChatToolCallAccumulatorError: Error, Sendable, Equatable {
   case conflictingMetadata(choice: Int, tool: Int, field: String)
   case unsupportedToolType(choice: Int, tool: Int)
   case missingMetadata(choice: Int, tool: Int, field: String)
+  case duplicateToolCallID(choice: Int)
   case invalidArguments(choice: Int, tool: Int)
   case incompleteChoice(choice: Int)
   case emptyToolCalls(choice: Int)
@@ -122,11 +123,15 @@ public struct ChatToolCallAccumulator: Sendable {
       guard choice.finishReason == "tool_calls" else {
         throw ChatToolCallAccumulatorError.incompleteChoice(choice: index)
       }
+      var ids: Set<String> = []
       result[index] = try choice.tools.keys.sorted().map { toolIndex in
         let tool = choice.tools[toolIndex]!
         guard let id = tool.id, !id.isEmpty else {
           throw ChatToolCallAccumulatorError.missingMetadata(
             choice: index, tool: toolIndex, field: "id")
+        }
+        guard ids.insert(id).inserted else {
+          throw ChatToolCallAccumulatorError.duplicateToolCallID(choice: index)
         }
         guard let name = tool.name, !name.isEmpty else {
           throw ChatToolCallAccumulatorError.missingMetadata(

@@ -35,9 +35,9 @@ final class ChatToolCallAccumulatorTests: XCTestCase {
 
   func testSplitUnicodeInterleavedAndSorted() throws {
     var accumulator = ChatToolCallAccumulator()
-    try accumulator.append(chunk([call(4, args: "{\"é\":\"👩")], choice: 2))
+    try accumulator.append(chunk([call(4, id: "id4", args: "{\"é\":\"👩")], choice: 2))
     try accumulator.append(chunk([call(3)], choice: 0, finish: "tool_calls"))
-    try accumulator.append(chunk([call(1), call(4, args: "🏽‍💻\"}")], choice: 2))
+    try accumulator.append(chunk([call(1), call(4, id: "id4", args: "🏽‍💻\"}")], choice: 2))
     try accumulator.append(
       chunk([call(4, id: nil, name: nil, args: nil)], choice: 2, finish: "tool_calls"))
     try accumulator.append(.init(choices: []))
@@ -56,6 +56,33 @@ final class ChatToolCallAccumulatorTests: XCTestCase {
     try accumulator.append(chunk([call(args: "}", type: "function")]))
     try accumulator.append(chunk([call(args: nil, type: "function")], finish: "tool_calls"))
     XCTAssertEqual(try accumulator.finish()[0]?.first?.function.arguments, "{}")
+  }
+
+  func testDuplicateIDsWithinChoiceRejectAndCloseCollector() throws {
+    var accumulator = ChatToolCallAccumulator()
+    try accumulator.append(chunk([call(0), call(1)], choice: 2, finish: "tool_calls"))
+    XCTAssertThrowsError(try accumulator.finish()) {
+      XCTAssertEqual($0 as? ChatToolCallAccumulatorError, .duplicateToolCallID(choice: 2))
+    }
+    XCTAssertThrowsError(try accumulator.finish()) {
+      XCTAssertEqual($0 as? ChatToolCallAccumulatorError, .invalidState)
+    }
+    XCTAssertThrowsError(try accumulator.append(.init(choices: []))) {
+      XCTAssertEqual($0 as? ChatToolCallAccumulatorError, .invalidState)
+    }
+  }
+
+  func testSameIDAcrossChoicesAndRepeatedFragmentsRemainValid() throws {
+    var accumulator = ChatToolCallAccumulator()
+    try accumulator.append(chunk([call(args: "{")], choice: 0))
+    try accumulator.append(chunk([call()], choice: 1, finish: "tool_calls"))
+    try accumulator.append(chunk([call(args: "}")], choice: 0, finish: "tool_calls"))
+    let result = try accumulator.finish()
+    for index in [0, 1] {
+      XCTAssertEqual(result[index]?.count, 1)
+      XCTAssertEqual(result[index]?.first?.id, "id")
+      XCTAssertEqual(result[index]?.first?.function.arguments, "{}")
+    }
   }
 
   func testMetadataConflictsAndUnsupportedTypesPoison() throws {

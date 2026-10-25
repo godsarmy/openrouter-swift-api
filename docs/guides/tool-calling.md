@@ -93,7 +93,7 @@ if let assistant = toolResponse.choices.first?.message,
     history.append(try weather.resultMessage(for: call, result: result))
   }
   let finalResponse = try await client.chat.send(.init(
-    model: "openai/gpt-4o-mini", messages: history
+    model: "openai/gpt-4o-mini", messages: history, tools: [weather.tool]
   ))
   // Consume finalResponse in your app; no automatic execution loop is started.
 }

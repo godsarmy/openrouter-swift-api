@@ -100,6 +100,65 @@ final class ChatToolStreamingTests: XCTestCase {
     XCTAssertThrowsError(try accumulator.finish())
   }
 
+  func testCancellationAfterFinishMarkerRequiresExplicitCheckBeforeExecution() async throws {
+    // FoundationNetworking's client stream throws URLError.cancelled here on
+    // Linux. Reproduce AsyncThrowingStream's normal-cancellation termination
+    // directly so this guard remains covered independently of transport behavior.
+    let complete = try JSONDecoder().decode(
+      ChatCompletionChunk.self,
+      from: Data(
+        #"{"choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":"call_tokyo","type":"function","function":{"name":"lookup","arguments":"{\"city\":\"東京 🌸\"}"}}]}}]}"#
+          .utf8))
+    let marker = try JSONDecoder().decode(
+      ChatCompletionChunk.self,
+      from: Data(#"{"choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}]}"#.utf8))
+    let (stream, continuation) = AsyncThrowingStream<ChatCompletionChunk, Error>.makeStream()
+    continuation.yield(complete)
+    continuation.yield(marker)
+    // Keep the producer open: neither EOF nor [DONE] has occurred.
+    defer { continuation.finish() }
+    // Cancel a separate task so XCTest's own task remains usable.
+    let consumer = Task {
+      var accumulator = ChatToolCallAccumulator()
+      var sawFinish = false
+      var finalized = false
+      var executionCount = 0
+      for try await chunk in stream {
+        try accumulator.append(chunk)
+        if chunk.choices.contains(where: { $0.finishReason == "tool_calls" }) {
+          sawFinish = true
+          withUnsafeCurrentTask { $0?.cancel() }
+        }
+      }
+      // AsyncThrowingStream's next() can return nil on cancellation, even though
+      // this producer never sent [DONE] or closed the response. Do not interpret
+      // this normal loop exit as authorization to execute the completed calls.
+      do {
+        try Task.checkCancellation()
+        let completed = try accumulator.finish()
+        finalized = true
+        let tool = TypedChatTool<Arguments, String>(name: "lookup", parameters: .object([:]))
+        for call in completed[0] ?? [] {
+          let arguments = try tool.decodeArguments(from: call)
+          _ = try tool.resultMessage(for: call, result: arguments.city)
+          executionCount += 1
+        }
+        return (sawFinish, false, finalized, executionCount)
+      } catch is CancellationError {
+        return (sawFinish, true, finalized, executionCount)
+      }
+    }
+
+    // A stream-level throw escapes the task and fails this await: the regression
+    // specifically demonstrates normal loop termination followed by the guard.
+    let (sawFinish, cancellationChecked, finalized, executionCount) = try await consumer.value
+    XCTAssertTrue(sawFinish)
+    XCTAssertTrue(cancellationChecked)
+    XCTAssertFalse(finalized)
+    XCTAssertEqual(executionCount, 0)
+    XCTAssertFalse(Task.isCancelled)
+  }
+
   func testTransportFailurePropagatesWithoutExecutableResults() async throws {
     var accumulator = ChatToolCallAccumulator()
     do {

@@ -69,7 +69,8 @@ for try await chunk in client.chat.stream(.init(
     assistantText += choice.delta?.content ?? ""
   }
 }
-// If iteration throws or is cancelled, propagate the error; do not call finish().
+// Cancellation can end AsyncThrowingStream iteration without throwing.
+try Task.checkCancellation()
 let completed = try accumulator.finish()
 if let calls = completed[0], !calls.isEmpty {
   let assistant = ChatMessage(
@@ -84,7 +85,7 @@ if let calls = completed[0], !calls.isEmpty {
     history.append(try echo.resultMessage(for: call, result: arguments.message))
   }
   let finalResponse = try await client.chat.send(.init(
-    model: "openai/gpt-4o-mini", messages: history
+    model: "openai/gpt-4o-mini", messages: history, tools: [echo.tool]
   ))
   // Consume finalResponse in your app.
 }
@@ -102,6 +103,7 @@ metadata needed by your application separately.
   tool data, is rejected. A text-only stream returns an empty dictionary.
 - Tool deltas require nonnegative choice and tool indexes. Completed calls require
   nonempty IDs and names, function type, and arguments that form a JSON object.
+  IDs must be unique within a choice; alternative choices may reuse an ID.
   This checks JSON syntax/shape, not your schema or authorization rules.
 - Arguments are concatenated in arrival order. IDs, names, and types are stable
   metadata: identical repeats are allowed, conflicts are rejected. An omitted
@@ -115,8 +117,10 @@ metadata needed by your application separately.
 The accumulator cannot observe SSE `[DONE]` itself. The `tool_calls` finish reason
 is its completion gate; it does not prove that the transport delivered `[DONE]`.
 A normal EOF without the required finish reason rejects partial tool calls.
-Transport failures and cancellation remain the caller's responsibility: never
-finalize after catching one, or after breaking out of iteration early. Assembly
+Transport failures and cancellation remain the caller's responsibility. Cancellation
+can end `AsyncThrowingStream` iteration normally, so explicitly check cancellation
+before finalizing, as above. Never finalize after catching a transport error or
+after breaking out of iteration early. Assembly
 buffers argument strings in memory; it does not execute tools or start a loop.
 
 The SSE parser supports OpenRouter chat streams and basic multiline frame parsing;
