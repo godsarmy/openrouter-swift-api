@@ -6,6 +6,7 @@ This project follows semantic versioning once public releases are tagged.
 
 ## Unreleased
 
+- Added explicit irreversible file deletion with workspace/provider scoping and validated native/provider confirmation shapes; unknown shapes do not report confirmed success.
 - Added file listing, metadata retrieval, and buffered content downloads, with provider-shaped responses, pagination fields, and workspace/provider filters. Existing uploads remain unchanged; deletion is not included.
 - Added read-only workspace discovery via `workspaces.list` and `workspaces.get`, with typed settings, pagination metadata, and UUID-or-slug lookup.
 

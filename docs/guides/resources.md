@@ -124,7 +124,36 @@ Treat `downloadable` as metadata, not a guarantee that a later request will succ
 IDs are encoded as one path segment; the server validates the documented ID pattern
 (`^[\w-]+$`, 1–256 characters). HTTP errors use normal `OpenRouterError.apiError`
 handling. Existing `files.upload` still returns `FileMetadata` and does not expose
-provider-backed uploads. File deletion remains unimplemented.
+provider-backed uploads.
+
+## File deletion
+
+**Deletion is irreversible.** Verify the file identity, workspace, and provider,
+and obtain explicit approval before calling `client.files.delete`. The SDK does
+not prompt for confirmation or automatically delete files after download.
+
+```swift
+// Destructive: uncomment only after confirming the target file and storage scope.
+// let deletion = try await client.files.delete(
+//   id: "<confirmed-file-id>", options: .init(retries: RetryPolicy.none)
+// )
+```
+
+The flat alias is `client.deleteFile(id:workspaceID:provider:options:)`.
+Both forms accept optional `workspaceID: UUID`, `provider`, and `RequestOptions`,
+using the same storage-scoping rules as retrieval. The `downloadable` flag limits
+downloads, not deletion.
+
+`FileDeleteResponse` distinguishes native, Anthropic, OpenAI, and unknown shapes.
+Known responses require a native `type: "file_deleted"` or OpenAI
+`object: "file", deleted: true` marker; malformed confirmations fail decoding.
+Unknown shapes preserve raw JSON but have `isConfirmed == false`. Check the
+returned `id` against the approved target before treating the response as its
+confirmation. Untagged legacy native/OpenAI responses are also supported.
+
+Retries are disabled by default. Do not automatically retry a destructive request
+after a transport failure: the server may already have deleted the file even
+though no confirmation reached the client. Inspect the result explicitly.
 
 ## Key management and authorization codes
 

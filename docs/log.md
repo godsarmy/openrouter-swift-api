@@ -2,6 +2,7 @@
 
 ## 2026-10-25
 
+- **Update**: Documented explicit file deletion, approval and retry cautions, confirmation handling, and updated endpoint coverage.
 - **Update**: Documented file retrieval, provider response shapes, pagination and download limits, and updated endpoint coverage without claiming provider-backed upload support.
 - **Update**: Added workspace list/get examples, management-key and pagination guidance, and updated endpoint counts and deferred workspace scope.
 - **Correction**: Reconciled endpoint coverage with the current official OpenAPI inventory, added 72 omitted operations, distinguished legacy completions, and corrected method-aware file coverage and the alpha decision server override. Removed stale Zig-tracker wording and documented audit limits.

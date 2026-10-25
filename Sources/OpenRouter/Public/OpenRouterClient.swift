@@ -227,6 +227,23 @@ public struct OpenRouterClient: Sendable {
       responseType: FileResponse.self, options: options)
   }
 
+  /// Irreversibly deletes a file; callers must obtain explicit authorization before calling.
+  /// Uploaded/downloadable status does not determine deletion eligibility.
+  /// The server validates IDs against `^[\w-]+$` with length 1...256; IDs are passed through safely escaped.
+  public func deleteFile(
+    id: String, workspaceID: UUID? = nil, provider: String? = nil,
+    options: RequestOptions? = nil
+  ) async throws -> FileDeleteResponse {
+    var queryItems: [URLQueryItem] = []
+    if let workspaceID {
+      queryItems.append(.init(name: "workspace_id", value: workspaceID.uuidString))
+    }
+    if let provider { queryItems.append(.init(name: "provider", value: provider)) }
+    return try await transport.delete(
+      path: .preEscaped("files/\(escapePathSegment(id))"), queryItems: queryItems,
+      responseType: FileDeleteResponse.self, options: options)
+  }
+
   /// Buffers downloadable file bytes. Uploaded files are not downloadable (server returns 400).
   /// The server validates IDs (1...256 word characters or hyphens).
   public func downloadFileContent(
@@ -1002,6 +1019,16 @@ extension OpenRouterClient {
 
   public struct FilesResource: Sendable {
     fileprivate let client: OpenRouterClient
+
+    /// Irreversibly deletes a file. Explicit caller authorization is required.
+    /// Uploaded/downloadable status is irrelevant to deletion.
+    public func delete(
+      id: String, workspaceID: UUID? = nil, provider: String? = nil,
+      options: RequestOptions? = nil
+    ) async throws -> FileDeleteResponse {
+      try await client.deleteFile(
+        id: id, workspaceID: workspaceID, provider: provider, options: options)
+    }
 
     public func list(
       limit: Int? = nil, cursor: String? = nil, workspaceID: UUID? = nil,

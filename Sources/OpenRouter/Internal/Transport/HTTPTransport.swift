@@ -64,10 +64,11 @@ struct HTTPTransport: @unchecked Sendable {
 
   func delete<Response: Decodable>(
     path: HTTPPath,
+    queryItems: [URLQueryItem] = [],
     responseType: Response.Type,
     options: RequestOptions? = nil
   ) async throws -> Response {
-    let request = try buildDeleteRequest(path: path, options: options)
+    let request = try buildDeleteRequest(path: path, queryItems: queryItems, options: options)
     log(.init(message: "request", method: "DELETE", path: redactedPath(from: request)))
     let (data, response) = try await execute(request: request, options: options)
     return try decodeResponse(data: data, response: response, responseType: responseType)
@@ -284,6 +285,7 @@ struct HTTPTransport: @unchecked Sendable {
 
   func buildDeleteRequest(
     path: HTTPPath,
+    queryItems: [URLQueryItem] = [],
     options: RequestOptions? = nil
   ) throws -> URLRequest {
     guard let apiKey = configuration.apiKey, !apiKey.isEmpty else {
@@ -304,6 +306,9 @@ struct HTTPTransport: @unchecked Sendable {
     case .preEscaped(let value): encodedPath = value
     }
     components.percentEncodedPath += "\(separator)\(encodedPath)"
+    if !queryItems.isEmpty {
+      components.queryItems = queryItems
+    }
     guard let url = components.url else {
       throw OpenRouterError.invalidURL(path.description)
     }
