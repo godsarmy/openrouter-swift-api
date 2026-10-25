@@ -18,9 +18,11 @@ tags: [limitations, beta, roadmap, sse]
   streams and basic multiline frame parsing helpers; broader SSE metadata is
   currently ignored by the streaming client.
 - [Video content](../guides/media.md) downloads buffer the entire file in memory.
-- [Typed chat tools](../guides/tool-calling.md) handle complete non-streaming
-  calls, not streaming tool-call assembly. Schemas remain explicit; applications
-  own validation and execution. Explicit `content: null` is supported as
+- [Typed chat tools](../guides/tool-calling.md) handle complete calls. Streamed
+  calls must first be finalized with the [manual accumulator](../guides/streaming.md#streaming-tool-calls),
+  after normal stream exhaustion. It buffers arguments and does not itself
+  observe SSE `[DONE]`. Schemas remain explicit; applications own validation
+  and execution. Explicit `content: null` is supported as
   `Content.null`, but chat messages with an omitted `content` key are still rejected.
 - Linux/WSL builds do not replace testing on Apple platforms.
 

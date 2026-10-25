@@ -112,7 +112,8 @@ Pass a custom `JSONDecoder` or `JSONEncoder` to customize coding strategies.
 
 Results are JSON text inside a `.tool` message. A Swift `String` result is therefore
 a JSON-quoted string, not raw text; use `ChatMessage` directly for raw-text results.
-The helper handles complete non-streaming calls only, not streaming fragments.
+The helper handles complete calls, not streaming fragments. For streamed calls,
+use [streaming tool-call assembly](streaming.md#streaming-tool-calls) first.
 Assistant tool-call messages may contain `content: null`. The SDK represents this
 as `Content.null` and preserves it when replaying the original assistant message;
 it is distinct from empty text or an empty parts array. An omitted `content` key

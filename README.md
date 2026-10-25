@@ -50,7 +50,9 @@ can incur charges; see [building and testing](docs/development/building-and-test
 ## Roadmap
 
 Typed chat argument/result helpers are available; see
-[tool calling](docs/guides/tool-calling.md). Raw chat/tool APIs remain canonical,
+[tool calling](docs/guides/tool-calling.md) and
+[streaming tool-call assembly](docs/guides/streaming.md#streaming-tool-calls).
+Raw chat/tool APIs remain canonical,
 and applications retain control of execution.
 
 Endpoint coverage and deferred namespaces are tracked in

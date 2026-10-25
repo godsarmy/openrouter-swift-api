@@ -6,6 +6,7 @@ This project follows semantic versioning once public releases are tagged.
 
 ## Unreleased
 
+- Added typed streaming tool-call deltas and a manual `ChatToolCallAccumulator`, with per-choice assembly and rejection of incomplete or conflicting calls before typed decoding.
 - Added `Content.null` to decode and replay chat tool-call messages with explicit null content. Downstream exhaustive switches over `Content` must handle the new case; missing content remains rejected.
 - Added `TypedChatTool` for typed chat function arguments and JSON tool results, with explicit schemas and application-controlled execution.
 - Added unauthenticated authorization-code exchange with optional PKCE via `auth.keys.exchange` and `exchangeAuthCodeForAPIKey`.

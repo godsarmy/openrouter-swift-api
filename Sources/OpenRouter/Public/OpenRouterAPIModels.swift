@@ -652,10 +652,22 @@ public struct ChatCompletionChunk: Codable, Sendable, Equatable {
   public struct Delta: Codable, Sendable, Equatable {
     public var role: ChatMessage.Role?
     public var content: String?
+    public var toolCalls: [ToolCallDelta]?
 
-    public init(role: ChatMessage.Role? = nil, content: String? = nil) {
+    enum CodingKeys: String, CodingKey {
+      case role
+      case content
+      case toolCalls = "tool_calls"
+    }
+
+    public init(
+      role: ChatMessage.Role? = nil,
+      content: String? = nil,
+      toolCalls: [ToolCallDelta]? = nil
+    ) {
       self.role = role
       self.content = content
+      self.toolCalls = toolCalls
     }
   }
 }

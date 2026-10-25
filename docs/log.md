@@ -1,5 +1,9 @@
 # Documentation update log
 
+## 2026-10-24
+
+- **Update**: Documented streaming tool-call assembly, typed-helper integration, and completion/error boundaries; updated limitations and guide navigation.
+
 ## 2026-10-23
 
 - **Correction**: Documented explicit null chat content support, preserved replay semantics, and the new `Content.null` switch case.
