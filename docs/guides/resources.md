@@ -16,6 +16,9 @@ These snippets assume a [configured client](../getting-started/quick-start.md)
 and an async context. Check [endpoint coverage](../reference/endpoint-coverage.md)
 for aliases, supported filters, and authentication requirements.
 
+For asynchronous provider work, see [batch processing](batches.md). The batch API
+uses inline requests; it is not an uploaded-file workflow.
+
 ## Generation metadata
 
 ```swift

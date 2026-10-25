@@ -1,6 +1,7 @@
 # SDK guides
 
 - [Chat](chat.md) - Send chat requests and discover optional request features.
+- [Batch processing](batches.md) - Explicitly submit asynchronous work and retrieve status/results.
 - [Streaming](streaming.md) - Consume chat streams and assemble complete tool calls.
 - [Tool calling](tool-calling.md) - Declare tools and use typed arguments and results.
 - [Structured output](structured-output.md) - Request JSON-schema-constrained chat output.

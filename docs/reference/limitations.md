@@ -22,6 +22,9 @@ tags: [limitations, beta, roadmap, sse]
   files only; uploaded files return HTTP 400. Provider-backed uploads are not
   implemented; the existing upload API remains unchanged. File deletion is
   supported but irreversible and never performed automatically.
+- [Batch processing](../guides/batches.md) supports explicit create/list/get only.
+  There is no automatic polling, webhook receiver, or batch deletion. Result bodies
+  and provider-specific usage remain JSON; payment and retention failures are API errors.
 - [Typed chat tools](../guides/tool-calling.md) handle complete calls. Streamed
   calls must first be finalized with the [manual accumulator](../guides/streaming.md#streaming-tool-calls),
   after normal stream exhaustion. It buffers arguments and does not itself

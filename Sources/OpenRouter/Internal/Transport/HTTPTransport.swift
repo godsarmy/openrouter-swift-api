@@ -29,10 +29,12 @@ struct HTTPTransport: @unchecked Sendable {
     requestBody: Request,
     responseType: Response.Type,
     requiresAPIKey: Bool = true,
+    sortedKeys: Bool = false,
     options: RequestOptions? = nil
   ) async throws -> Response {
     let request = try buildRequest(
-      path: path, body: requestBody, requiresAPIKey: requiresAPIKey, options: options)
+      path: path, body: requestBody, requiresAPIKey: requiresAPIKey, sortedKeys: sortedKeys,
+      options: options)
     log(.init(message: "request", method: "POST", path: redactedPath(from: request)))
     let (data, response) = try await execute(request: request, options: options)
     return try decodeResponse(data: data, response: response, responseType: responseType)
@@ -162,6 +164,7 @@ struct HTTPTransport: @unchecked Sendable {
     body: Body,
     accept: String = "application/json",
     requiresAPIKey: Bool = true,
+    sortedKeys: Bool = false,
     options: RequestOptions? = nil
   ) throws -> URLRequest {
     if !requiresAPIKey,
@@ -198,7 +201,9 @@ struct HTTPTransport: @unchecked Sendable {
       applyResponseCacheHeaders(responseCache, to: &request)
     }
 
-    request.httpBody = try JSONEncoder().encode(body)
+    let encoder = JSONEncoder()
+    if sortedKeys { encoder.outputFormatting.insert(.sortedKeys) }
+    request.httpBody = try encoder.encode(body)
     return request
   }
 

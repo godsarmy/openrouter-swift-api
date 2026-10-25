@@ -2,6 +2,7 @@
 
 ## 2026-10-25
 
+- **Creation**: Added batch processing guidance for inline requests, explicit costly submission, status/results, wire ordering, billing, and retention; updated navigation and endpoint coverage.
 - **Update**: Documented explicit file deletion, approval and retry cautions, confirmation handling, and updated endpoint coverage.
 - **Update**: Documented file retrieval, provider response shapes, pagination and download limits, and updated endpoint coverage without claiming provider-backed upload support.
 - **Update**: Added workspace list/get examples, management-key and pagination guidance, and updated endpoint counts and deferred workspace scope.

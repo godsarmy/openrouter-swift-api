@@ -191,6 +191,39 @@ public struct OpenRouterClient: Sendable {
     )
   }
 
+  /// Submits a batch, starting potentially costly provider work. Requests are not retried by default.
+  /// The server validates body size, models, endpoints, routing, and HTTPS callback URLs.
+  public func createBatch(
+    _ request: CreateBatchRequest, options: RequestOptions? = nil
+  ) async throws -> BatchObject {
+    try await transport.post(
+      path: "batches", requestBody: request, responseType: BatchObject.self,
+      sortedKeys: true, options: options)
+  }
+
+  /// Lists batches in the API key's workspace. Statuses and time filters are passed through unchanged.
+  public func listBatches(
+    limit: Int? = nil, after: String? = nil, statuses: [String]? = nil,
+    createdAfter: String? = nil, createdBefore: String? = nil, options: RequestOptions? = nil
+  ) async throws -> BatchListResponse {
+    var queryItems: [URLQueryItem] = []
+    if let limit { queryItems.append(.init(name: "limit", value: String(limit))) }
+    if let after { queryItems.append(.init(name: "after", value: after)) }
+    for status in statuses ?? [] { queryItems.append(.init(name: "status", value: status)) }
+    if let createdAfter { queryItems.append(.init(name: "created_after", value: createdAfter)) }
+    if let createdBefore { queryItems.append(.init(name: "created_before", value: createdBefore)) }
+    return try await transport.get(
+      path: "batches", queryItems: queryItems, responseType: BatchListResponse.self,
+      options: options)
+  }
+
+  /// Retrieves batch status and any inline results in the API key's workspace.
+  public func getBatch(id: String, options: RequestOptions? = nil) async throws -> BatchObject {
+    try await transport.get(
+      path: .preEscaped("batches/\(escapePathSegment(id))"), responseType: BatchObject.self,
+      options: options)
+  }
+
   /// Lists files. The server validates limit (1...1000); cursors and provider filters are opaque.
   public func listFiles(
     limit: Int? = nil, cursor: String? = nil, workspaceID: UUID? = nil,
@@ -850,6 +883,31 @@ extension OpenRouterClient {
   public var providers: ProvidersResource { ProvidersResource(client: self) }
   public var endpoints: EndpointsResource { EndpointsResource(client: self) }
   public var files: FilesResource { FilesResource(client: self) }
+  public var batches: BatchesResource { BatchesResource(client: self) }
+
+  public struct BatchesResource: Sendable {
+    fileprivate let client: OpenRouterClient
+
+    /// Submits potentially costly provider work; no retries are performed by default.
+    public func create(
+      _ request: CreateBatchRequest, options: RequestOptions? = nil
+    ) async throws -> BatchObject {
+      try await client.createBatch(request, options: options)
+    }
+
+    public func list(
+      limit: Int? = nil, after: String? = nil, statuses: [String]? = nil,
+      createdAfter: String? = nil, createdBefore: String? = nil, options: RequestOptions? = nil
+    ) async throws -> BatchListResponse {
+      try await client.listBatches(
+        limit: limit, after: after, statuses: statuses, createdAfter: createdAfter,
+        createdBefore: createdBefore, options: options)
+    }
+
+    public func get(id: String, options: RequestOptions? = nil) async throws -> BatchObject {
+      try await client.getBatch(id: id, options: options)
+    }
+  }
 
   public struct ChatResource: Sendable {
     fileprivate let client: OpenRouterClient
