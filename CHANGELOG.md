@@ -4,15 +4,31 @@ All notable changes to this package will be documented in this file.
 
 This project follows semantic versioning once public releases are tagged.
 
-## Unreleased
+## 0.4.0 - Unreleased
 
-- Reject duplicate streamed tool-call IDs within a choice and document cancellation-safe finalization with tool schemas retained in follow-up requests.
-- Added typed streaming tool-call deltas and a manual `ChatToolCallAccumulator`, with per-choice assembly and rejection of incomplete or conflicting calls before typed decoding.
-- Added `Content.null` to decode and replay chat tool-call messages with explicit null content. Downstream exhaustive switches over `Content` must handle the new case; missing content remains rejected.
-- Added `TypedChatTool` for typed chat function arguments and JSON tool results, with explicit schemas and application-controlled execution.
-- Added unauthenticated authorization-code exchange with optional PKCE via `auth.keys.exchange` and `exchangeAuthCodeForAPIKey`.
-- Added credential-redacted exchange models and support for creating a client without an API key for exchange only.
-- Reject authorization-code exchange before sending when an injected session has a session-level Authorization header; added credential-free debug logging regression tests.
+### Added
+
+- Unauthenticated authorization-code exchange with optional PKCE via `auth.keys.exchange` and `exchangeAuthCodeForAPIKey`, credential-redacted models, and keyless client initialization for exchange.
+- `TypedChatTool` for typed chat function arguments and JSON tool results, with explicit schemas and application-controlled execution.
+- Typed streaming tool-call deltas and a manual `ChatToolCallAccumulator`, with per-choice assembly and rejection of incomplete, conflicting, or duplicate-ID calls before typed decoding.
+- `Content.null` to decode and replay chat messages with explicit null content; missing content remains rejected.
+
+### Fixed
+
+- Reject exchange before sending when an injected session has a session-level Authorization header; debug logging tests cover credential-free success and error events.
+- Document cancellation checks before streamed tool-call finalization and retain tool schemas in follow-up request examples.
+
+### Compatibility and limitations
+
+- Exhaustive switches over `Content` must handle `.null`; exhaustive switches over `OpenRouterError` must handle `.unauthenticatedSessionRequired`.
+- Existing `Delta(role:content:)` calls remain valid, but two-argument initializer references must use an explicit closure because the initializer now also accepts `toolCalls`; see the versioning guide for migration.
+- Exchange needs a session without Authorization in `httpAdditionalHeaders`; configuring a client API key does not send that key with exchange.
+- Streaming assembly is explicit and buffers arguments. Finalize only after normal stream exhaustion and an explicit cancellation check; the accumulator does not observe SSE `[DONE]` or execute tools.
+- Responses API behavior remains beta. Pagination helpers and deferred administrative namespaces remain out of scope.
+
+### Documentation
+
+- Reorganized SDK guides and endpoint coverage into an OKF v0.2 documentation bundle, with typed-tool and streaming round-trip examples.
 
 ## 0.3.0 - 2026-08-13
 

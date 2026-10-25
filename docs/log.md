@@ -2,6 +2,7 @@
 
 ## 2026-10-24
 
+- **Update**: Prepared v0.4.0 compatibility and migration notes while retaining an explicit unreleased status.
 - **Correction**: Added an explicit cancellation check before stream finalization, clarified per-choice call-ID uniqueness, and retained tool schemas in follow-up requests.
 - **Update**: Documented streaming tool-call assembly, typed-helper integration, and completion/error boundaries; updated limitations and guide navigation.
 
