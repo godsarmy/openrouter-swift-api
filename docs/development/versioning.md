@@ -12,12 +12,11 @@ compatible fixes. After `1.0`, the package follows semantic versioning: breaking
 source changes require a major version, additive APIs use minor versions, and
 bug fixes use patch versions.
 
-## Preparing v0.4.0
+## API review notes for v0.4.0
 
-The [unreleased changelog](../../CHANGELOG.md) collects the v0.4.0 candidate's
+The [changelog](../../CHANGELOG.md) collects v0.4.0's
 authorization-code exchange, typed chat tools, null content, and streamed tool-call
-assembly. A release tag and publication are separate steps; these notes do not
-mean the release has been published.
+assembly. These notes describe its source-compatibility and operational boundaries.
 
 Migration considerations:
 

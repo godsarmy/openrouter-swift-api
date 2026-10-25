@@ -4,7 +4,7 @@ All notable changes to this package will be documented in this file.
 
 This project follows semantic versioning once public releases are tagged.
 
-## 0.4.0 - Unreleased
+## 0.4.0 - 2026-10-25
 
 ### Added
 

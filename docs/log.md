@@ -1,5 +1,9 @@
 # Documentation update log
 
+## 2026-10-25
+
+- **Update**: Finalized v0.4.0 release-date and migration documentation.
+
 ## 2026-10-24
 
 - **Update**: Prepared v0.4.0 compatibility and migration notes while retaining an explicit unreleased status.
