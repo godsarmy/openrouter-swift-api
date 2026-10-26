@@ -27,6 +27,9 @@ tags: [limitations, beta, roadmap, sse]
   cancellation. Deletion purges artifacts, not billing/audit records, and upstream
   deletion may be unsupported. Result bodies and provider-specific usage remain
   JSON; payment and retention failures are API errors.
+- [Image-model discovery](../guides/media.md#image-model-discovery) is implemented,
+  but dedicated `POST /images` generation and its native SSE protocol are not.
+  Streaming flags and pricing/capability maps describe upstream endpoints only.
 - [Typed chat tools](../guides/tool-calling.md) handle complete calls. Streamed
   calls must first be finalized with the [manual accumulator](../guides/streaming.md#streaming-tool-calls),
   after normal stream exhaustion. It buffers arguments and does not itself

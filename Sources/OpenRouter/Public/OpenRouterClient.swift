@@ -756,6 +756,24 @@ public struct OpenRouterClient: Sendable {
     )
   }
 
+  public func listImageModels(options: RequestOptions? = nil) async throws
+    -> ImageModelsListResponse
+  {
+    try await transport.get(
+      path: "images/models", responseType: ImageModelsListResponse.self, options: options)
+  }
+
+  public func listImageModelEndpoints(
+    author: String, slug: String, options: RequestOptions? = nil
+  ) async throws -> ImageModelEndpointsResponse {
+    try await transport.get(
+      path: .preEscaped(
+        "images/models/\(escapePathSegment(author))/\(escapePathSegment(slug))/endpoints"),
+      responseType: ImageModelEndpointsResponse.self,
+      options: options
+    )
+  }
+
   public func listProviders(options: RequestOptions? = nil) async throws -> ProvidersResponse {
     try await transport.get(
       path: "providers", responseType: ProvidersResponse.self, options: options)
@@ -882,6 +900,7 @@ extension OpenRouterClient {
   public var embeddings: EmbeddingsResource { EmbeddingsResource(client: self) }
   public var audio: AudioResource { AudioResource(client: self) }
   public var videos: VideosResource { VideosResource(client: self) }
+  public var images: ImagesResource { ImagesResource(client: self) }
   public var rerank: RerankResource { RerankResource(client: self) }
   public var generations: GenerationsResource { GenerationsResource(client: self) }
   public var models: ModelsResource { ModelsResource(client: self) }
@@ -1015,6 +1034,26 @@ extension OpenRouterClient {
     public func create(_ request: RerankRequest, options: RequestOptions? = nil) async throws
       -> RerankResponse
     { try await client.createRerank(request, options: options) }
+  }
+
+  public struct ImagesResource: Sendable {
+    fileprivate let client: OpenRouterClient
+
+    public var models: ModelsResource { ModelsResource(client: client) }
+
+    public struct ModelsResource: Sendable {
+      fileprivate let client: OpenRouterClient
+
+      public func list(options: RequestOptions? = nil) async throws -> ImageModelsListResponse {
+        try await client.listImageModels(options: options)
+      }
+
+      public func endpoints(
+        author: String, slug: String, options: RequestOptions? = nil
+      ) async throws -> ImageModelEndpointsResponse {
+        try await client.listImageModelEndpoints(author: author, slug: slug, options: options)
+      }
+    }
   }
 
   public struct VideosResource: Sendable {

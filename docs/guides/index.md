@@ -8,7 +8,7 @@
 - [Multimodal content](multimodal.md) - Represent text, image, file, and audio message parts.
 - [Responses API](responses.md) - Use beta Responses creation, streaming, and stateless tool replay.
 - [Messages API](messages.md) - Use Anthropic-compatible messages and streaming events.
-- [Media APIs](media.md) - Work with speech, transcription, video jobs, and downloads.
+- [Media APIs](media.md) - Discover image models and use audio/video APIs.
 - [Resource examples](resources.md) - Access generation metadata, discovery, files, workspaces, keys, activity, and reranking.
 
 ## Reference

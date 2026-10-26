@@ -6,6 +6,7 @@ This project follows semantic versioning once public releases are tagged.
 
 ## Unreleased
 
+- Added read-only image-model and provider-endpoint discovery with typed architecture/pricing fields, dynamic capability descriptors, and preserved raw response envelopes. Dedicated image generation remains out of scope.
 - Added explicit terminal batch deletion with per-target cleanup outcomes. It is not cancellation, retains billing/audit records, and never runs automatically.
 - Added explicit batch submission, listing, and retrieval with inline request models, pagination/status filters, and raw endpoint-specific results. No automatic polling or live submission tests.
 - Added explicit irreversible file deletion with workspace/provider scoping and validated native/provider confirmation shapes; unknown shapes do not report confirmed success.

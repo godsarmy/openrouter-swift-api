@@ -45,6 +45,9 @@ let zdrEndpoints = try await client.endpoints.listZDR()
 
 Credits and activity require a management API key.
 
+Dedicated image-model and provider-capability discovery is documented in
+[Media APIs](media.md#image-model-discovery), separately from generic model discovery.
+
 ## Workspace discovery
 
 Use a client configured with a **management API key** to list or retrieve

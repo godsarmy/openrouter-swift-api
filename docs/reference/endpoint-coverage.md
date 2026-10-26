@@ -25,8 +25,8 @@ official OpenAPI specification (OpenAPI 3.1.0, `info.version: 1.0.0`).
 | Inventory | Unique method/path operations |
 |---|---:|
 | Listed in the current specification | 139 |
-| Current-spec operations implemented by the SDK | 43 |
-| Current-spec operations not implemented | 96 |
+| Current-spec operations implemented by the SDK | 45 |
+| Current-spec operations not implemented | 94 |
 | Additional SDK legacy operations absent from the specification | 1 |
 
 The earlier tracker omitted 72 current-spec operations; those are now included
@@ -95,6 +95,8 @@ Status legend:
 | [x] | GET | `/models/user` | `client.models.listUser`, `client.listModelsUser` | Lists user-filtered models with optional `offset` and `limit` pagination. |
 | [x] | GET | `/model/{author}/{slug}` | `client.models.get`, `client.getModel` | Gets full details for one model. |
 | [x] | GET | `/models/count` | `client.models.count`, `client.listModelsCount` | Gets the total available model count, optionally filtered by output modalities. |
+| [x] | GET | `/images/models` | `client.images.models.list`, `client.listImageModels` | Lists dedicated image models, architecture, coarse capabilities, and streaming metadata. |
+| [x] | GET | `/images/models/{author}/{slug}/endpoints` | `client.images.models.endpoints`, `client.listImageModelEndpoints` | Lists definitive image-endpoint capabilities, passthrough parameters, and pricing lines. |
 | [x] | GET | `/credits` | `client.credits.get`, `client.getCredits` | Gets remaining credits and usage. Requires a management API key. |
 | [x] | GET | `/key` | `client.keys.current`, `client.getCurrentKey` | Gets usage, limits, and lifecycle metadata for the current key using ordinary bearer key authentication. |
 | [x] | GET | `/keys` | `client.keys.list`, `client.listAPIKeys` | Lists management API key metadata with optional disabled, offset, and workspace filters. Requires a management key. |
@@ -216,6 +218,16 @@ Status legend:
 | [ ] | PATCH | `/observability/destinations/{id}` | `updateObservabilityDestination` | Update an observability destination. |  |
 | [ ] | DELETE | `/observability/destinations/{id}` | `deleteObservabilityDestination` | Delete an observability destination. |  |
 
+## Image-model Discovery
+
+| Status | Method | Path | Operation | Description | SDK notes |
+|---|---|---|---|---|---|
+| [x] | GET | `/images/models` | `listImageModels` | List image models. | Implemented in `OpenRouterClient.listImageModels`; alias: `client.images.models.list`. Typed image-specific response, not the generic models schema. No pagination/filter parameters. |
+| [x] | GET | `/images/models/{author}/{slug}/endpoints` | `listImageModelEndpoints` | List provider endpoints. | Implemented in `OpenRouterClient.listImageModelEndpoints`; alias: `client.images.models.endpoints`. Safely escapes author/slug separately; exposes capability maps, nullable provider tags, and numeric pricing lines. |
+
+Dedicated `POST /images` generation remains pending. Discovery flags do not imply
+SDK support for generation or its native SSE protocol.
+
 ## Batch Processing
 
 | Status | Method | Path | Operation | Description | SDK notes |
@@ -249,7 +261,7 @@ the existing upload API.
 
 ## Additional spec-listed operations
 
-These 64 operations were missing from the earlier tracker and have no SDK
+These 62 operations were missing from the earlier tracker and have no SDK
 implementation. Names in the last column are upstream operation IDs, **not**
 existing Swift methods. Check each operation's schema, authentication,
 availability, and server override before implementing it.
@@ -272,8 +284,6 @@ availability, and server override before implementing it.
 | [ ] | GET | `/datasets/session-cost` | `getSessionCost` |
 | [ ] | GET | `/external-users` | `listExternalUsers` |
 | [ ] | GET | `/external-users/{user}` | `getExternalUser` |
-| [ ] | GET | `/images/models` | `listImageModels` |
-| [ ] | GET | `/images/models/{author}/{slug}/endpoints` | `listImageModelEndpoints` |
 | [ ] | GET | `/oauth/jwks` | `listOauthJwks` |
 | [ ] | GET | `/organization/settings` | `getOrganizationSettings` |
 | [ ] | GET | `/presets` | `listPresets` |
