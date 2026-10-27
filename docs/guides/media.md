@@ -1,7 +1,7 @@
 ---
 type: Guide
 title: Media APIs
-description: Discover image models and work with speech, transcription, video jobs, and downloads.
+description: Discover image models, generate buffered images, and use audio/video APIs.
 tags: [audio, images, video, transcription, integration-tests]
 sources:
   - resource: https://openrouter.ai/openapi.json
@@ -67,9 +67,77 @@ The response envelopes retain `rawPayload`, including unmodeled nested fields.
 Encoding uses that payload; changing typed properties alone does not rewrite it.
 Inspect these fields as metadata, not a promise of availability or a fixed cost.
 
-**The dedicated image-generation endpoint (`POST /images`) and its native SSE
-streaming are not implemented.** `supportsStreaming` describes upstream image
-endpoint capability, not an SDK generation method. See [endpoint coverage](../reference/endpoint-coverage.md).
+`supportsStreaming` describes upstream image endpoint capability. The SDK
+supports buffered generation below, **not native image SSE streaming**. See
+[endpoint coverage](../reference/endpoint-coverage.md).
+
+## Buffered image generation
+
+**Image generation starts real provider work and can incur charges.** Normal
+tests use mocked responses and never generate images. Submit only intentionally:
+
+```swift
+let imageRequest = ImageGenerationRequest(
+  model: "bytedance-seed/seedream-4.5",
+  prompt: "A red panda astronaut floating in space, studio lighting",
+  n: 1,
+  outputFormat: "png"
+)
+// Paid request: uncomment only when intentional.
+// let generated = try await client.images.create(
+//   imageRequest, options: .init(retries: RetryPolicy.none)
+// )
+// Decode output explicitly; the SDK does not render or save it:
+// let bytes = generated.data.first.flatMap { Data(base64Encoded: $0.b64JSON) }
+```
+
+The flat alias is `client.createImage(_:options:)`; both forms accept
+`RequestOptions`. `ImageGenerationRequest` requires `model` and a nonempty
+`prompt` (validated by the server). It **always encodes `stream: false`** and has
+no writable streaming option. Decoding a request with `stream: true` fails rather
+than silently enabling SSE. An unexpected SSE response is a decoding failure,
+not a successful buffered result.
+
+Optional fields cover `aspectRatio`, `background`, `inputReferences`, `n`,
+`outputCompression`, `outputFormat`, `provider`, `quality`, `resolution`, `seed`,
+`sessionID`, `size`, `trace`, and `user`; absent fields are omitted. Strings such
+as format and quality remain open for future upstream values. No model, seed,
+or image-count defaults are invented by the SDK.
+
+- `ImageGenerationReference(url:)` represents an `image_url` input part. Reference
+  strings may be HTTP(S) URLs or base64 data URLs; the API accepts up to 16. There
+  is no multipart upload or automatic URL fetch by the SDK.
+- `ImageGenerationProviderPreferences` exposes `only`, `ignore`, `order`,
+  `allowFallbacks`, raw `sort` (string or configuration object), and per-provider
+  `options`. Check the definitive endpoint's accepted passthrough keys. The
+  server may drop unrecognized options; forwarding them is not a guarantee of
+  provider support. `trace` is a raw JSON map for tracing fields.
+- `n` is an upper bound from 1 through 10. Providers may return fewer images,
+  and single-image providers can reject `n > 1`.
+- A tier `size` combines with `aspectRatio`; explicit pixel dimensions are
+  authoritative. Conflicting `resolution` or `aspectRatio` can return HTTP 400.
+  Transparent backgrounds require an alpha-capable output format. Compression
+  and quality support vary by provider; the server validates constraints.
+- Reusing `seed` does not guarantee determinism for every provider.
+
+The documented HTTP 200 response is `ImageGenerationResponse`: integer Unix
+`created`, a `data` array, optional typed token counts/cost in `usage`, and
+`rawPayload`. Each `ImageGenerationImage` requires `b64JSON` and may include
+`mediaType`. **The buffered contract returns base64 bytes, not download URLs.**
+Do not assume media type is present or output count equals `n`.
+
+PNG/JPEG/WebP are raster outputs; vectorization models may return SVG as
+base64-encoded UTF-8 markup. Decode base64 yourself and treat SVG as untrusted
+content before rendering. The complete JSON response and base64 strings are
+buffered in memory; this is not progressive image delivery.
+
+The response and usage retain authoritative `rawPayload`, preserving unmodeled
+image/usage fields. Typed-property edits alone do not rewrite those payloads.
+Cost can be null and usage can be absent; detailed provider accounting remains
+available in raw usage JSON. API errors, including payment/quota failures (402),
+payload limits (413), and upstream failures, use `OpenRouterError.apiError`.
+Do not blindly retry paid work after a transport failure: a provider may already
+have processed the original request. Retries default to disabled.
 
 ## Live video certification smoke test
 

@@ -1,5 +1,9 @@
 # Documentation update log
 
+## 2026-10-26
+
+- **Update**: Documented buffered image generation, explicit costs, non-streaming enforcement, reference/provider options, base64/usage handling, and refreshed endpoint coverage.
+
 ## 2026-10-25
 
 - **Update**: Documented read-only image discovery, provider capabilities/pricing, response preservation, and the distinction from unimplemented image generation; updated navigation and coverage.

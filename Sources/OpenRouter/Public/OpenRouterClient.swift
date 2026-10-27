@@ -19,6 +19,18 @@ public struct OpenRouterClient: Sendable {
     transport = HTTPTransport(configuration: resolved, session: session)
   }
 
+  /// Starts provider work and may incur image-generation costs. Requires a normal API key
+  /// with the server-required authorization scope. Only nonstreaming responses are supported.
+  /// `n` is an upper bound: providers may return fewer images. A seed does not guarantee determinism.
+  public func createImage(
+    _ request: ImageGenerationRequest,
+    options: RequestOptions? = nil
+  ) async throws -> ImageGenerationResponse {
+    try await transport.post(
+      path: "images", requestBody: request,
+      responseType: ImageGenerationResponse.self, options: options)
+  }
+
   public func createChatCompletion(
     _ request: ChatCompletionRequest,
     options: RequestOptions? = nil
@@ -1038,6 +1050,15 @@ extension OpenRouterClient {
 
   public struct ImagesResource: Sendable {
     fileprivate let client: OpenRouterClient
+
+    /// Starts provider work and may incur costs; requires a normal API key with the
+    /// server-required authorization scope. Nonstreaming only. `n` is an upper bound,
+    /// and a seed does not guarantee deterministic output.
+    public func create(
+      _ request: ImageGenerationRequest, options: RequestOptions? = nil
+    ) async throws -> ImageGenerationResponse {
+      try await client.createImage(request, options: options)
+    }
 
     public var models: ModelsResource { ModelsResource(client: client) }
 

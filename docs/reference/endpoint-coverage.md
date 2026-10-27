@@ -19,14 +19,14 @@ This file tracks which OpenRouter API endpoints are implemented by this Swift SD
 
 ## Audit source and scope
 
-Endpoint inventory checked on **2026-10-25** against a fresh download of the
+Endpoint inventory checked on **2026-10-26** against a fresh download of the
 official OpenAPI specification (OpenAPI 3.1.0, `info.version: 1.0.0`).
 
 | Inventory | Unique method/path operations |
 |---|---:|
 | Listed in the current specification | 139 |
-| Current-spec operations implemented by the SDK | 45 |
-| Current-spec operations not implemented | 94 |
+| Current-spec operations implemented by the SDK | 46 |
+| Current-spec operations not implemented | 93 |
 | Additional SDK legacy operations absent from the specification | 1 |
 
 The earlier tracker omitted 72 current-spec operations; those are now included
@@ -97,6 +97,7 @@ Status legend:
 | [x] | GET | `/models/count` | `client.models.count`, `client.listModelsCount` | Gets the total available model count, optionally filtered by output modalities. |
 | [x] | GET | `/images/models` | `client.images.models.list`, `client.listImageModels` | Lists dedicated image models, architecture, coarse capabilities, and streaming metadata. |
 | [x] | GET | `/images/models/{author}/{slug}/endpoints` | `client.images.models.endpoints`, `client.listImageModelEndpoints` | Lists definitive image-endpoint capabilities, passthrough parameters, and pricing lines. |
+| [x] | POST | `/images` | `client.images.create`, `client.createImage` | Non-streaming generation with explicit `stream: false`, base64 outputs, and typed usage. Can incur provider cost; native SSE remains unsupported. |
 | [x] | GET | `/credits` | `client.credits.get`, `client.getCredits` | Gets remaining credits and usage. Requires a management API key. |
 | [x] | GET | `/key` | `client.keys.current`, `client.getCurrentKey` | Gets usage, limits, and lifecycle metadata for the current key using ordinary bearer key authentication. |
 | [x] | GET | `/keys` | `client.keys.list`, `client.listAPIKeys` | Lists management API key metadata with optional disabled, offset, and workspace filters. Requires a management key. |
@@ -224,9 +225,10 @@ Status legend:
 |---|---|---|---|---|---|
 | [x] | GET | `/images/models` | `listImageModels` | List image models. | Implemented in `OpenRouterClient.listImageModels`; alias: `client.images.models.list`. Typed image-specific response, not the generic models schema. No pagination/filter parameters. |
 | [x] | GET | `/images/models/{author}/{slug}/endpoints` | `listImageModelEndpoints` | List provider endpoints. | Implemented in `OpenRouterClient.listImageModelEndpoints`; alias: `client.images.models.endpoints`. Safely escapes author/slug separately; exposes capability maps, nullable provider tags, and numeric pricing lines. |
+| [x] | POST | `/images` | `createImages` | Generate buffered images. | Implemented in `OpenRouterClient.createImage`; alias: `client.images.create`. JSON-only, always `stream: false`. Supports declared reference, routing, output, and tracing fields. No automatic output rendering/download. |
 
-Dedicated `POST /images` generation remains pending. Discovery flags do not imply
-SDK support for generation or its native SSE protocol.
+Dedicated `POST /images` supports buffered generation only. Discovery streaming
+flags do not imply SDK support for its native SSE protocol.
 
 ## Batch Processing
 
@@ -261,7 +263,7 @@ the existing upload API.
 
 ## Additional spec-listed operations
 
-These 62 operations were missing from the earlier tracker and have no SDK
+These 61 operations were missing from the earlier tracker and have no SDK
 implementation. Names in the last column are upstream operation IDs, **not**
 existing Swift methods. Check each operation's schema, authentication,
 availability, and server override before implementing it.
@@ -315,7 +317,6 @@ availability, and server override before implementing it.
 | [ ] | POST | `/credits/coinbase` | `createCoinbaseCharge` |
 | [ ] | POST | `/external-users` | `createExternalUser` |
 | [ ] | POST | `/generation/feedback` | `submitGenerationFeedback` |
-| [ ] | POST | `/images` | `createImages` |
 | [ ] | POST | `/oauth/token` | `createOauthToken` |
 | [ ] | POST | `/private-endpoints` | `createPrivateEndpoint` |
 | [ ] | POST | `/private-endpoints/{id}/activate` | `activatePrivateEndpoint` |
