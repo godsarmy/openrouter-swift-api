@@ -12,11 +12,11 @@ compatible fixes. After `1.0`, the package follows semantic versioning: breaking
 source changes require a major version, additive APIs use minor versions, and
 bug fixes use patch versions.
 
-## Preparing v0.5.0
+## API review notes for v0.5.0
 
-The [unreleased changelog](../../CHANGELOG.md) collects workspace discovery, file
+The [changelog](../../CHANGELOG.md) collects v0.5.0's workspace discovery, file
 retrieval/deletion, batch processing, and image discovery/generation. These notes
-prepare a candidate release; a release tag and publication remain separate steps.
+describe its source-compatibility and operational boundaries.
 
 The reviewed source diff from v0.4.0 identified no source-breaking changes to
 existing public declarations. Existing client initializers/methods and upload
