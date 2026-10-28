@@ -45,6 +45,37 @@ public struct OpenRouterClient: Sendable {
     )
   }
 
+  /// Streams image generation without retrying or resubmitting provider work.
+  public func createImageStream(
+    _ request: ImageGenerationRequest, options: RequestOptions? = nil
+  ) -> AsyncThrowingStream<ImageGenerationStreamEvent, Error> {
+    let state = ImageStreamState()
+    return makeIncrementalStream(
+      transport: transport, path: "images", request: StreamingImageRequest(request: request),
+      prepare: { _ in }, options: options, accept: "text/event-stream, application/json",
+      decodeBufferedJSON: { data in
+        let response = try JSONDecoder().decode(ImageGenerationResponse.self, from: data)
+        state.buffered = true
+        return ImageGenerationStreamEvent(bufferedResponse: response)
+      },
+      validateFinish: { done in
+        guard state.buffered || (state.completed && done) else {
+          throw ImageGenerationStreamError.incompleteStream
+        }
+      },
+      decode: { data, name in
+        var event = try JSONDecoder().decode(ImageGenerationStreamEvent.self, from: data)
+        guard event.bufferedResponse == nil else {
+          throw DecodingError.dataCorrupted(
+            .init(codingPath: [], debugDescription: "Buffered response in SSE"))
+        }
+        event.eventName = name
+        if let error = event.error { throw ImageGenerationStreamError.provider(error) }
+        if event.type == "image_generation.completed" { state.completed = true }
+        return event
+      })
+  }
+
   public func createChatCompletionStream(
     _ request: ChatCompletionRequest
   ) -> AsyncThrowingStream<ChatCompletionChunk, Error> {
@@ -82,13 +113,18 @@ public struct OpenRouterClient: Sendable {
     request: Request,
     prepare: @escaping @Sendable (inout Request) -> Void,
     metadataBox: StreamMetadataBox? = nil,
+    options: RequestOptions? = nil,
+    accept: String? = nil,
+    decodeBufferedJSON: (@Sendable (Data) throws -> Element)? = nil,
+    validateFinish: (@Sendable (Bool) throws -> Void)? = nil,
     decode: @escaping @Sendable (Data, String?) throws -> Element
   ) -> AsyncThrowingStream<Element, Error> {
     let stream = AsyncThrowingStream<Element, Error> { continuation in
       do {
         var streamRequest = request
         prepare(&streamRequest)
-        let urlRequest = try transport.buildRequest(path: path, body: streamRequest)
+        let urlRequest = try transport.buildRequest(
+          path: path, body: streamRequest, accept: accept ?? "application/json", options: options)
 
         let delegate = IncrementalSSEDelegate(
           transport: transport,
@@ -96,6 +132,7 @@ public struct OpenRouterClient: Sendable {
             metadataBox?.resume(with: .success(metadata))
           },
           decode: decode,
+          decodeBufferedJSON: decodeBufferedJSON,
           onElement: { element in
             continuation.yield(element)
           },
@@ -103,8 +140,13 @@ public struct OpenRouterClient: Sendable {
             metadataBox?.resume(with: .failure(error))
             continuation.finish(throwing: error)
           },
-          onDone: {
-            continuation.finish()
+          onDone: { done in
+            do {
+              try validateFinish?(done)
+              continuation.finish()
+            } catch {
+              continuation.finish(throwing: error)
+            }
           }
         )
         let runtime = IncrementalStreamRuntime(
@@ -1060,6 +1102,12 @@ extension OpenRouterClient {
       try await client.createImage(request, options: options)
     }
 
+    public func stream(
+      _ request: ImageGenerationRequest, options: RequestOptions? = nil
+    ) -> AsyncThrowingStream<ImageGenerationStreamEvent, Error> {
+      client.createImageStream(request, options: options)
+    }
+
     public var models: ModelsResource { ModelsResource(client: client) }
 
     public struct ModelsResource: Sendable {
@@ -1720,6 +1768,20 @@ private final class IncrementalStreamRuntime<Element: Sendable>: @unchecked Send
   }
 }
 
+private struct StreamingImageRequest: Encodable {
+  let request: ImageGenerationRequest
+
+  func encode(to encoder: Encoder) throws {
+    try request.encode(to: encoder, stream: true)
+  }
+}
+
+/// Accessed only by the serialized URLSession delegate callbacks for one invocation.
+private final class ImageStreamState: @unchecked Sendable {
+  var completed = false
+  var buffered = false
+}
+
 private final class IncrementalSSEDelegate<Element: Sendable>: NSObject, URLSessionDataDelegate,
   @unchecked Sendable
 {
@@ -1728,7 +1790,9 @@ private final class IncrementalSSEDelegate<Element: Sendable>: NSObject, URLSess
   private let decode: @Sendable (Data, String?) throws -> Element
   private let onElement: @Sendable (Element) -> Void
   private let onError: @Sendable (Error) -> Void
-  private let onDone: @Sendable () -> Void
+  private let onDone: @Sendable (Bool) -> Void
+  private let decodeBufferedJSON: (@Sendable (Data) throws -> Element)?
+  private var isBufferedJSON = false
   private var buffer = Data()
   private var frameLines: [String] = []
   private var errorBuffer = Data()
@@ -1739,13 +1803,15 @@ private final class IncrementalSSEDelegate<Element: Sendable>: NSObject, URLSess
     transport: HTTPTransport,
     onMetadata: @escaping @Sendable (ResponseCacheMetadata?) -> Void,
     decode: @escaping @Sendable (Data, String?) throws -> Element,
+    decodeBufferedJSON: (@Sendable (Data) throws -> Element)? = nil,
     onElement: @escaping @Sendable (Element) -> Void,
     onError: @escaping @Sendable (Error) -> Void,
-    onDone: @escaping @Sendable () -> Void
+    onDone: @escaping @Sendable (Bool) -> Void
   ) {
     self.transport = transport
     self.onMetadata = onMetadata
     self.decode = decode
+    self.decodeBufferedJSON = decodeBufferedJSON
     self.onElement = onElement
     self.onError = onError
     self.onDone = onDone
@@ -1772,6 +1838,10 @@ private final class IncrementalSSEDelegate<Element: Sendable>: NSObject, URLSess
     }
 
     onMetadata(transport.parseResponseCacheMetadata(from: http))
+    let mediaType = http.value(forHTTPHeaderField: "Content-Type")?
+      .split(separator: ";", maxSplits: 1).first?
+      .trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    isBufferedJSON = decodeBufferedJSON != nil && mediaType == "application/json"
     completionHandler(.allow)
   }
 
@@ -1784,6 +1854,7 @@ private final class IncrementalSSEDelegate<Element: Sendable>: NSObject, URLSess
     }
 
     buffer.append(data)
+    if isBufferedJSON { return }
 
     while let newlineRange = buffer.range(of: Data([0x0A])) {
       let lineData = buffer.subdata(in: buffer.startIndex..<newlineRange.lowerBound)
@@ -1812,7 +1883,7 @@ private final class IncrementalSSEDelegate<Element: Sendable>: NSObject, URLSess
     switch event {
     case .done:
       didTerminate = true
-      onDone()
+      onDone(true)
       session?.invalidateAndCancel()
       return true
     case .data(let payload):
@@ -1851,6 +1922,16 @@ private final class IncrementalSSEDelegate<Element: Sendable>: NSObject, URLSess
       didTerminate = true
       onError(error)
     } else {
+      if isBufferedJSON, let decodeBufferedJSON {
+        didTerminate = true
+        do {
+          onElement(try decodeBufferedJSON(buffer))
+          onDone(false)
+        } catch {
+          onError(error)
+        }
+        return
+      }
       if !buffer.isEmpty {
         var line = String(decoding: buffer, as: UTF8.self)
         if line.last == "\r" { line.removeLast() }
@@ -1864,7 +1945,7 @@ private final class IncrementalSSEDelegate<Element: Sendable>: NSObject, URLSess
       }
       if processFrame(session: nil) { return }
       didTerminate = true
-      onDone()
+      onDone(false)
     }
   }
 }

@@ -2,6 +2,7 @@
 
 ## 2026-10-28
 
+- **Update**: Documented native image SSE, buffered JSON normalization, completion/error and cancellation rules, partial-image handling, and unchanged endpoint counts.
 - **Update**: Finalized v0.5.0 release-date and compatibility documentation.
 - **Update**: Prepared v0.5.0 release notes and operational compatibility guidance, consolidating feature scope and removing stale claims that file deletion and buffered image generation were still excluded.
 

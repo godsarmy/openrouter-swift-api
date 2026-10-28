@@ -14,9 +14,9 @@ tags: [limitations, beta, roadmap, sse]
   budgets, organization APIs, guardrails, other beta namespaces, and some analytics
   capabilities are not yet implemented. Activity and daily-ranking endpoints are implemented; consult
   [endpoint coverage](endpoint-coverage.md) for the precise inventory.
-- The [streaming](../guides/streaming.md) SSE parser supports OpenRouter chat
-  streams and basic multiline frame parsing helpers; broader SSE metadata is
-  currently ignored by the streaming client.
+- The [streaming](../guides/streaming.md) SSE parser supports multiline frames.
+  Image streams retain optional event names; SSE IDs/retry metadata do not
+  provide automatic reconnection or resumable generation.
 - [Video content](../guides/media.md) and [file content](../guides/resources.md#file-retrieval)
   downloads buffer the entire file in memory. File downloads support server-created
   files only; uploaded files return HTTP 400. Provider-backed uploads are not
@@ -27,10 +27,12 @@ tags: [limitations, beta, roadmap, sse]
   cancellation. Deletion purges artifacts, not billing/audit records, and upstream
   deletion may be unsupported. Result bodies and provider-specific usage remain
   JSON; payment and retention failures are API errors.
-- [Image-model discovery](../guides/media.md#image-model-discovery) and buffered
-  `POST /images` generation are implemented; native image SSE remains unsupported.
-  Generation always sends `stream: false`, buffers base64 outputs, and does not
-  render or save them automatically. Streaming flags describe upstream capability.
+- [Image generation](../guides/media.md#streaming-image-generation) supports buffered
+  JSON and native SSE. Non-streaming providers return a buffered synthetic event.
+  Native SSE requires a valid completion and `[DONE]`; partial images are not
+  concatenated or mapped to final-image identities. There is no automatic output
+  rendering, saving, download, or resubmission. Cancellation is not a billing
+  guarantee; consumers must check task cancellation after iteration.
 - [Typed chat tools](../guides/tool-calling.md) handle complete calls. Streamed
   calls must first be finalized with the [manual accumulator](../guides/streaming.md#streaming-tool-calls),
   after normal stream exhaustion. It buffers arguments and does not itself

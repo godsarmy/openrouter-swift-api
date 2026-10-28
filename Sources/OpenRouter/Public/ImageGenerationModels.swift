@@ -83,10 +83,14 @@ public struct ImageGenerationRequest: Codable, Sendable, Equatable {
   }
 
   public func encode(to encoder: Encoder) throws {
+    try encode(to: encoder, stream: false)
+  }
+
+  internal func encode(to encoder: Encoder, stream: Bool) throws {
     var c = encoder.container(keyedBy: CodingKeys.self)
     try c.encode(model, forKey: .model)
     try c.encode(prompt, forKey: .prompt)
-    try c.encode(false, forKey: .stream)
+    try c.encode(stream, forKey: .stream)
     try c.encodeIfPresent(aspectRatio, forKey: .aspectRatio)
     try c.encodeIfPresent(background, forKey: .background)
     try c.encodeIfPresent(inputReferences, forKey: .inputReferences)

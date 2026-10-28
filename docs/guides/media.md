@@ -1,7 +1,7 @@
 ---
 type: Guide
 title: Media APIs
-description: Discover image models, generate buffered images, and use audio/video APIs.
+description: Discover image models, generate or stream images, and use audio/video APIs.
 tags: [audio, images, video, transcription, integration-tests]
 sources:
   - resource: https://openrouter.ai/openapi.json
@@ -68,7 +68,7 @@ Encoding uses that payload; changing typed properties alone does not rewrite it.
 Inspect these fields as metadata, not a promise of availability or a fixed cost.
 
 `supportsStreaming` describes upstream image endpoint capability. The SDK
-supports buffered generation below, **not native image SSE streaming**. See
+supports buffered generation and native image SSE below. See
 [endpoint coverage](../reference/endpoint-coverage.md).
 
 ## Buffered image generation
@@ -138,6 +138,77 @@ available in raw usage JSON. API errors, including payment/quota failures (402),
 payload limits (413), and upstream failures, use `OpenRouterError.apiError`.
 Do not blindly retry paid work after a transport failure: a provider may already
 have processed the original request. Retries default to disabled.
+
+## Streaming image generation
+
+`client.images.stream(_:options:)` and its flat alias
+`client.createImageStream(_:options:)` accept the same `ImageGenerationRequest`.
+Only the streaming method sends `stream: true`; the request's public `stream`
+property and buffered encoding remain false. **Streaming also starts paid work.**
+The following function submits nothing until explicitly called:
+
+```swift
+func consumeImageStream(
+  client: OpenRouterClient, request: ImageGenerationRequest
+) async throws {
+  for try await event in client.images.stream(request) {
+    switch event.type {
+    case "image_generation.partial_image":
+      // An independent opaque preview, not a fragment to concatenate.
+      _ = event.partialImageIndex
+      _ = event.b64JSON
+    case "image_generation.text_chunk":
+      // Phase is an open string; content, reasoning, and draft are distinct.
+      _ = event.phase
+      _ = event.text
+    case "image_generation.completed":
+      // Completed base64 output; usage and media type can be absent.
+      _ = event.b64JSON
+      _ = event.usage
+    case "image_generation.buffered_response":
+      // A non-streaming provider returned JSON; retain every image.
+      _ = event.bufferedResponse?.data
+    default:
+      _ = event.rawPayload // Unknown event types remain available.
+    }
+  }
+  // Cancellation may end AsyncThrowingStream iteration without throwing.
+  try Task.checkCancellation()
+}
+```
+
+The documented SSE body is a JSON `data` envelope. Its `data.type` is authoritative;
+optional SSE `event:` metadata is exposed as `eventName`, even if it differs.
+Recognized variants validate their required fields. Unknown types preserve their
+raw JSON without imposing known-event field types. Encoding an event uses its
+authoritative `rawPayload`, not subsequent typed-property edits; `eventName` is
+transport metadata and is not encoded into JSON.
+
+Partial indices identify positions in a partial-image sequence. Do not infer
+final-image identity, ordering, or that base64 previews concatenate. Multiple
+completion events are allowed, and `n` is not an expected completion count.
+Native SSE succeeds only after at least one valid `image_generation.completed`
+event **and** `[DONE]`; otherwise normal EOF throws
+`ImageGenerationStreamError.incompleteStream`. Keep consuming after a completed
+event: a later provider error must still be observed.
+
+An SSE `error` throws `ImageGenerationStreamError.provider` rather than being
+yielded as an ordinary event. Its `ImageGenerationProviderError` retains the
+message, nullable string `code`/`param`/`type`, and the nested error's raw JSON.
+HTTP failures remain `OpenRouterError.apiError`; decoding and transport failures
+are not replaced with truncation errors.
+
+Providers without native streaming may ignore the flag and return
+`application/json`. The SDK buffers that response and yields one synthetic
+`image_generation.buffered_response` event with the full `bufferedResponse`.
+Its `rawPayload` is the original buffered response JSON, not an invented SSE
+envelope. This path requires no SSE sentinel and does not resubmit the request.
+
+Cancellation terminates the underlying URL task but cannot guarantee provider
+work or billing stops. The SDK never automatically renders, saves, downloads,
+concatenates, or resubmits image output. Streams can contain large base64 payloads;
+buffered fallback retains the whole response in memory. Tests cover mocked
+protocol behavior only, not paid provider integration.
 
 ## Live video certification smoke test
 

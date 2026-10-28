@@ -4,6 +4,10 @@ All notable changes to this package will be documented in this file.
 
 This project follows semantic versioning once public releases are tagged.
 
+## Unreleased
+
+- Added native image SSE via `images.stream` and `createImageStream`, with typed raw-preserving events, provider errors, strict completion validation, cancellation, and buffered JSON fallback. Existing buffered image APIs are unchanged. Verified with offline tests only; no paid generation calls.
+
 ## 0.5.0 - 2026-10-28
 
 ### Added

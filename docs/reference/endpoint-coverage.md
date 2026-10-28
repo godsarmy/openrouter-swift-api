@@ -97,7 +97,7 @@ Status legend:
 | [x] | GET | `/models/count` | `client.models.count`, `client.listModelsCount` | Gets the total available model count, optionally filtered by output modalities. |
 | [x] | GET | `/images/models` | `client.images.models.list`, `client.listImageModels` | Lists dedicated image models, architecture, coarse capabilities, and streaming metadata. |
 | [x] | GET | `/images/models/{author}/{slug}/endpoints` | `client.images.models.endpoints`, `client.listImageModelEndpoints` | Lists definitive image-endpoint capabilities, passthrough parameters, and pricing lines. |
-| [x] | POST | `/images` | `client.images.create`, `client.createImage` | Non-streaming generation with explicit `stream: false`, base64 outputs, and typed usage. Can incur provider cost; native SSE remains unsupported. |
+| [x] | POST | `/images` | `client.images.create`, `client.images.stream`, flat aliases | Buffered generation or native SSE with base64 outputs, typed usage, and JSON fallback. Can incur provider cost. |
 | [x] | GET | `/credits` | `client.credits.get`, `client.getCredits` | Gets remaining credits and usage. Requires a management API key. |
 | [x] | GET | `/key` | `client.keys.current`, `client.getCurrentKey` | Gets usage, limits, and lifecycle metadata for the current key using ordinary bearer key authentication. |
 | [x] | GET | `/keys` | `client.keys.list`, `client.listAPIKeys` | Lists management API key metadata with optional disabled, offset, and workspace filters. Requires a management key. |
@@ -225,10 +225,11 @@ Status legend:
 |---|---|---|---|---|---|
 | [x] | GET | `/images/models` | `listImageModels` | List image models. | Implemented in `OpenRouterClient.listImageModels`; alias: `client.images.models.list`. Typed image-specific response, not the generic models schema. No pagination/filter parameters. |
 | [x] | GET | `/images/models/{author}/{slug}/endpoints` | `listImageModelEndpoints` | List provider endpoints. | Implemented in `OpenRouterClient.listImageModelEndpoints`; alias: `client.images.models.endpoints`. Safely escapes author/slug separately; exposes capability maps, nullable provider tags, and numeric pricing lines. |
-| [x] | POST | `/images` | `createImages` | Generate buffered images. | Implemented in `OpenRouterClient.createImage`; alias: `client.images.create`. JSON-only, always `stream: false`. Supports declared reference, routing, output, and tracing fields. No automatic output rendering/download. |
+| [x] | POST | `/images` | `createImages` | Generate or stream images. | `createImage` / `images.create` preserve buffered `stream: false`; `createImageStream` / `images.stream` send `stream: true`, validate SSE completion, and normalize buffered JSON fallback. Supports declared reference, routing, output, and tracing fields. No automatic output rendering/download. |
 
-Dedicated `POST /images` supports buffered generation only. Discovery streaming
-flags do not imply SDK support for its native SSE protocol.
+Dedicated `POST /images` supports buffered JSON and native SSE; streaming extends
+this existing operation without changing endpoint counts. Discovery streaming
+flags describe upstream capability, not a promise that every provider streams.
 
 ## Batch Processing
 
