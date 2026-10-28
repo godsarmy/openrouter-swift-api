@@ -1,5 +1,9 @@
 # Documentation update log
 
+## 2026-10-28
+
+- **Update**: Prepared v0.5.0 release notes and operational compatibility guidance, consolidating feature scope and removing stale claims that file deletion and buffered image generation were still excluded.
+
 ## 2026-10-26
 
 - **Update**: Documented buffered image generation, explicit costs, non-streaming enforcement, reference/provider options, base64/usage handling, and refreshed endpoint coverage.

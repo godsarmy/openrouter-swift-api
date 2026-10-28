@@ -12,6 +12,43 @@ compatible fixes. After `1.0`, the package follows semantic versioning: breaking
 source changes require a major version, additive APIs use minor versions, and
 bug fixes use patch versions.
 
+## Preparing v0.5.0
+
+The [unreleased changelog](../../CHANGELOG.md) collects workspace discovery, file
+retrieval/deletion, batch processing, and image discovery/generation. These notes
+prepare a candidate release; a release tag and publication remain separate steps.
+
+The reviewed source diff from v0.4.0 identified no source-breaking changes to
+existing public declarations. Existing client initializers/methods and upload
+signatures remain unchanged, and existing public enums gain no cases. This is a
+source-diff compatibility conclusion, not an ABI guarantee or a live-provider
+certification.
+
+Operational considerations:
+
+- Existing `files.upload` still returns `FileMetadata`. New file retrieval
+  methods return the separate provider-aware `FileResponse`; inspect its case,
+  including `.unknown`, rather than assuming every provider uses native fields.
+- Raw-backed response envelopes are snapshots. Encoding uses `rawPayload`;
+  typed property mutations alone do not rewrite it. See the relevant
+  [resource examples](../guides/resources.md).
+- Batch submission uses inline request objects, not an uploaded input file.
+  `createBatch` handles metadata ordering; HTTP 202 is acceptance, not completion.
+  Inspect batch status and per-request results, including payment/retention errors.
+- Deletion methods are explicit and irreversible. Batch artifact purging is not
+  cancellation and does not erase billing/audit records. Inspect per-target
+  outcomes rather than treating HTTP 200 as universal provider deletion.
+- Image generation is buffered JSON only. The request always sends `stream: false`;
+  decoding `stream: true` into `ImageGenerationRequest` is rejected. Output is
+  base64 data, not a URL. Native image SSE remains deferred.
+- Generation/submission can incur charges. Retries are disabled by default;
+  automatic polling, webhook handling, and cancellation are not provided.
+
+Consult [limitations](../reference/limitations.md),
+[batch processing](../guides/batches.md), and [Media APIs](../guides/media.md)
+before using new operations. Endpoint coverage is not a claim of full field parity
+with every evolving upstream schema.
+
 ## API review notes for v0.4.0
 
 The [changelog](../../CHANGELOG.md) collects v0.4.0's

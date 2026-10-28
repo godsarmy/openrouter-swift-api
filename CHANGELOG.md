@@ -4,15 +4,30 @@ All notable changes to this package will be documented in this file.
 
 This project follows semantic versioning once public releases are tagged.
 
-## Unreleased
+## 0.5.0 - Unreleased
 
-- Added non-streaming image generation via `images.create` and `createImage`, with image references, provider options, base64 outputs, typed usage, and preserved raw payloads. Requests always send `stream: false`; no paid live tests or native SSE support.
-- Added read-only image-model and provider-endpoint discovery with typed architecture/pricing fields, dynamic capability descriptors, and preserved raw response envelopes. Dedicated image generation remains out of scope.
-- Added explicit terminal batch deletion with per-target cleanup outcomes. It is not cancellation, retains billing/audit records, and never runs automatically.
-- Added explicit batch submission, listing, and retrieval with inline request models, pagination/status filters, and raw endpoint-specific results. No automatic polling or live submission tests.
-- Added explicit irreversible file deletion with workspace/provider scoping and validated native/provider confirmation shapes; unknown shapes do not report confirmed success.
-- Added file listing, metadata retrieval, and buffered content downloads, with provider-shaped responses, pagination fields, and workspace/provider filters. Existing uploads remain unchanged; deletion is not included.
-- Added read-only workspace discovery via `workspaces.list` and `workspaces.get`, with typed settings, pagination metadata, and UUID-or-slug lookup.
+### Added
+
+- Read-only workspace list/get with typed settings, offset/limit pagination, and UUID-or-slug lookup.
+- File listing, metadata retrieval, and buffered content downloads with native/OpenAI/Anthropic response shapes, pagination fields, and workspace/provider filters.
+- Explicit irreversible file deletion with validated confirmation markers; unknown response shapes do not report confirmed success.
+- Batch submission, listing, retrieval, and terminal artifact deletion, with inline requests, repeated status filters, raw endpoint-specific results, and separate OpenRouter/upstream cleanup outcomes.
+- Image-model and provider-endpoint discovery with typed architecture/pricing fields and dynamic capability descriptors.
+- Non-streaming image generation via `images.create` and `createImage`, with image references, provider options, base64 outputs, typed usage, and preserved raw payloads.
+
+### Compatibility and operational notes
+
+- No source-breaking changes to existing public declarations were identified in the v0.4.0-to-v0.5.0 review. Existing method signatures and enum cases are unchanged; this is not an ABI guarantee.
+- Existing file uploads still return `FileMetadata`; provider-backed uploads remain unimplemented. Retrieval supports provider-shaped responses without changing upload behavior.
+- Raw-backed response envelopes encode their authoritative `rawPayload`; changing typed snapshot properties alone does not rewrite that JSON.
+- Batch creation submits real work and can incur charges. Submission uses ordered metadata before inline requests; HTTP 202 means accepted for asynchronous validation, not completed.
+- File deletion is irreversible. Batch deletion purges terminal request/result artifacts, not running jobs or billing/audit records; upstream deletion may be unsupported. Neither runs automatically.
+- Image generation always sends `stream: false` and buffers base64 output. Native image SSE remains unsupported; the SDK does not render, save, or download images automatically.
+- Retries default to disabled. There is no automatic batch polling, cancellation, or webhook receiver. Paid generation/submission and real deletion were not used during testing.
+
+### Documentation
+
+- Reconciled the endpoint tracker with the official OpenAPI inventory and documented method-aware coverage, legacy compatibility, provider shapes, billing/retention limits, and new resource examples.
 
 ## 0.4.0 - 2026-10-25
 
