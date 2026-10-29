@@ -40,6 +40,19 @@ struct HTTPTransport: @unchecked Sendable {
     return try decodeResponse(data: data, response: response, responseType: responseType)
   }
 
+  func post<Request: Encodable, Response: Decodable>(
+    path: HTTPPath,
+    requestBody: Request,
+    responseType: Response.Type,
+    options: RequestOptions? = nil
+  ) async throws -> Response {
+    var request = try buildPatchRequest(path: path, body: requestBody, options: options)
+    request.httpMethod = "POST"
+    log(.init(message: "request", method: "POST", path: redactedPath(from: request)))
+    let (data, response) = try await execute(request: request, options: options)
+    return try decodeResponse(data: data, response: response, responseType: responseType)
+  }
+
   func postData<Request: Encodable>(
     path: String,
     requestBody: Request,

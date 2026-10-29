@@ -699,6 +699,58 @@ public struct OpenRouterClient: Sendable {
     )
   }
 
+  /// Creates a workspace using a management API key.
+  public func createWorkspace(_ request: CreateWorkspaceRequest, options: RequestOptions? = nil)
+    async throws -> WorkspaceResponse
+  {
+    try await transport.post(
+      path: "workspaces", requestBody: request, responseType: WorkspaceResponse.self,
+      options: options)
+  }
+
+  /// Updates a workspace using a management API key. IDs are single path segments.
+  public func updateWorkspace(
+    id: String, _ request: UpdateWorkspaceRequest, options: RequestOptions? = nil
+  ) async throws -> WorkspaceResponse {
+    try await transport.patch(
+      path: .preEscaped("workspaces/\(escapePathSegment(id))"), requestBody: request,
+      responseType: WorkspaceResponse.self, options: options)
+  }
+
+  /// Permanently deletes a workspace, its budgets and guardrails, and disables its classifiers
+  /// and broadcast destinations. Active API keys must first be removed.
+  /// Opting into default workspace deletion also permanently disables unscoped inference keys;
+  /// management and provisioning keys are retained. Requires a management API key.
+  public func deleteWorkspace(
+    id: String, confirmDefaultWorkspaceDeletion: Bool = false, options: RequestOptions? = nil
+  ) async throws -> DeleteWorkspaceResponse {
+    let queryItems: [URLQueryItem] =
+      confirmDefaultWorkspaceDeletion
+      ? [.init(name: "confirm_default_workspace_deletion", value: "true")] : []
+    return try await transport.delete(
+      path: .preEscaped("workspaces/\(escapePathSegment(id))"), queryItems: queryItems,
+      responseType: DeleteWorkspaceResponse.self, options: options)
+  }
+
+  /// Adds 1...100 users with their organization roles. Requires a management API key.
+  public func addWorkspaceMembers(
+    id: String, _ request: WorkspaceMembersRequest, options: RequestOptions? = nil
+  ) async throws -> AddWorkspaceMembersResponse {
+    try await transport.post(
+      path: .preEscaped("workspaces/\(escapePathSegment(id))/members/add"), requestBody: request,
+      responseType: AddWorkspaceMembersResponse.self, options: options)
+  }
+
+  /// Removes 1...100 users. Active workspace API keys block removal; change SCIM-managed
+  /// members through the identity provider. Requires a management API key.
+  public func removeWorkspaceMembers(
+    id: String, _ request: WorkspaceMembersRequest, options: RequestOptions? = nil
+  ) async throws -> RemoveWorkspaceMembersResponse {
+    try await transport.post(
+      path: .preEscaped("workspaces/\(escapePathSegment(id))/members/remove"), requestBody: request,
+      responseType: RemoveWorkspaceMembersResponse.self, options: options)
+  }
+
   public func listAPIKeys(
     includeDisabled: Bool? = nil,
     offset: Int? = nil,
@@ -1259,9 +1311,41 @@ extension OpenRouterClient {
     }
   }
 
-  /// Read-only workspace endpoints requiring a management API key.
+  /// Workspace endpoints requiring a management API key.
   public struct WorkspacesResource: Sendable {
     fileprivate let client: OpenRouterClient
+
+    public func create(_ request: CreateWorkspaceRequest, options: RequestOptions? = nil)
+      async throws -> WorkspaceResponse
+    {
+      try await client.createWorkspace(request, options: options)
+    }
+
+    public func update(
+      id: String, _ request: UpdateWorkspaceRequest, options: RequestOptions? = nil
+    ) async throws -> WorkspaceResponse {
+      try await client.updateWorkspace(id: id, request, options: options)
+    }
+
+    /// See `deleteWorkspace` for destructive effects of default workspace confirmation.
+    public func delete(
+      id: String, confirmDefaultWorkspaceDeletion: Bool = false, options: RequestOptions? = nil
+    ) async throws -> DeleteWorkspaceResponse {
+      try await client.deleteWorkspace(
+        id: id, confirmDefaultWorkspaceDeletion: confirmDefaultWorkspaceDeletion, options: options)
+    }
+
+    public func addMembers(
+      id: String, _ request: WorkspaceMembersRequest, options: RequestOptions? = nil
+    ) async throws -> AddWorkspaceMembersResponse {
+      try await client.addWorkspaceMembers(id: id, request, options: options)
+    }
+
+    public func removeMembers(
+      id: String, _ request: WorkspaceMembersRequest, options: RequestOptions? = nil
+    ) async throws -> RemoveWorkspaceMembersResponse {
+      try await client.removeWorkspaceMembers(id: id, request, options: options)
+    }
 
     /// Lists workspaces. Offset must be at least 0 and limit must be 1...100.
     /// Nil pagination values use server defaults (limit: 50).

@@ -1,5 +1,9 @@
 # Documentation update log
 
+## 2026-10-29
+
+- **Update**: Documented workspace create/update/delete and bulk member add/remove, nullable settings, management-key and server restrictions, explicit destructive default-workspace confirmation, and refreshed endpoint counts and deferred scope.
+
 ## 2026-10-28
 
 - **Update**: Documented native image SSE, buffered JSON normalization, completion/error and cancellation rules, partial-image handling, and unchanged endpoint counts.

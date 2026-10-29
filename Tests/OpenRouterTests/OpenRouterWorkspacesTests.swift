@@ -7,6 +7,130 @@ import XCTest
 #endif
 
 final class OpenRouterWorkspacesTests: XCTestCase {
+  func testMutationsAndAliases() async throws {
+    let client = makeClient()
+    for alias in [false, true] {
+      for operation in 0..<5 {
+        let suffix = operation == 3 ? "/members/add" : operation == 4 ? "/members/remove" : ""
+        let path =
+          operation == 0
+          ? "/api/v1/workspaces" : "/api/v1/workspaces/team%2Fone%3F%23%25%E9%9B%AA" + suffix
+        var options = checkedOptions(path: path)
+        options.extraHeaders["X-Expected-Method"] =
+          operation == 1 ? "PATCH" : operation == 2 ? "DELETE" : "POST"
+        var settings = UpdateWorkspaceRequest()
+        settings.description = .null
+        settings.defaultTextModel = .value("model")
+        settings.isObservabilityIOLoggingEnabled = false
+        let body: [String: Any] =
+          operation < 2
+          ? [
+            "description": NSNull(), "default_text_model": "model",
+            "is_observability_io_logging_enabled": false,
+          ]
+          : ["user_ids": ["user_1"]]
+        var expected = body
+        if operation == 0 {
+          expected["name"] = "New"
+          expected["slug"] = "new"
+        }
+        if operation != 2 {
+          options.extraHeaders["X-Expected-Body"] = String(
+            data: try JSONSerialization.data(withJSONObject: expected), encoding: .utf8)
+        }
+        let id = "team/one?#%雪"
+        switch operation {
+        case 0:
+          let request = CreateWorkspaceRequest(name: "New", slug: "new", settings: settings)
+          let response =
+            try await alias
+            ? client.workspaces.create(request, options: options)
+            : client.createWorkspace(request, options: options)
+          XCTAssertEqual(response.data.name, "Production")
+        case 1:
+          let response =
+            try await alias
+            ? client.workspaces.update(id: id, settings, options: options)
+            : client.updateWorkspace(id: id, settings, options: options)
+          XCTAssertEqual(response.data.slug, "production")
+        case 2:
+          let response =
+            try await alias
+            ? client.workspaces.delete(id: id, options: options)
+            : client.deleteWorkspace(id: id, options: options)
+          XCTAssertTrue(response.deleted)
+          options.extraHeaders["X-Expected-Query"] = "confirm_default_workspace_deletion=true"
+          _ = try await client.workspaces.delete(
+            id: id, confirmDefaultWorkspaceDeletion: true, options: options)
+        case 3:
+          let response =
+            try await alias
+            ? client.workspaces.addMembers(id: id, .init(userIDs: ["user_1"]), options: options)
+            : client.addWorkspaceMembers(id: id, .init(userIDs: ["user_1"]), options: options)
+          XCTAssertEqual(response.addedCount, 1)
+          XCTAssertEqual(response.data.first?.role, "member")
+          XCTAssertEqual(response.data.first?.userID, "user_1")
+        default:
+          let response =
+            try await alias
+            ? client.workspaces.removeMembers(id: id, .init(userIDs: ["user_1"]), options: options)
+            : client.removeWorkspaceMembers(id: id, .init(userIDs: ["user_1"]), options: options)
+          XCTAssertEqual(response.removedCount, 1)
+        }
+      }
+    }
+  }
+
+  func testEmptyUpdateOmitsAllSettings() throws {
+    let object =
+      try JSONSerialization.jsonObject(with: JSONEncoder().encode(UpdateWorkspaceRequest()))
+      as? NSDictionary
+    XCTAssertEqual(object, [:])
+  }
+
+  func testMutationErrorsAndMissingAuthentication() async throws {
+    for missingKey in [false, true] {
+      for operation in 0..<5 {
+        var options = checkedOptions(
+          path: operation == 0
+            ? "/api/v1/workspaces"
+            : "/api/v1/workspaces/test"
+              + (operation == 3 ? "/members/add" : operation == 4 ? "/members/remove" : ""))
+        options.retries = RetryPolicy.none
+        options.extraHeaders["X-Test-Status"] = "403"
+        options.extraHeaders["X-Expected-Method"] =
+          operation == 1 ? "PATCH" : operation == 2 ? "DELETE" : "POST"
+        let client = makeClient(apiKey: missingKey ? nil : "workspace-key")
+        do {
+          switch operation {
+          case 0:
+            _ = try await client.workspaces.create(
+              .init(name: "Test", slug: "test"), options: options)
+          case 1: _ = try await client.workspaces.update(id: "test", .init(), options: options)
+          case 2: _ = try await client.workspaces.delete(id: "test", options: options)
+          case 3:
+            _ = try await client.workspaces.addMembers(
+              id: "test", .init(userIDs: ["user"]), options: options)
+          default:
+            _ = try await client.workspaces.removeMembers(
+              id: "test", .init(userIDs: ["user"]), options: options)
+          }
+          XCTFail("Expected failure")
+        } catch let error as OpenRouterError {
+          if missingKey {
+            guard case .missingAPIKey = error else { return XCTFail("Unexpected error: \(error)") }
+          } else {
+            guard case .apiError(let status, _, let message, _) = error else {
+              return XCTFail("Unexpected error: \(error)")
+            }
+            XCTAssertEqual(status, 403)
+            XCTAssertEqual(message, "workspace failure")
+          }
+        }
+      }
+    }
+  }
+
   func testListPaginationAndAliases() async throws {
     let client = makeClient()
     for alias in [false, true] {
@@ -202,7 +326,26 @@ private final class WorkspaceOfflineURLProtocol: URLProtocol {
     do {
       let url = try XCTUnwrap(request.url)
       let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
-      XCTAssertEqual(request.httpMethod, "GET")
+      XCTAssertEqual(
+        request.httpMethod, request.value(forHTTPHeaderField: "X-Expected-Method") ?? "GET")
+      if let expected = request.value(forHTTPHeaderField: "X-Expected-Body") {
+        var data = request.httpBody
+        if data == nil, let stream = request.httpBodyStream {
+          stream.open()
+          defer { stream.close() }
+          var result = Data()
+          var buffer = [UInt8](repeating: 0, count: 1024)
+          while stream.hasBytesAvailable {
+            let count = stream.read(&buffer, maxLength: buffer.count)
+            if count <= 0 { break }
+            result.append(contentsOf: buffer.prefix(count))
+          }
+          data = result
+        }
+        let actual = try JSONSerialization.jsonObject(with: XCTUnwrap(data)) as? NSDictionary
+        let wanted = try JSONSerialization.jsonObject(with: Data(expected.utf8)) as? NSDictionary
+        XCTAssertEqual(actual, wanted)
+      }
       XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer workspace-key")
       XCTAssertEqual(
         components.percentEncodedPath, request.value(forHTTPHeaderField: "X-Expected-Path"))
@@ -221,7 +364,21 @@ private final class WorkspaceOfflineURLProtocol: URLProtocol {
       let object: [String: Any]
       if status != 200 {
         object = ["error": ["code": status, "message": "workspace failure"]]
-      } else if components.path.hasSuffix("/workspaces") {
+      } else if request.httpMethod == "DELETE" {
+        object = ["deleted": true]
+      } else if components.path.hasSuffix("/members/add") {
+        object = [
+          "added_count": 1,
+          "data": [
+            [
+              "id": "membership", "workspace_id": "workspace", "user_id": "user_1",
+              "role": "member", "created_at": "2026-01-01T00:00:00Z",
+            ]
+          ],
+        ]
+      } else if components.path.hasSuffix("/members/remove") {
+        object = ["removed_count": 1]
+      } else if components.path.hasSuffix("/workspaces") && request.httpMethod == "GET" {
         let empty =
           components.queryItems?.contains(URLQueryItem(name: "offset", value: "100")) == true
         object = ["data": empty ? [] : [workspaceTestObject], "total_count": 42]
