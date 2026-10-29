@@ -1,8 +1,8 @@
 ---
 type: Guide
 title: Resource examples
-description: Access generation metadata, discovery, files, workspaces, keys, activity, and reranking.
-tags: [resources, models, files, workspaces, keys, authentication, rerank]
+description: Access generation metadata, discovery, files, workspaces, organization members, keys, activity, and reranking.
+tags: [resources, models, files, workspaces, organization, keys, authentication, rerank]
 sources:
   - resource: https://openrouter.ai/docs/use-cases/oauth-pkce
     title: OpenRouter OAuth PKCE guide
@@ -70,10 +70,37 @@ pagination is manual.
 
 `Workspace` exposes names, defaults, logging settings, timestamps, and optional
 budget/tool settings. Nullable values remain optional; the presence of settings
-in this response does not provide APIs to change them. Workspace mutations,
-membership operations, and budget APIs remain unimplemented. These operations
+in this response does not imply that all settings are configurable. Workspace
+create/update/delete and bulk member add/remove are supported; workspace member
+listing and budget APIs remain deferred. See [limitations](../reference/limitations.md)
+for nullable request settings and destructive deletion restrictions. These operations
 surface authentication/permission failures through the normal typed API errors;
 retrieving an unknown workspace can return HTTP 404.
+
+## Organization members
+
+Use a client configured with a **management API key**:
+
+```swift
+let members = try await client.organization.listMembers(offset: 0, limit: 25)
+let totalMembers = members.totalCount
+// After selecting and approving an organization member to add:
+if let member = members.data.first {
+  let result = try await client.workspaces.addMembers(
+    id: "production", .init(userIDs: [member.id])
+  )
+}
+```
+
+The flat alias is `client.listOrganizationMembers(offset:limit:options:)`.
+Both surfaces accept per-request options. Omit pagination for server defaults
+(offset 0, limit 50); the server validates offset >= 0 and limit 1–100. No filters
+are supported. `totalCount` is the total available count, including on an empty
+page; pagination is manual. `OrganizationMember` exposes `id`, optional
+`firstName`/`lastName`, `email`, and an extensible `role` string (currently
+`org:admin` or `org:member`). Names that are null or absent decode as nil.
+Authentication and permission failures use normal typed API errors. Organization
+settings and other organization endpoints remain deferred.
 
 ## File retrieval
 

@@ -11,9 +11,15 @@ tags: [limitations, beta, roadmap, sse]
   forward-compatible raw typed events, including text and function argument
   deltas; provider-specific beta fields may still require `rawPayload`.
 - Workspace list/get/create/update/delete and bulk member add/remove are implemented;
-  member listing, budgets, organization APIs, guardrails, other beta namespaces, and some analytics
+  workspace member listing, budgets, organization APIs other than member listing,
+  guardrails, other beta namespaces, and some analytics
   capabilities are not yet implemented. Activity and daily-ranking endpoints are implemented; consult
   [endpoint coverage](endpoint-coverage.md) for the precise inventory.
+- Organization member listing requires a management key and supports only manual
+  offset/limit pagination, without filters. The server validates offset >= 0 and
+  limit 1–100; omitted values use defaults 0 and 50. Names are optional and roles
+  remain extensible strings (currently `org:admin` and `org:member`). Organization
+  settings and other organization operations remain deferred.
 - Workspace operations require management keys. The server validates names (1–100
   characters), slugs (1–50 lowercase alphanumeric characters separated by single
   hyphens), descriptions (up to 500 characters), sampling rates (0.0001–1), supported

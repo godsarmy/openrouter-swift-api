@@ -62,5 +62,6 @@ Endpoint coverage and deferred namespaces are tracked in
   provider-specific fields may still require raw payload access.
 - Consider pagination helpers as paginated-resource coverage grows; supported
   endpoint pagination parameters are already exposed individually.
-- Workspace member listing/budgets, organization APIs, guardrails, BYOK, and
+- Organization member listing is supported with management keys.
+- Workspace member listing/budgets, other organization APIs, guardrails, BYOK, and
   other unimplemented namespaces remain deferred; see the tracker for details.

@@ -663,6 +663,22 @@ public struct OpenRouterClient: Sendable {
     )
   }
 
+  /// Lists organization members using a management API key.
+  /// Nil pagination uses server defaults (offset: 0, limit: 50).
+  /// The server validates offset >= 0 and limit in 1...100.
+  public func listOrganizationMembers(
+    offset: Int? = nil,
+    limit: Int? = nil,
+    options: RequestOptions? = nil
+  ) async throws -> OrganizationMembersResponse {
+    var queryItems: [URLQueryItem] = []
+    if let offset { queryItems.append(.init(name: "offset", value: String(offset))) }
+    if let limit { queryItems.append(.init(name: "limit", value: String(limit))) }
+    return try await transport.get(
+      path: "organization/members", queryItems: queryItems,
+      responseType: OrganizationMembersResponse.self, options: options)
+  }
+
   /// Lists workspaces using a management API key.
   ///
   /// - Parameters:
@@ -1013,6 +1029,7 @@ extension OpenRouterClient {
   public var credits: CreditsResource { CreditsResource(client: self) }
   public var keys: KeysResource { KeysResource(client: self) }
   public var workspaces: WorkspacesResource { WorkspacesResource(client: self) }
+  public var organization: OrganizationResource { OrganizationResource(client: self) }
   public var auth: AuthResource { AuthResource(client: self) }
   public var activity: ActivityResource { ActivityResource(client: self) }
   public var datasets: DatasetsResource { DatasetsResource(client: self) }
@@ -1308,6 +1325,21 @@ extension OpenRouterClient {
 
     public func get(options: RequestOptions? = nil) async throws -> CreditsResponse {
       try await client.getCredits(options: options)
+    }
+  }
+
+  /// Organization member discovery requiring a management API key.
+  public struct OrganizationResource: Sendable {
+    fileprivate let client: OpenRouterClient
+
+    /// Lists members. Nil pagination uses server defaults (offset: 0, limit: 50).
+    /// The server validates offset >= 0 and limit in 1...100.
+    public func listMembers(
+      offset: Int? = nil,
+      limit: Int? = nil,
+      options: RequestOptions? = nil
+    ) async throws -> OrganizationMembersResponse {
+      try await client.listOrganizationMembers(offset: offset, limit: limit, options: options)
     }
   }
 

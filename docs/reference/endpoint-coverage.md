@@ -25,8 +25,8 @@ official OpenAPI specification (OpenAPI 3.1.0, `info.version: 1.0.0`).
 | Inventory | Unique method/path operations |
 |---|---:|
 | Listed in the current specification | 139 |
-| Current-spec operations implemented by the SDK | 51 |
-| Current-spec operations not implemented | 88 |
+| Current-spec operations implemented by the SDK | 52 |
+| Current-spec operations not implemented | 87 |
 | Additional SDK legacy operations absent from the specification | 1 |
 
 The earlier tracker omitted 72 current-spec operations; those are now included
@@ -119,6 +119,7 @@ Status legend:
 | [x] | DELETE | `/workspaces/{id}` | `client.workspaces.delete`, `client.deleteWorkspace` | Irreversible deletion with explicit default-workspace confirmation opt-in. Requires a management key. |
 | [x] | POST | `/workspaces/{id}/members/add` | `client.workspaces.addMembers`, `client.addWorkspaceMembers` | Adds 1–100 users with organization roles. Requires a management key. |
 | [x] | POST | `/workspaces/{id}/members/remove` | `client.workspaces.removeMembers`, `client.removeWorkspaceMembers` | Removes 1–100 users subject to server restrictions. Requires a management key. |
+| [x] | GET | `/organization/members` | `client.organization.listMembers`, `client.listOrganizationMembers` | Lists organization members with optional offset/limit and a total count. Requires a management key. |
 
 ## Core Inference Endpoints
 
@@ -212,7 +213,7 @@ Status legend:
 | [x] | DELETE | `/workspaces/{id}` | `deleteWorkspace` | Delete a workspace. | Alias: `client.workspaces.delete`; explicit default-workspace confirmation opt-in; typed deletion result; management key required. See [restrictions](limitations.md). |
 | [x] | POST | `/workspaces/{id}/members/add` | `bulkAddWorkspaceMembers` | Bulk add members to a workspace. | Implemented as `client.addWorkspaceMembers`; alias: `client.workspaces.addMembers`; 1–100 user IDs; typed memberships/count; management key required. |
 | [x] | POST | `/workspaces/{id}/members/remove` | `bulkRemoveWorkspaceMembers` | Bulk remove members from a workspace. | Implemented as `client.removeWorkspaceMembers`; alias: `client.workspaces.removeMembers`; 1–100 user IDs; typed count; management key required. See [restrictions](limitations.md). |
-| [ ] | GET | `/organization/members` | `listOrganizationMembers` | List organization members. |  |
+| [x] | GET | `/organization/members` | `listOrganizationMembers` | List organization members. | Alias: `client.organization.listMembers`; optional offset/limit, typed members and total count; management key required. |
 
 ## Observability
 
