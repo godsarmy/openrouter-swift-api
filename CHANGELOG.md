@@ -6,12 +6,28 @@ This project follows semantic versioning once public releases are tagged.
 
 ## Unreleased
 
-- Added workspace member listing via `workspaces.listMembers` and `listWorkspaceMembers`, reusing typed workspace memberships with offset/limit pagination and total count.
-- Added workspace create/update/delete and bulk member add/remove with nullable settings and explicit default-workspace deletion confirmation.
-- Added organization member listing with typed profiles and offset/limit pagination.
-- Added workspace budget list/get/upsert/delete with typed intervals and optional workspace-wide BYOK configuration.
+## 0.6.0 - 2026-10-29
 
-- Added native image SSE via `images.stream` and `createImageStream`, with typed raw-preserving events, provider errors, strict completion validation, cancellation, and buffered JSON fallback. Existing buffered image APIs are unchanged. Verified with offline tests only; no paid generation calls.
+### Added
+
+- Native image SSE via `images.stream` and `createImageStream`, with typed raw-preserving events, provider errors, strict completion validation, cancellation, and buffered JSON fallback.
+- Workspace create/update/delete and bulk member add/remove, with nullable settings and explicit default-workspace deletion confirmation.
+- Organization member listing with typed profiles and offset/limit pagination.
+- Workspace budget list/get/upsert/delete with typed intervals and optional workspace-wide BYOK configuration.
+- Workspace member listing via `workspaces.listMembers` and `listWorkspaceMembers`, reusing typed workspace memberships with offset/limit pagination and total count.
+
+### Compatibility and operational notes
+
+- No source-breaking changes to existing public declarations were identified in the v0.5.0-to-v0.6.0 source review. Existing signatures and enum cases remain unchanged; this is not an ABI guarantee.
+- Existing buffered image APIs retain their behavior. Native image SSE requires a valid completion and `[DONE]`; non-streaming providers yield a buffered synthetic event. Partial images are not concatenated or mapped to final-image identities. Cancellation does not guarantee that billing stops.
+- Workspace, organization member, and budget operations require management keys. Pagination is manual. Default workspace member listing includes all organization members through implicit membership.
+- Workspace updates distinguish omitted, null, and assigned settings with `WorkspaceField`. Workspace deletion is irreversible; default-workspace deletion requires explicit opt-in and disables unscoped inference keys. Active workspace keys and SCIM policies can restrict membership changes or deletion.
+- Budget changes enforce immediately. Limits must satisfy the server's interval hierarchy; the BYOK setting applies workspace-wide. Deleting a budget removes only that interval and preserves the BYOK setting.
+- Validation used offline tests; no paid generation or destructive live management calls were performed for this release.
+
+### Documentation
+
+- Added image streaming, workspace management, organization/member listing, and budget examples and limitations; endpoint coverage now records 57 of the 139 operations in the audited specification.
 
 ## 0.5.0 - 2026-10-28
 

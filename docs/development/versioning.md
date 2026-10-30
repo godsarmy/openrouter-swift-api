@@ -12,6 +12,36 @@ compatible fixes. After `1.0`, the package follows semantic versioning: breaking
 source changes require a major version, additive APIs use minor versions, and
 bug fixes use patch versions.
 
+## API review notes for v0.6.0
+
+The [changelog](../../CHANGELOG.md) collects v0.6.0's native image streaming,
+workspace management and member listing, organization member listing, and budgets.
+The source diff from v0.5.0 identified no removed public declarations, changed
+existing public signatures, or new cases in existing public enums. This is a
+source-diff compatibility conclusion, not an ABI guarantee or live API certification.
+
+Operational considerations:
+
+- Existing buffered image generation remains unchanged. `images.stream` requests
+  native SSE and accepts buffered JSON fallback. Native streams require a valid
+  completion and `[DONE]`. Partial images remain independent opaque snapshots;
+  cancellation does not guarantee that provider billing stops.
+- Management operations require management keys. Workspace/member pagination is
+  explicit; default workspaces include all organization members implicitly.
+- `WorkspaceField` distinguishes omission, explicit null, and assigned values in
+  workspace settings. Workspace deletion is irreversible, and deleting the default
+  workspace requires explicit confirmation and disables unscoped inference keys.
+  Active workspace keys and SCIM policies can restrict management operations.
+- Budget enforcement changes immediately. Limits must follow the server's interval
+  hierarchy. BYOK settings apply workspace-wide; deleting an interval preserves
+  those settings.
+- Validation uses offline tests. Paid generation and destructive live management
+  operations were not performed for this release.
+
+See [limitations](../reference/limitations.md), [resources](../guides/resources.md),
+and [image streaming](../guides/media.md#streaming-image-generation) for contracts
+and examples. Historical exclusions below apply to their named release only.
+
 ## API review notes for v0.5.0
 
 The [changelog](../../CHANGELOG.md) collects v0.5.0's workspace discovery, file

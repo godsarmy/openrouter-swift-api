@@ -2,6 +2,8 @@
 
 ## 2026-10-29
 
+- **Update**: Finalized v0.6.0 release notes and source compatibility review for native image streaming, workspace management and membership, organization members, and budgets.
+
 - **Update**: Documented workspace member listing, manual pagination, default-workspace implicit membership, typed membership fields, and refreshed endpoint counts.
 
 - **Update**: Documented workspace budget list/get/upsert/delete, interval hierarchy, immediate enforcement, lifetime reset and workspace-wide BYOK semantics; refreshed supported scope and endpoint counts.
