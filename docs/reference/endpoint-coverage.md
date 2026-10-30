@@ -17,6 +17,10 @@ and [current limitations](limitations.md) for usage and compatibility context.
 
 This file tracks which OpenRouter API endpoints are implemented by this Swift SDK.
 
+For prioritized cross-language work, see the
+[Swift / Zig API parity TODOs](../../PLAN.md). That source-level comparison is
+separate from this dated OpenAPI inventory and does not change implemented status.
+
 ## Audit source and scope
 
 Endpoint inventory checked on **2026-10-26** against a fresh download of the

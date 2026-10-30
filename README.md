@@ -56,7 +56,12 @@ Raw chat/tool APIs remain canonical,
 and applications retain control of execution.
 
 Endpoint coverage and deferred namespaces are tracked in
-[Endpoint coverage](docs/reference/endpoint-coverage.md). Remaining follow-ups:
+[Endpoint coverage](docs/reference/endpoint-coverage.md). The prioritized
+[Swift / Zig API parity TODOs](PLAN.md) track the shared API goal and source-review
+baseline. **Next: BYOK management**, followed by guardrails and observability
+destinations; broader pagination helpers are secondary to closing API gaps.
+
+Remaining follow-ups:
 
 - Track additional beta Responses event fields as OpenRouter confirms them;
   provider-specific fields may still require raw payload access.

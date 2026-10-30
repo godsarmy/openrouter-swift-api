@@ -1,5 +1,9 @@
 # Documentation update log
 
+## 2026-10-30
+
+- **Update**: Added source-referenced Swift/Zig API parity TODOs, prioritized BYOK, guardrails, and observability gaps, and separated shared contract checks and Zig follow-ups from endpoint-presence claims.
+
 ## 2026-10-29
 
 - **Update**: Documented on-demand workspace and organization member pagination, cancellation and termination rules, and offset consistency limits; retained deferred scope for other resources.
