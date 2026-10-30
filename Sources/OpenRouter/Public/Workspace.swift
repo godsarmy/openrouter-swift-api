@@ -250,3 +250,19 @@ public struct RemoveWorkspaceMembersResponse: Codable, Sendable, Equatable {
   public init(removedCount: Int) { self.removedCount = removedCount }
   enum CodingKeys: String, CodingKey { case removedCount = "removed_count" }
 }
+
+/// A page of workspace memberships and the total number available.
+public struct WorkspaceMembersResponse: Codable, Sendable, Equatable {
+  public var data: [WorkspaceMembership]
+  public var totalCount: Int
+
+  public init(data: [WorkspaceMembership], totalCount: Int) {
+    self.data = data
+    self.totalCount = totalCount
+  }
+
+  enum CodingKeys: String, CodingKey {
+    case data
+    case totalCount = "total_count"
+  }
+}

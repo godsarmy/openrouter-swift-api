@@ -6,6 +6,11 @@ This project follows semantic versioning once public releases are tagged.
 
 ## Unreleased
 
+- Added workspace member listing via `workspaces.listMembers` and `listWorkspaceMembers`, reusing typed workspace memberships with offset/limit pagination and total count.
+- Added workspace create/update/delete and bulk member add/remove with nullable settings and explicit default-workspace deletion confirmation.
+- Added organization member listing with typed profiles and offset/limit pagination.
+- Added workspace budget list/get/upsert/delete with typed intervals and optional workspace-wide BYOK configuration.
+
 - Added native image SSE via `images.stream` and `createImageStream`, with typed raw-preserving events, provider errors, strict completion validation, cancellation, and buffered JSON fallback. Existing buffered image APIs are unchanged. Verified with offline tests only; no paid generation calls.
 
 ## 0.5.0 - 2026-10-28

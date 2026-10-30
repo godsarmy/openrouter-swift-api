@@ -25,8 +25,8 @@ official OpenAPI specification (OpenAPI 3.1.0, `info.version: 1.0.0`).
 | Inventory | Unique method/path operations |
 |---|---:|
 | Listed in the current specification | 139 |
-| Current-spec operations implemented by the SDK | 56 |
-| Current-spec operations not implemented | 83 |
+| Current-spec operations implemented by the SDK | 57 |
+| Current-spec operations not implemented | 82 |
 | Additional SDK legacy operations absent from the specification | 1 |
 
 The earlier tracker omitted 72 current-spec operations; those are now included
@@ -124,6 +124,7 @@ Status legend:
 | [x] | GET | `/workspaces/{workspace_ref}/budgets/{interval}` | `client.workspaces.getBudget`, `client.getWorkspaceBudget` | Gets a daily, weekly, monthly, or lifetime budget. Requires a management key. |
 | [x] | PUT | `/workspaces/{workspace_ref}/budgets/{interval}` | `client.workspaces.upsertBudget`, `client.upsertWorkspaceBudget` | Sets a positive USD limit with immediate enforcement and optional workspace-wide BYOK setting. Requires a management key. |
 | [x] | DELETE | `/workspaces/{workspace_ref}/budgets/{interval}` | `client.workspaces.deleteBudget`, `client.deleteWorkspaceBudget` | Removes only this interval, including when already absent; BYOK setting unchanged. Requires a management key. |
+| [x] | GET | `/workspaces/{id}/members` | `client.workspaces.listMembers`, `client.listWorkspaceMembers` | Lists workspace memberships with offset/limit pagination and total count. Default workspaces include all organization members; management key required. |
 
 ## Core Inference Endpoints
 
@@ -317,7 +318,7 @@ availability, and server override before implementing it.
 | [ ] | GET | `/vault/secrets` | `listVaultSecrets` |
 | [x] | GET | `/workspaces/{workspace_ref}/budgets` | `listWorkspaceBudgets`; alias: `client.workspaces.listBudgets` |
 | [x] | GET | `/workspaces/{workspace_ref}/budgets/{interval}` | `getWorkspaceBudget`; alias: `client.workspaces.getBudget` |
-| [ ] | GET | `/workspaces/{id}/members` | `listWorkspaceMembers` |
+| [x] | GET | `/workspaces/{id}/members` | `listWorkspaceMembers`; alias: `client.workspaces.listMembers` |
 | [ ] | PATCH | `/external-users/{user}` | `updateExternalUser` |
 | [ ] | PATCH | `/organization/settings` | `updateOrganizationSettings` |
 | [ ] | PATCH | `/private-endpoints/{id}` | `updatePrivateEndpoint` |

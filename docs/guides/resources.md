@@ -71,11 +71,33 @@ pagination is manual.
 `Workspace` exposes names, defaults, logging settings, timestamps, and optional
 budget/tool settings. Nullable values remain optional; the presence of settings
 in this response does not imply that all settings are configurable. Workspace
-create/update/delete and bulk member add/remove are supported; workspace member
-listing remains deferred; budget APIs are supported separately below. See [limitations](../reference/limitations.md)
+create/update/delete and member list/add/remove are supported; budget APIs are
+supported separately below. See [limitations](../reference/limitations.md)
 for nullable request settings and destructive deletion restrictions. These operations
 surface authentication/permission failures through the normal typed API errors;
 retrieving an unknown workspace can return HTTP 404.
+
+## Workspace members
+
+Use a management key to list memberships by workspace UUID or slug:
+
+```swift
+let members = try await client.workspaces.listMembers(id: "production", offset: 0, limit: 25)
+for member in members.data {
+  let userID = member.userID
+  let role = member.role
+}
+let totalMembers = members.totalCount
+```
+
+The flat alias is `client.listWorkspaceMembers(id:offset:limit:options:)`.
+Pagination is manual: omitted offset/limit use server defaults 0/50; the server
+validates offset >= 0 and limit 1–100. `totalCount` describes all memberships,
+including when the requested page is empty. IDs and slugs are encoded as one
+path segment. Default workspaces return all organization members through implicit
+membership. Each `WorkspaceMembership` contains its membership ID, workspace ID,
+user ID, extensible role string, and creation timestamp. Authentication,
+permission, and missing-workspace failures use the normal typed API errors.
 
 ## Workspace budgets
 
