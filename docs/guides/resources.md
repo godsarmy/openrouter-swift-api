@@ -91,13 +91,14 @@ let totalMembers = members.totalCount
 ```
 
 The flat alias is `client.listWorkspaceMembers(id:offset:limit:options:)`.
-Pagination is manual: omitted offset/limit use server defaults 0/50; the server
+For a single page, omitted offset/limit use server defaults 0/50; the server
 validates offset >= 0 and limit 1–100. `totalCount` describes all memberships,
 including when the requested page is empty. IDs and slugs are encoded as one
 path segment. Default workspaces return all organization members through implicit
 membership. Each `WorkspaceMembership` contains its membership ID, workspace ID,
 user ID, extensible role string, and creation timestamp. Authentication,
 permission, and missing-workspace failures use the normal typed API errors.
+See [member pagination](#member-pagination) to iterate across pages.
 
 ## Workspace budgets
 
@@ -158,11 +159,42 @@ The flat alias is `client.listOrganizationMembers(offset:limit:options:)`.
 Both surfaces accept per-request options. Omit pagination for server defaults
 (offset 0, limit 50); the server validates offset >= 0 and limit 1–100. No filters
 are supported. `totalCount` is the total available count, including on an empty
-page; pagination is manual. `OrganizationMember` exposes `id`, optional
+page. For automatic iteration, see [member pagination](#member-pagination). `OrganizationMember` exposes `id`, optional
 `firstName`/`lastName`, `email`, and an extensible `role` string (currently
 `org:admin` or `org:member`). Names that are null or absent decode as nil.
 Authentication and permission failures use normal typed API errors. Organization
 settings and other organization endpoints remain deferred.
+
+## Member pagination
+
+Both member resources offer on-demand async sequences with management keys:
+
+```swift
+for try await member in client.workspaces.members(id: "production", limit: 25) {
+  print(member.userID)
+}
+for try await member in client.organization.members(limit: 25) {
+  print(member.email)
+}
+```
+
+Both accept `offset` (default 0), `limit` (default 50), and per-request `options`.
+The server validates offset >= 0 and limit 1–100. Existing `listMembers` methods
+and flat aliases still return individual pages and their total counts.
+
+`OffsetPaginatedSequence` fetches its first page on the first `next()` call and
+buffers only the current page. Each iterator starts independently. No next page
+is requested until the current page is consumed; breaking a loop starts no
+background requests. Offsets advance by the number of members returned. A short
+page continues if its total count indicates more members; an empty page or reaching
+the reported total ends iteration. Errors terminate the iterator and propagate
+to the caller without restarting pagination. Request-level retry policy still applies.
+
+Cancellation is checked before requests, before yielding buffered members, and
+after a request completes. In-flight requests use the existing transport's task
+cancellation behavior. Offset pagination is not a snapshot: membership changes
+between requests can cause duplicates or omissions. Helpers for other resources,
+including cursor-based files and batches, remain deferred.
 
 ## File retrieval
 

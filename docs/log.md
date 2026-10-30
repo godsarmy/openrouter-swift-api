@@ -2,6 +2,8 @@
 
 ## 2026-10-29
 
+- **Update**: Documented on-demand workspace and organization member pagination, cancellation and termination rules, and offset consistency limits; retained deferred scope for other resources.
+
 - **Update**: Finalized v0.6.0 release notes and source compatibility review for native image streaming, workspace management and membership, organization members, and budgets.
 
 - **Update**: Documented workspace member listing, manual pagination, default-workspace implicit membership, typed membership fields, and refreshed endpoint counts.

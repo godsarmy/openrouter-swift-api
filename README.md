@@ -60,10 +60,11 @@ Endpoint coverage and deferred namespaces are tracked in
 
 - Track additional beta Responses event fields as OpenRouter confirms them;
   provider-specific fields may still require raw payload access.
-- Consider pagination helpers as paginated-resource coverage grows; supported
-  endpoint pagination parameters are already exposed individually.
+- Workspace and organization member async pagination helpers are available; see
+  [member pagination](docs/guides/resources.md#member-pagination). Helpers for other
+  offset-based resources and cursor-based files/batches remain deferred.
 - Organization member listing is supported with management keys.
 - Workspace budget list/get/upsert/delete is supported with management keys.
-- Workspace member listing is supported with management keys and manual pagination.
+- Workspace member listing is supported with management keys and optional async pagination.
 - Other organization APIs, guardrails, BYOK, and
   other unimplemented namespaces remain deferred; see the tracker for details.

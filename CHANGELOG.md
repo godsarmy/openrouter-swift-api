@@ -6,6 +6,8 @@ This project follows semantic versioning once public releases are tagged.
 
 ## Unreleased
 
+- Added on-demand async member pagination via `workspaces.members` and `organization.members`, with independent iterators, cancellation checks, and terminal error propagation. Existing page methods remain available.
+
 ## 0.6.0 - 2026-10-29
 
 ### Added

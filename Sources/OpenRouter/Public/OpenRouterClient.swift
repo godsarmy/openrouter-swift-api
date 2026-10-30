@@ -1389,6 +1389,18 @@ extension OpenRouterClient {
   public struct OrganizationResource: Sendable {
     fileprivate let client: OpenRouterClient
 
+    /// Iterates members, fetching pages only as needed. The server validates
+    /// offset >= 0 and limit in 1...100. Errors terminate the iterator.
+    public func members(
+      offset: Int = 0, limit: Int = 50, options: RequestOptions? = nil
+    ) -> OffsetPaginatedSequence<OrganizationMember> {
+      OffsetPaginatedSequence(offset: offset) { offset in
+        let page = try await client.listOrganizationMembers(
+          offset: offset, limit: limit, options: options)
+        return (page.data, page.totalCount)
+      }
+    }
+
     /// Lists members. Nil pagination uses server defaults (offset: 0, limit: 50).
     /// The server validates offset >= 0 and limit in 1...100.
     public func listMembers(
@@ -1450,6 +1462,18 @@ extension OpenRouterClient {
     ) async throws -> DeleteWorkspaceResponse {
       try await client.deleteWorkspace(
         id: id, confirmDefaultWorkspaceDeletion: confirmDefaultWorkspaceDeletion, options: options)
+    }
+
+    /// Iterates memberships, fetching pages only as needed. The server validates
+    /// offset >= 0 and limit in 1...100. Errors terminate the iterator.
+    public func members(
+      id: String, offset: Int = 0, limit: Int = 50, options: RequestOptions? = nil
+    ) -> OffsetPaginatedSequence<WorkspaceMembership> {
+      OffsetPaginatedSequence(offset: offset) { offset in
+        let page = try await client.listWorkspaceMembers(
+          id: id, offset: offset, limit: limit, options: options)
+        return (page.data, page.totalCount)
+      }
     }
 
     /// Lists members by workspace UUID or slug, encoded as a single path segment.

@@ -15,12 +15,12 @@ tags: [limitations, beta, roadmap, sse]
   guardrails, other beta namespaces, and some analytics
   capabilities are not yet implemented. Activity and daily-ranking endpoints are implemented; consult
   [endpoint coverage](endpoint-coverage.md) for the precise inventory.
-- Organization member listing requires a management key and supports only manual
+- Organization member listing requires a management key and supports manual or async
   offset/limit pagination, without filters. The server validates offset >= 0 and
   limit 1–100; omitted values use defaults 0 and 50. Names are optional and roles
   remain extensible strings (currently `org:admin` and `org:member`). Organization
   settings and other organization operations remain deferred.
-- Workspace member listing requires a management key and supports manual offset/limit
+- Workspace member listing requires a management key and supports manual or async offset/limit
   pagination (defaults 0/50, limit 1–100). Default workspaces return all organization
   members through implicit membership. Responses contain workspace membership IDs,
   user IDs, roles, and creation timestamps rather than organization profile fields.
@@ -74,7 +74,9 @@ tags: [limitations, beta, roadmap, sse]
 ## Deferred work
 
 Track additional beta Responses fields as OpenRouter confirms them.
-Pagination helpers remain deferred; individual supported pagination
-parameters are documented in the endpoint tracker.
+Workspace and organization members support [async member pagination](../guides/resources.md#member-pagination).
+It buffers one page and is not a snapshot; changing membership may cause duplicates
+or omissions. Helpers for other resources remain deferred; individual supported
+pagination parameters are documented in the endpoint tracker.
 
 The project-level roadmap remains in the [repository README](../../README.md).

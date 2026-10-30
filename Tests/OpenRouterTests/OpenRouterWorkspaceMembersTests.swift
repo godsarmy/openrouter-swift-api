@@ -7,6 +7,18 @@ import XCTest
 #endif
 
 final class OpenRouterWorkspaceMembersTests: XCTestCase {
+  func testMemberSequenceUsesEndpointAndRequestOptions() async throws {
+    var options = checkedOptions(query: "offset=0&limit=100")
+    options.baseURL = URL(string: "https://workspace.invalid/custom")!
+    options.timeout = 17
+    options.extraHeaders["X-Custom"] = "override"
+    options.extraHeaders["X-Expected-Path"] = "/custom/workspaces/production/members"
+    var iterator = makeClient().workspaces.members(id: "production", limit: 100, options: options)
+      .makeAsyncIterator()
+    let member = try await iterator.next()
+    XCTAssertEqual(member?.userID, "user_1")
+  }
+
   func testPaginationThroughBothSurfaces() async throws {
     for alias in [false, true] {
       for (offset, limit) in [(nil, nil), (0, nil), (nil, 100), (10, 25)] as [(Int?, Int?)] {
