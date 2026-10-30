@@ -72,10 +72,50 @@ pagination is manual.
 budget/tool settings. Nullable values remain optional; the presence of settings
 in this response does not imply that all settings are configurable. Workspace
 create/update/delete and bulk member add/remove are supported; workspace member
-listing and budget APIs remain deferred. See [limitations](../reference/limitations.md)
+listing remains deferred; budget APIs are supported separately below. See [limitations](../reference/limitations.md)
 for nullable request settings and destructive deletion restrictions. These operations
 surface authentication/permission failures through the normal typed API errors;
 retrieving an unknown workspace can return HTTP 404.
+
+## Workspace budgets
+
+These operations require a **management API key**. `workspaceRef` accepts a UUID
+or slug, encoded as a single path segment. Intervals are `.daily`, `.weekly`,
+`.monthly`, and `.lifetime`:
+
+```swift
+let budgets = try await client.workspaces.listBudgets(workspaceRef: "production")
+let monthly = try await client.workspaces.getBudget(
+  workspaceRef: "production", interval: .monthly
+)
+// Changes enforcement immediately; run only after approving the limit.
+let updated = try await client.workspaces.upsertBudget(
+  workspaceRef: "production", interval: .monthly,
+  .init(limitUSD: 100, includeBYOKInBudgets: false)
+)
+// Removes this interval only; uncomment after confirming the intended change.
+// let deletion = try await client.workspaces.deleteBudget(
+//   workspaceRef: "production", interval: .monthly
+// )
+```
+
+Flat aliases are `listWorkspaceBudgets`, `getWorkspaceBudget`,
+`upsertWorkspaceBudget`, and `deleteWorkspaceBudget`. All accept `RequestOptions`.
+The server requires `limitUSD > 0` and strictly decreasing limits as intervals
+narrow: lifetime > monthly > weekly > daily. Enforcement is immediate. Models
+contain the budget ID, workspace ID, USD limit, reset interval, and creation/update
+timestamps, not usage or currency fields. A null `resetInterval` means lifetime.
+
+List/get/upsert responses may include `includeBYOKInBudgets`. Upsert accepts an
+optional nonnullable boolean: omit it to leave the current setting unchanged;
+`false` explicitly excludes BYOK spend. This flag is **workspace-wide**, not per
+interval. Delete returns `deleted`, true even for an already absent interval;
+other intervals and the workspace BYOK setting are unchanged.
+
+Official contracts: [list](https://openrouter.ai/docs/api/api-reference/workspaces/list-workspace-budgets.md),
+[get](https://openrouter.ai/docs/api/api-reference/workspaces/get-a-workspace-budget.md),
+[upsert](https://openrouter.ai/docs/api/api-reference/workspaces/create-or-update-a-workspace-budget.md),
+and [delete](https://openrouter.ai/docs/api/api-reference/workspaces/delete-a-workspace-budget.md).
 
 ## Organization members
 

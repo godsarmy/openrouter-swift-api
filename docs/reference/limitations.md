@@ -11,7 +11,7 @@ tags: [limitations, beta, roadmap, sse]
   forward-compatible raw typed events, including text and function argument
   deltas; provider-specific beta fields may still require `rawPayload`.
 - Workspace list/get/create/update/delete and bulk member add/remove are implemented;
-  workspace member listing, budgets, organization APIs other than member listing,
+  workspace member listing, organization APIs other than member listing,
   guardrails, other beta namespaces, and some analytics
   capabilities are not yet implemented. Activity and daily-ranking endpoints are implemented; consult
   [endpoint coverage](endpoint-coverage.md) for the precise inventory.
@@ -32,7 +32,14 @@ tags: [limitations, beta, roadmap, sse]
   keys; management and provisioning keys remain. The confirmation query is omitted
   by default. Nullable request settings use `WorkspaceField`: `.unchanged` omits,
   `.null` clears, and `.value(...)` assigns. Create settings are flattened into the
-  request body. Budget configuration remains separate and unsupported.
+  request body. Budget configuration uses separate list/get/upsert/delete APIs.
+- Workspace budgets require management keys. The server validates positive USD
+  limits and strict hierarchy lifetime > monthly > weekly > daily; enforcement
+  changes immediately. Lifetime budgets return a null reset interval. The optional
+  BYOK flag applies workspace-wide across all intervals; omitting it on upsert
+  leaves the setting unchanged. Deletion removes only the selected interval and
+  succeeds even if absent; it does not reset BYOK settings. See the
+  [budget examples and contracts](../guides/resources.md#workspace-budgets).
 - The [streaming](../guides/streaming.md) SSE parser supports multiline frames.
   Image streams retain optional event names; SSE IDs/retry metadata do not
   provide automatic reconnection or resumable generation.

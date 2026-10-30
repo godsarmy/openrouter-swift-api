@@ -2,6 +2,7 @@
 
 ## 2026-10-29
 
+- **Update**: Documented workspace budget list/get/upsert/delete, interval hierarchy, immediate enforcement, lifetime reset and workspace-wide BYOK semantics; refreshed supported scope and endpoint counts.
 - **Update**: Documented organization member listing, management-key pagination and member IDs for workspace membership, corrected stale workspace scope, and refreshed endpoint counts.
 - **Update**: Documented workspace create/update/delete and bulk member add/remove, nullable settings, management-key and server restrictions, explicit destructive default-workspace confirmation, and refreshed endpoint counts and deferred scope.
 

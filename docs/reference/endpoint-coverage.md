@@ -25,8 +25,8 @@ official OpenAPI specification (OpenAPI 3.1.0, `info.version: 1.0.0`).
 | Inventory | Unique method/path operations |
 |---|---:|
 | Listed in the current specification | 139 |
-| Current-spec operations implemented by the SDK | 52 |
-| Current-spec operations not implemented | 87 |
+| Current-spec operations implemented by the SDK | 56 |
+| Current-spec operations not implemented | 83 |
 | Additional SDK legacy operations absent from the specification | 1 |
 
 The earlier tracker omitted 72 current-spec operations; those are now included
@@ -120,6 +120,10 @@ Status legend:
 | [x] | POST | `/workspaces/{id}/members/add` | `client.workspaces.addMembers`, `client.addWorkspaceMembers` | Adds 1–100 users with organization roles. Requires a management key. |
 | [x] | POST | `/workspaces/{id}/members/remove` | `client.workspaces.removeMembers`, `client.removeWorkspaceMembers` | Removes 1–100 users subject to server restrictions. Requires a management key. |
 | [x] | GET | `/organization/members` | `client.organization.listMembers`, `client.listOrganizationMembers` | Lists organization members with optional offset/limit and a total count. Requires a management key. |
+| [x] | GET | `/workspaces/{workspace_ref}/budgets` | `client.workspaces.listBudgets`, `client.listWorkspaceBudgets` | Lists budgets and optional workspace-wide BYOK setting. Requires a management key. |
+| [x] | GET | `/workspaces/{workspace_ref}/budgets/{interval}` | `client.workspaces.getBudget`, `client.getWorkspaceBudget` | Gets a daily, weekly, monthly, or lifetime budget. Requires a management key. |
+| [x] | PUT | `/workspaces/{workspace_ref}/budgets/{interval}` | `client.workspaces.upsertBudget`, `client.upsertWorkspaceBudget` | Sets a positive USD limit with immediate enforcement and optional workspace-wide BYOK setting. Requires a management key. |
+| [x] | DELETE | `/workspaces/{workspace_ref}/budgets/{interval}` | `client.workspaces.deleteBudget`, `client.deleteWorkspaceBudget` | Removes only this interval, including when already absent; BYOK setting unchanged. Requires a management key. |
 
 ## Core Inference Endpoints
 
@@ -282,7 +286,7 @@ availability, and server override before implementing it.
 | [ ] | DELETE | `/scim/group-mappings/{id}` | `deleteScimGroupMapping` |
 | [ ] | DELETE | `/vault/interns/{internId}/secrets/{name}` | `deleteInternVaultSecret` |
 | [ ] | DELETE | `/vault/secrets/{name}` | `deleteVaultSecret` |
-| [ ] | DELETE | `/workspaces/{workspace_ref}/budgets/{interval}` | `deleteWorkspaceBudget` |
+| [x] | DELETE | `/workspaces/{workspace_ref}/budgets/{interval}` | `deleteWorkspaceBudget`; alias: `client.workspaces.deleteBudget` |
 | [ ] | GET | `/analytics/meta` | `getAnalyticsMeta` |
 | [ ] | GET | `/benchmarks` | `getBenchmarks` |
 | [ ] | GET | `/classifications/task` | `getTaskClassifications` |
@@ -311,8 +315,8 @@ availability, and server override before implementing it.
 | [ ] | GET | `/vault/interns/{internId}/effective-secrets` | `listInternEffectiveVaultSecrets` |
 | [ ] | GET | `/vault/interns/{internId}/secrets` | `listInternVaultSecrets` |
 | [ ] | GET | `/vault/secrets` | `listVaultSecrets` |
-| [ ] | GET | `/workspaces/{workspace_ref}/budgets` | `listWorkspaceBudgets` |
-| [ ] | GET | `/workspaces/{workspace_ref}/budgets/{interval}` | `getWorkspaceBudget` |
+| [x] | GET | `/workspaces/{workspace_ref}/budgets` | `listWorkspaceBudgets`; alias: `client.workspaces.listBudgets` |
+| [x] | GET | `/workspaces/{workspace_ref}/budgets/{interval}` | `getWorkspaceBudget`; alias: `client.workspaces.getBudget` |
 | [ ] | GET | `/workspaces/{id}/members` | `listWorkspaceMembers` |
 | [ ] | PATCH | `/external-users/{user}` | `updateExternalUser` |
 | [ ] | PATCH | `/organization/settings` | `updateOrganizationSettings` |
@@ -337,7 +341,7 @@ availability, and server override before implementing it.
 | [ ] | PUT | `/private-endpoints/{id}/pricing` | `updatePrivateEndpointPricing` |
 | [ ] | PUT | `/vault/interns/{internId}/secrets/{name}` | `storeInternVaultSecret` |
 | [ ] | PUT | `/vault/secrets/{name}` | `storeVaultSecret` |
-| [ ] | PUT | `/workspaces/{workspace_ref}/budgets/{interval}` | `upsertWorkspaceBudget` |
+| [x] | PUT | `/workspaces/{workspace_ref}/budgets/{interval}` | `upsertWorkspaceBudget`; alias: `client.workspaces.upsertBudget` |
 
 ## Notes
 

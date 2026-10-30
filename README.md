@@ -63,5 +63,6 @@ Endpoint coverage and deferred namespaces are tracked in
 - Consider pagination helpers as paginated-resource coverage grows; supported
   endpoint pagination parameters are already exposed individually.
 - Organization member listing is supported with management keys.
-- Workspace member listing/budgets, other organization APIs, guardrails, BYOK, and
+- Workspace budget list/get/upsert/delete is supported with management keys.
+- Workspace member listing, other organization APIs, guardrails, BYOK, and
   other unimplemented namespaces remain deferred; see the tracker for details.
