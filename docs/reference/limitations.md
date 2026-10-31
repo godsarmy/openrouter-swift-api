@@ -12,7 +12,7 @@ tags: [limitations, beta, roadmap, sse]
   deltas; provider-specific beta fields may still require `rawPayload`.
 - Workspace list/get/create/update/delete and member list/add/remove are implemented;
   organization APIs other than member listing,
-  guardrails, other beta namespaces, and some analytics
+  other beta namespaces and some analytics
   capabilities are not yet implemented. Activity and daily-ranking endpoints are implemented; consult
   [endpoint coverage](endpoint-coverage.md) for the precise inventory.
 - Organization member listing requires a management key and supports manual or async
@@ -50,6 +50,13 @@ tags: [limitations, beta, roadmap, sse]
   omitted. Policy bounds/combinations and UUID inputs are server-validated.
   Region/ZDR declarations are self-reported, not verified privacy guarantees.
   Deletion wipes secret material; ambiguous mutations must not be blindly retried.
+- [Guardrails](../guides/guardrails.md) require management keys. Creating a
+  guardrail in a workspace does not assign it or enforce it on workspace traffic.
+  Nullable PATCH settings support omission/null/value; create nil settings omit.
+  Listing is manually paginated; bulk operations accept 1–500 nonempty IDs/hashes.
+  UUIDs, policy bounds, and combinations are server-validated. The SDK transports
+  content filters and privacy policies; it does not execute filters locally or
+  guarantee application security. Mutation retries require caller care.
 - The [streaming](../guides/streaming.md) SSE parser supports multiline frames.
   Image streams retain optional event names; SSE IDs/retry metadata do not
   provide automatic reconnection or resumable generation.

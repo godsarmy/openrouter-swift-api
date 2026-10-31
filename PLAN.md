@@ -47,8 +47,8 @@ No Zig files were changed by this review.
 ## P1 — Close coherent Swift management API gaps
 
 These groups are implemented in Zig and absent from Swift at the review baseline.
-BYOK is implemented. **Next implementation: guardrails**, ahead of expanding
-pagination convenience APIs.
+BYOK and guardrails are implemented. **Next implementation: observability
+destinations**, ahead of expanding pagination convenience APIs.
 
 - [x] **BYOK (5 operations):** list/create at `/byok`; get/update/delete at
   `/byok/{id}`. Reference: `Zig: src/byok.zig`, `ByokResource` in `src/client.zig`.
@@ -56,9 +56,11 @@ pagination convenience APIs.
   versus omitted update values, and request-only provider secrets.
   Swift follows the October 30 schema, including policy fields absent from the
   reviewed Zig models; Zig still needs a BYOK field-parity follow-up.
-- [ ] **Guardrails (13 operations):** CRUD, global key/member assignment reads,
+- [x] **Guardrails (13 operations):** CRUD, global key/member assignment reads,
   per-guardrail assignment reads, and bulk key/member assignment/removal.
   Reference: `Zig: src/guardrails.zig`, `GuardrailsResource`.
+  Swift follows the October 31 schema, with typed filters, nullable PATCH fields,
+  and current privacy/region/training policies. See [guardrails](docs/guides/guardrails.md).
 - [ ] **Observability destinations (5 operations):** list/create/get/update/delete.
   Reference: `Zig: src/observability.zig`, `ObservabilityDestinationsResource`.
 
@@ -113,6 +115,11 @@ milestones rather than one large port.
 
 ## P3 — Align behavior on shared endpoints
 
+- [ ] **Zig follow-up: guardrail policies.** Add the snapshot-backed region, xAI
+  ZDR, safety-retention, publication/training, first-party-harness, and BYOK-budget
+  fields missing from the reviewed Zig models. Align nullable PATCH clearing,
+  required response/count fields, path escaping, and typed builtin scan scopes.
+  Zig already accepts create `workspace_id`; do not treat that as an endpoint gap.
 - [ ] **Zig follow-up: BYOK policies.** Match Swift's snapshot-backed fields:
   `allowed_api_key_hashes`, `is_required`, `is_byok_only`, `declared_region`, and
   `declared_zdr`, and nullable PATCH name/policy handling. Check required response

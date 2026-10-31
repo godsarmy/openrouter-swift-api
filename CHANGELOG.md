@@ -6,6 +6,8 @@ This project follows semantic versioning once public releases are tagged.
 
 ## Unreleased
 
+- Added all 13 management-key guardrail operations: policy CRUD, global/scoped key/member assignment listing, and bulk assignment/removal. Models include current privacy, region, budget, training, and typed content-filter settings with explicit nullable PATCH updates.
+- Refreshed endpoint inventory to the October 31 146-operation snapshot; Swift implements 75 operations. Alpha Extractions remains unimplemented.
 - Added management-key BYOK list/create/get/update/delete APIs, typed masked responses, secret-redacted requests, and explicit omit/null/value PATCH settings.
 - Added a repeatable Swift/Zig tracker comparison tool and a shared 145-operation OpenAPI baseline; Swift now implements 62 operations in that snapshot.
 - Added on-demand async member pagination via `workspaces.members` and `organization.members`, with independent iterators, cancellation checks, and terminal error propagation. Existing page methods remain available.

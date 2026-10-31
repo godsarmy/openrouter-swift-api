@@ -23,18 +23,19 @@ separate from this dated OpenAPI inventory and does not change implemented statu
 
 ## Audit source and scope
 
-Endpoint inventory checked on **2026-10-30** against a fresh download of the
+Endpoint inventory checked on **2026-10-31** against a fresh download of the
 official OpenAPI specification (OpenAPI 3.1.0, `info.version: 1.0.0`).
 
 | Inventory | Unique method/path operations |
 |---|---:|
-| Listed in the current specification | 145 |
-| Current-spec operations implemented by the SDK | 62 |
-| Current-spec operations not implemented | 83 |
+| Listed in the current specification | 146 |
+| Current-spec operations implemented by the SDK | 75 |
+| Current-spec operations not implemented | 71 |
 | Additional SDK legacy operations absent from the specification | 1 |
 
 The October 26 audit corrected 72 earlier omissions; this snapshot adds five
-private-provider operations and a private-endpoint parameter update. See the
+private-provider operations and a private-endpoint parameter update. October 31
+adds alpha Extractions; the 13 guardrail routes are unchanged. See the
 [cross-SDK baseline](sdk-parity.md) for the snapshot digest and comparison method.
 Table statuses reflect subsequent SDK additions. Repeated summary/detail rows do
 not count as separate operations. Coverage is matched by **HTTP method and path**:
@@ -60,9 +61,9 @@ https://openrouter.ai/api/v1
 ```
 
 Endpoint paths below are relative to the base URL, except
-`POST /api/alpha/decisions`: its operation-level server override is
-`https://openrouter.ai`, so its full URL is
-`https://openrouter.ai/api/alpha/decisions`.
+`POST /api/alpha/decisions` and `POST /api/alpha/extractions`: their server override is
+`https://openrouter.ai`, so the full URLs are
+`https://openrouter.ai/api/alpha/decisions` or `https://openrouter.ai/api/alpha/extractions`.
 
 Status legend:
 
@@ -136,6 +137,19 @@ Status legend:
 | [x] | GET | `/byok/{id}` | `client.byok.get`, `client.getBYOKKey` | Gets masked metadata, never the provider secret. |
 | [x] | PATCH | `/byok/{id}` | `client.byok.update`, `client.updateBYOKKey` | Rotates secrets or updates policies; nullable settings distinguish omission from explicit null. |
 | [x] | DELETE | `/byok/{id}` | `client.byok.delete`, `client.deleteBYOKKey` | Soft-deletes the credential and wipes its secret; validates `deleted: true`. |
+| [x] | GET | `/guardrails` | `client.guardrails.list`, `client.listGuardrails` | Lists policies with offset/limit and workspace filter; management key required. |
+| [x] | POST | `/guardrails` | `client.guardrails.create`, `client.createGuardrail` | Creates a policy, not an assignment; HTTP 201. |
+| [x] | GET | `/guardrails/{id}` | `client.guardrails.get`, `client.getGuardrail` | Gets policy metadata and settings. |
+| [x] | PATCH | `/guardrails/{id}` | `client.guardrails.update`, `client.updateGuardrail` | Nullable settings distinguish omission/null/value. |
+| [x] | DELETE | `/guardrails/{id}` | `client.guardrails.delete`, `client.deleteGuardrail` | Explicit deletion validates `deleted: true`. |
+| [x] | GET | `/guardrails/{id}/assignments/keys` | `client.guardrails.listKeyAssignments(id:)`, `client.listGuardrailKeyAssignments` | Manually paginated scoped key assignments. |
+| [x] | POST | `/guardrails/{id}/assignments/keys` | `client.guardrails.bulkAssignKeysToGuardrail`, flat alias | Assigns 1–500 nonempty key hashes; typed count. |
+| [x] | POST | `/guardrails/{id}/assignments/keys/remove` | `client.guardrails.bulkUnassignKeysFromGuardrail`, flat alias | Removes key assignments; typed count. |
+| [x] | GET | `/guardrails/{id}/assignments/members` | `client.guardrails.listMemberAssignments(id:)`, `client.listGuardrailMemberAssignments` | Manually paginated scoped member assignments. |
+| [x] | POST | `/guardrails/{id}/assignments/members` | `client.guardrails.bulkAssignMembersToGuardrail`, flat alias | Assigns 1–500 nonempty member user IDs; typed count. |
+| [x] | POST | `/guardrails/{id}/assignments/members/remove` | `client.guardrails.bulkUnassignMembersFromGuardrail`, flat alias | Removes member assignments; typed count. |
+| [x] | GET | `/guardrails/assignments/keys` | `client.guardrails.listKeyAssignments`, `client.listKeyAssignments` | Global key assignments; omit scoped `id` argument. |
+| [x] | GET | `/guardrails/assignments/members` | `client.guardrails.listMemberAssignments`, `client.listMemberAssignments` | Global member assignments; omit scoped `id` argument. |
 
 ## Core Inference Endpoints
 
@@ -204,19 +218,22 @@ Status legend:
 
 | Status | Method | Path | Operation | Description | SDK notes |
 |---|---|---|---|---|---|
-| [ ] | GET | `/guardrails` | `listGuardrails` | List guardrails. Requires management auth. |  |
-| [ ] | POST | `/guardrails` | `createGuardrail` | Create a guardrail. |  |
-| [ ] | GET | `/guardrails/{id}` | `getGuardrail` | Get a guardrail. |  |
-| [ ] | PATCH | `/guardrails/{id}` | `updateGuardrail` | Update a guardrail. |  |
-| [ ] | DELETE | `/guardrails/{id}` | `deleteGuardrail` | Delete a guardrail. |  |
-| [ ] | GET | `/guardrails/{id}/assignments/keys` | `listGuardrailKeyAssignments` | List key assignments for a guardrail. |  |
-| [ ] | POST | `/guardrails/{id}/assignments/keys` | `bulkAssignKeysToGuardrail` | Bulk assign keys to a guardrail. |  |
-| [ ] | POST | `/guardrails/{id}/assignments/keys/remove` | `bulkUnassignKeysFromGuardrail` | Bulk unassign keys from a guardrail. |  |
-| [ ] | GET | `/guardrails/{id}/assignments/members` | `listGuardrailMemberAssignments` | List member assignments for a guardrail. |  |
-| [ ] | POST | `/guardrails/{id}/assignments/members` | `bulkAssignMembersToGuardrail` | Bulk assign members to a guardrail. |  |
-| [ ] | POST | `/guardrails/{id}/assignments/members/remove` | `bulkUnassignMembersFromGuardrail` | Bulk unassign members from a guardrail. |  |
-| [ ] | GET | `/guardrails/assignments/keys` | `listKeyAssignments` | List all key assignments. |  |
-| [ ] | GET | `/guardrails/assignments/members` | `listMemberAssignments` | List all member assignments. |  |
+| [x] | GET | `/guardrails` | `listGuardrails` | List guardrails. Requires management auth. | Alias: `guardrails.list`; workspace filter, pagination and total count. |
+| [x] | POST | `/guardrails` | `createGuardrail` | Create a guardrail. | Alias: `guardrails.create`; does not assign enforcement. |
+| [x] | GET | `/guardrails/{id}` | `getGuardrail` | Get a guardrail. | Alias: `guardrails.get`; typed policies. |
+| [x] | PATCH | `/guardrails/{id}` | `updateGuardrail` | Update a guardrail. | Alias: `guardrails.update`; scoped tri-state nullable fields. |
+| [x] | DELETE | `/guardrails/{id}` | `deleteGuardrail` | Delete a guardrail. | Alias: `guardrails.delete`; validates confirmation. |
+| [x] | GET | `/guardrails/{id}/assignments/keys` | `listGuardrailKeyAssignments` | List key assignments for a guardrail. | Alias: `guardrails.listKeyAssignments(id:)`. |
+| [x] | POST | `/guardrails/{id}/assignments/keys` | `bulkAssignKeysToGuardrail` | Bulk assign keys to a guardrail. | Same-named resource method; typed assigned count. |
+| [x] | POST | `/guardrails/{id}/assignments/keys/remove` | `bulkUnassignKeysFromGuardrail` | Bulk unassign keys from a guardrail. | Same-named resource method; typed unassigned count. |
+| [x] | GET | `/guardrails/{id}/assignments/members` | `listGuardrailMemberAssignments` | List member assignments for a guardrail. | Alias: `guardrails.listMemberAssignments(id:)`. |
+| [x] | POST | `/guardrails/{id}/assignments/members` | `bulkAssignMembersToGuardrail` | Bulk assign members to a guardrail. | Same-named resource method; typed assigned count. |
+| [x] | POST | `/guardrails/{id}/assignments/members/remove` | `bulkUnassignMembersFromGuardrail` | Bulk unassign members from a guardrail. | Same-named resource method; typed unassigned count. |
+| [x] | GET | `/guardrails/assignments/keys` | `listKeyAssignments` | List all key assignments. | Alias: `guardrails.listKeyAssignments()`; global scope. |
+| [x] | GET | `/guardrails/assignments/members` | `listMemberAssignments` | List all member assignments. | Alias: `guardrails.listMemberAssignments()`; global scope. |
+
+See [guardrail policies and assignments](../guides/guardrails.md) for nullable
+settings, server-side validation, and enforcement limits.
 
 ## Workspaces and Organization
 
@@ -365,6 +382,12 @@ availability, and server override before implementing it.
 | [ ] | PATCH | `/private-providers/{slug}` | `updatePrivateProvider` |
 | [ ] | DELETE | `/private-providers/{slug}` | `deletePrivateProvider` |
 | [ ] | PUT | `/private-endpoints/{id}/parameters` | `updatePrivateEndpointParameters` |
+
+## Additional operation in the October 31 snapshot
+
+| Status | Method | Path | Upstream operation ID |
+|---|---|---|---|
+| [ ] | POST | `/api/alpha/extractions` | `createApiAlphaExtractions`; alpha server override, not implemented |
 
 ## Notes
 

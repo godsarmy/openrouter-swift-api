@@ -68,6 +68,21 @@ and Design Arena), intern list/create/get/update/delete, and intern chat, daemon
 daemon signing, invoke, provision, and suspend. Spec absence alone does not prove
 server-side removal. Keep these separate from current-spec coverage targets.
 
+## October 31 guardrails milestone
+
+The guardrails schema review used a fresh **2026-10-31** snapshot, SHA-256
+`745ff17775804896bc882ec6655cb082cf45a9ba36628fc724cb44c5c556380d`.
+It contains **146** operations: the sole route addition relative to October 30
+is `POST /api/alpha/extractions`, with an `https://openrouter.ai` server override.
+All 13 guardrail operation definitions are unchanged between the two snapshots.
+
+With BYOK and all guardrail routes implemented, Swift's tracker covers **75/146**
+operations, with 71 missing and one retained legacy operation. Against the same
+Zig tracker revision above, the trackers share 75 operations; Zig has 75 remaining
+tracker-only operations and Swift alone retains legacy completions. Zig covers
+137/146 current-snapshot operations, with nine missing and 13 retained outside it.
+These counts still measure endpoint presence, not complete policy-field parity.
+
 ## Repeat the comparison
 
 Save one official JSON snapshot, retain its digest with the audit, and run:
@@ -86,7 +101,7 @@ refetching the URL may produce different bytes and is a new baseline.
 
 This route comparison does not prove request/response field parity, auth-header
 behavior, server overrides, streaming semantics, entitlements, or live availability.
-The usual API base is `https://openrouter.ai/api/v1`; alpha Decisions overrides it
-with `https://openrouter.ai`. BYOK inherits the usual base and requires management
+The usual API base is `https://openrouter.ai/api/v1`; alpha Decisions and Extractions
+override it with `https://openrouter.ai`. BYOK and guardrails inherit the usual base and require management
 authentication. Preset semantics, audio encoding, Responses fields, and image
 streaming remain separate contract work in the plan.

@@ -19,6 +19,9 @@ for aliases, supported filters, and authentication requirements.
 For asynchronous provider work, see [batch processing](batches.md). The batch API
 uses inline requests; it is not an uploaded-file workflow.
 
+For management-key policy CRUD and key/member assignments, see
+[guardrails](guardrails.md).
+
 ## Generation metadata
 
 ```swift

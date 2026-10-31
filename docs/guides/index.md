@@ -10,6 +10,7 @@
 - [Messages API](messages.md) - Use Anthropic-compatible messages and streaming events.
 - [Media APIs](media.md) - Discover models, generate or stream images, and use audio/video APIs.
 - [Resource examples](resources.md) - Access generation metadata, discovery, files, workspaces, keys, BYOK, activity, and reranking.
+- [Guardrails](guardrails.md) - Manage policies and explicit key/member assignments with management credentials.
 
 ## Reference
 

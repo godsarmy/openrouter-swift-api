@@ -1,5 +1,10 @@
 # Documentation update log
 
+## 2026-10-31
+
+- **Update**: Added guardrail policy and assignment guidance, nullable updates, content-filter and workspace-enforcement distinctions, mutation cautions, and current-schema parity follow-ups.
+- **Update**: Refreshed the endpoint inventory to the 146-operation October 31 snapshot, recording 75 Swift implementations and deferred alpha Extractions; preserved the historical cross-SDK baseline.
+
 ## 2026-10-30
 
 - **Update**: Documented BYOK management APIs, nullable PATCH policies, write-only secrets, mutation cautions, and 62/145 snapshot operation coverage; moved the next milestone to guardrails.
