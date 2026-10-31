@@ -25,12 +25,15 @@ No Zig files were changed by this review.
 
 ## P0 — Establish a comparable baseline
 
-- [ ] Compare both method/path inventories against the **same saved OpenAPI
+- [x] Compare both method/path inventories against the **same saved OpenAPI
   snapshot**, recording its date and digest. Normalize path parameter names and
   expand combined HTTP verbs. Distinguish current-spec, retained/non-spec,
   deprecated, and unimplemented operations rather than comparing headline counts.
-- [ ] Record a repeatable cross-SDK route diff so new endpoints cannot silently
-  land in only one SDK. Include operation-level server overrides and auth mode.
+  Results and limitations: [shared snapshot baseline](docs/reference/sdk-parity.md).
+- [x] Record a repeatable cross-SDK route diff with
+  `scripts/compare_api_coverage.py`; snapshot auth and the known server override
+  are recorded in the baseline. This is an explicit review tool, not a CI gate
+  or a full auth/server-override validator.
 - [ ] Resolve known contract disagreements before porting behavior: preset POSTs
   are labeled inference in Zig's coverage but configuration-only in Swift's
   tracker; Zig transcription serializes JSON `input_audio` (`Zig: src/audio.zig`),
@@ -44,12 +47,15 @@ No Zig files were changed by this review.
 ## P1 — Close coherent Swift management API gaps
 
 These groups are implemented in Zig and absent from Swift at the review baseline.
-**Next implementation: BYOK**, ahead of expanding pagination convenience APIs.
+BYOK is implemented. **Next implementation: guardrails**, ahead of expanding
+pagination convenience APIs.
 
-- [ ] **BYOK (5 operations):** list/create at `/byok`; get/update/delete at
+- [x] **BYOK (5 operations):** list/create at `/byok`; get/update/delete at
   `/byok/{id}`. Reference: `Zig: src/byok.zig`, `ByokResource` in `src/client.zig`.
   Preserve management authentication, workspace/provider filters, explicit-null
   versus omitted update values, and request-only provider secrets.
+  Swift follows the October 30 schema, including policy fields absent from the
+  reviewed Zig models; Zig still needs a BYOK field-parity follow-up.
 - [ ] **Guardrails (13 operations):** CRUD, global key/member assignment reads,
   per-guardrail assignment reads, and bulk key/member assignment/removal.
   Reference: `Zig: src/guardrails.zig`, `GuardrailsResource`.
@@ -107,6 +113,10 @@ milestones rather than one large port.
 
 ## P3 — Align behavior on shared endpoints
 
+- [ ] **Zig follow-up: BYOK policies.** Match Swift's snapshot-backed fields:
+  `allowed_api_key_hashes`, `is_required`, `is_byok_only`, `declared_region`, and
+  `declared_zdr`, and nullable PATCH name/policy handling. Check required response
+  fields as well; endpoint presence in both SDKs does not establish field parity.
 - [ ] **Zig follow-up: image SSE.** Swift already supports incremental image
   events, terminal/error validation, and buffered JSON fallback; Zig currently
   forces buffered `stream: false`. Match observable behavior, not Swift types.

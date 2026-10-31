@@ -2,6 +2,8 @@
 
 ## 2026-10-30
 
+- **Update**: Documented BYOK management APIs, nullable PATCH policies, write-only secrets, mutation cautions, and 62/145 snapshot operation coverage; moved the next milestone to guardrails.
+- **Update**: Recorded a shared 145-operation OpenAPI snapshot, normalized Swift/Zig tracker comparison, retained-route exceptions, and six newly inventoried management operations.
 - **Update**: Added source-referenced Swift/Zig API parity TODOs, prioritized BYOK, guardrails, and observability gaps, and separated shared contract checks and Zig follow-ups from endpoint-presence claims.
 
 ## 2026-10-29

@@ -1,8 +1,8 @@
 ---
 type: Guide
 title: Resource examples
-description: Access generation metadata, discovery, files, workspaces, organization members, keys, activity, and reranking.
-tags: [resources, models, files, workspaces, organization, keys, authentication, rerank]
+description: Access generation metadata, discovery, files, workspaces, organization members, keys, BYOK, activity, and reranking.
+tags: [resources, models, files, workspaces, organization, keys, byok, authentication, rerank]
 sources:
   - resource: https://openrouter.ai/docs/use-cases/oauth-pkce
     title: OpenRouter OAuth PKCE guide
@@ -47,6 +47,67 @@ Credits and activity require a management API key.
 
 Dedicated image-model and provider-capability discovery is documented in
 [Media APIs](media.md#image-model-discovery), separately from generic model discovery.
+
+## BYOK provider credentials
+
+Use a client configured with a **management API key**. Read operations return
+masked metadata, never the provider's raw secret:
+
+```swift
+let credentials = try await client.byok.list(offset: 0, limit: 25, provider: "openai")
+let totalCredentials = credentials.totalCount
+if let id = credentials.data.first?.id {
+  let credential = try await client.byok.get(id: id)
+  let maskedLabel = credential.data.label
+}
+```
+
+List also accepts `workspaceID`. Omitted workspace filters resolve to the account's
+default workspace; if deleted, pass an explicit workspace UUID or the server
+returns HTTP 400. List pagination is manual, with defaults 0/50 and server bounds
+offset >= 0 and limit 1–100. Returned `workspaceID == nil` means a global credential,
+not the default workspace. IDs/workspace inputs are strings; the server validates
+UUIDs. IDs are escaped as single path segments.
+
+Creation, updates, and deletion change provider routing or credentials. Run only
+after approving the intended change. Load `providerAPIKey` securely before this
+example; never commit it or print the encoded request:
+
+```swift
+let created = try await client.byok.create(
+  .init(provider: "openai", key: providerAPIKey, name: "Production")
+)
+let updated = try await client.byok.update(
+  id: created.data.id,
+  .init(allowedModels: .value(["openai/gpt-4o-mini"]), name: .null)
+)
+// Explicitly approve secret removal before uncommenting:
+// let deleted = try await client.byok.delete(id: created.data.id)
+```
+
+Flat aliases are `listBYOKKeys`, `createBYOKKey`, `getBYOKKey`, `updateBYOKKey`,
+and `deleteBYOKKey`; resource and flat methods accept `RequestOptions`. Create
+requires `provider` and a nonempty `key`, and optionally scopes to `workspaceID`.
+PATCH may rotate `key`, but cannot change provider/workspace. Nullable settings
+use `BYOKField`: `.unchanged` omits, `.null` clears, `.value(...)` assigns. Create
+optionals omit nil values. Secret-bearing request descriptions and reflection
+are redacted; JSON encoding intentionally contains the secret for transmission.
+
+Policies include `allowedModels`, `allowedUserIDs`, `allowedAPIKeyHashes`,
+`isRequired`, `isBYOKOnly`, `isFallback`, `disabled`, `declaredRegion`, and
+`declaredZDR`. Null allowlists remove restrictions; supplied API-key hash lists
+require 1–100 account-owned hashes. The server validates policy combinations:
+`isBYOKOnly` cannot be combined with `isFallback`. `isRequired` removes shared
+provider capacity for the credential's model scope; `isBYOKOnly` removes it for
+every model on that provider. Region/ZDR declarations are self-reported, not
+independent privacy guarantees; null clears the declaration/inherits policy.
+OpenAI/Fireworks key rotation may re-derive the region from key material.
+
+Deletion soft-deletes the credential and wipes its secret; success requires
+`deleted: true`. No mutation happens automatically. Retries default to disabled;
+do not blindly retry ambiguous creation, rotation, or deletion failures. Normal
+typed API errors expose authentication, permission, validation, not-found, and
+conflict failures. No live management mutation was used to validate this support.
 
 ## Workspace discovery
 

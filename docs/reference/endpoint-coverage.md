@@ -23,18 +23,20 @@ separate from this dated OpenAPI inventory and does not change implemented statu
 
 ## Audit source and scope
 
-Endpoint inventory checked on **2026-10-26** against a fresh download of the
+Endpoint inventory checked on **2026-10-30** against a fresh download of the
 official OpenAPI specification (OpenAPI 3.1.0, `info.version: 1.0.0`).
 
 | Inventory | Unique method/path operations |
 |---|---:|
-| Listed in the current specification | 139 |
-| Current-spec operations implemented by the SDK | 57 |
-| Current-spec operations not implemented | 82 |
+| Listed in the current specification | 145 |
+| Current-spec operations implemented by the SDK | 62 |
+| Current-spec operations not implemented | 83 |
 | Additional SDK legacy operations absent from the specification | 1 |
 
-The earlier tracker omitted 72 current-spec operations; those are now included
-below. Table statuses reflect subsequent SDK additions. Repeated summary/detail rows do
+The October 26 audit corrected 72 earlier omissions; this snapshot adds five
+private-provider operations and a private-endpoint parameter update. See the
+[cross-SDK baseline](sdk-parity.md) for the snapshot digest and comparison method.
+Table statuses reflect subsequent SDK additions. Repeated summary/detail rows do
 not count as separate operations. Coverage is matched by **HTTP method and path**:
 `POST /files` upload does not implement `GET /files` listing.
 
@@ -129,6 +131,11 @@ Status legend:
 | [x] | PUT | `/workspaces/{workspace_ref}/budgets/{interval}` | `client.workspaces.upsertBudget`, `client.upsertWorkspaceBudget` | Sets a positive USD limit with immediate enforcement and optional workspace-wide BYOK setting. Requires a management key. |
 | [x] | DELETE | `/workspaces/{workspace_ref}/budgets/{interval}` | `client.workspaces.deleteBudget`, `client.deleteWorkspaceBudget` | Removes only this interval, including when already absent; BYOK setting unchanged. Requires a management key. |
 | [x] | GET | `/workspaces/{id}/members` | `client.workspaces.listMembers`, `client.listWorkspaceMembers` | Lists workspace memberships with offset/limit pagination and total count. Default workspaces include all organization members; management key required. |
+| [x] | GET | `/byok` | `client.byok.list`, `client.listBYOKKeys` | Lists masked provider credentials with offset/limit and workspace/provider filters; management key required. |
+| [x] | POST | `/byok` | `client.byok.create`, `client.createBYOKKey` | Creates a write-only provider credential with workspace and routing policies; management key required. |
+| [x] | GET | `/byok/{id}` | `client.byok.get`, `client.getBYOKKey` | Gets masked metadata, never the provider secret. |
+| [x] | PATCH | `/byok/{id}` | `client.byok.update`, `client.updateBYOKKey` | Rotates secrets or updates policies; nullable settings distinguish omission from explicit null. |
+| [x] | DELETE | `/byok/{id}` | `client.byok.delete`, `client.deleteBYOKKey` | Soft-deletes the credential and wipes its secret; validates `deleted: true`. |
 
 ## Core Inference Endpoints
 
@@ -187,11 +194,11 @@ Status legend:
 | [x] | DELETE | `/keys/{hash}` | `delete` | Permanently delete an API key. | Implemented in `OpenRouterClient.deleteAPIKey`; resource alias: `client.keys.delete`. Requires a management key and returns `DeleteAPIKeyResponse(deleted: true)` on successful confirmation. |
 | [x] | POST | `/auth/keys/code` | `createAuthKeysCode` | Create an authorization code. | Implemented in `OpenRouterClient.createAuthKeysCode`; resource alias: `client.auth.keys.createCode`. Requires a management key; supports PKCE and returns a single-use code that expires after approximately 10 minutes. |
 | [x] | POST | `/auth/keys` | `exchangeAuthCodeForAPIKey` | Exchange an authorization code for an API key. | Implemented in `OpenRouterClient.exchangeAuthCodeForAPIKey`; resource alias: `client.auth.keys.exchange`. Supports optional PKCE verifier/method, requires no bearer key, and redacts credential descriptions. |
-| [ ] | GET | `/byok` | `listBYOKKeys` | List BYOK provider credentials. Requires management auth. |  |
-| [ ] | POST | `/byok` | `createBYOKKey` | Create a BYOK provider credential. |  |
-| [ ] | GET | `/byok/{id}` | `getBYOKKey` | Get a BYOK provider credential. |  |
-| [ ] | PATCH | `/byok/{id}` | `updateBYOKKey` | Update a BYOK provider credential. |  |
-| [ ] | DELETE | `/byok/{id}` | `deleteBYOKKey` | Delete a BYOK provider credential. |  |
+| [x] | GET | `/byok` | `listBYOKKeys` | List BYOK provider credentials. Requires management auth. | Alias: `client.byok.list`; offset/limit, workspace/provider filters and total count. |
+| [x] | POST | `/byok` | `createBYOKKey` | Create a BYOK provider credential. | Alias: `client.byok.create`; raw key is request-only; HTTP 201. |
+| [x] | GET | `/byok/{id}` | `getBYOKKey` | Get a BYOK provider credential. | Alias: `client.byok.get`; masked metadata. |
+| [x] | PATCH | `/byok/{id}` | `updateBYOKKey` | Update a BYOK provider credential. | Alias: `client.byok.update`; nullable policies and optional secret rotation. |
+| [x] | DELETE | `/byok/{id}` | `deleteBYOKKey` | Delete a BYOK provider credential. | Alias: `client.byok.delete`; explicit mutation, not automatic cleanup. |
 
 ## Guardrails
 
@@ -279,9 +286,9 @@ the existing upload API.
 
 ## Additional spec-listed operations
 
-These 61 operations were missing from the earlier tracker and have no SDK
-implementation. Names in the last column are upstream operation IDs, **not**
-existing Swift methods. Check each operation's schema, authentication,
+These operations were missing from the earlier tracker; checkboxes reflect
+subsequent implementations. Names on unchecked rows are upstream operation IDs,
+**not** existing Swift methods. Check each operation's schema, authentication,
 availability, and server override before implementing it.
 
 | Status | Method | Path | Upstream operation ID |
@@ -347,6 +354,17 @@ availability, and server override before implementing it.
 | [ ] | PUT | `/vault/interns/{internId}/secrets/{name}` | `storeInternVaultSecret` |
 | [ ] | PUT | `/vault/secrets/{name}` | `storeVaultSecret` |
 | [x] | PUT | `/workspaces/{workspace_ref}/budgets/{interval}` | `upsertWorkspaceBudget`; alias: `client.workspaces.upsertBudget` |
+
+## Additional operations in the October 30 snapshot
+
+| Status | Method | Path | Upstream operation ID |
+|---|---|---|---|
+| [ ] | GET | `/private-providers` | `listPrivateProviders` |
+| [ ] | POST | `/private-providers` | `createPrivateProvider` |
+| [ ] | GET | `/private-providers/{slug}` | `getPrivateProvider` |
+| [ ] | PATCH | `/private-providers/{slug}` | `updatePrivateProvider` |
+| [ ] | DELETE | `/private-providers/{slug}` | `deletePrivateProvider` |
+| [ ] | PUT | `/private-endpoints/{id}/parameters` | `updatePrivateEndpointParameters` |
 
 ## Notes
 

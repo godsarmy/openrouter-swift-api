@@ -44,6 +44,12 @@ tags: [limitations, beta, roadmap, sse]
   leaves the setting unchanged. Deletion removes only the selected interval and
   succeeds even if absent; it does not reset BYOK settings. See the
   [budget examples and contracts](../guides/resources.md#workspace-budgets).
+- [BYOK credentials](../guides/resources.md#byok-provider-credentials) require
+  management keys. Raw provider secrets are write-only; response labels are
+  masked. Updates support explicit null clearing, but create nil values are
+  omitted. Policy bounds/combinations and UUID inputs are server-validated.
+  Region/ZDR declarations are self-reported, not verified privacy guarantees.
+  Deletion wipes secret material; ambiguous mutations must not be blindly retried.
 - The [streaming](../guides/streaming.md) SSE parser supports multiline frames.
   Image streams retain optional event names; SSE IDs/retry metadata do not
   provide automatic reconnection or resumable generation.

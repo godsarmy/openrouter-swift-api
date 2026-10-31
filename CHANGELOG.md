@@ -6,6 +6,8 @@ This project follows semantic versioning once public releases are tagged.
 
 ## Unreleased
 
+- Added management-key BYOK list/create/get/update/delete APIs, typed masked responses, secret-redacted requests, and explicit omit/null/value PATCH settings.
+- Added a repeatable Swift/Zig tracker comparison tool and a shared 145-operation OpenAPI baseline; Swift now implements 62 operations in that snapshot.
 - Added on-demand async member pagination via `workspaces.members` and `organization.members`, with independent iterators, cancellation checks, and terminal error propagation. Existing page methods remain available.
 
 ## 0.6.0 - 2026-10-29

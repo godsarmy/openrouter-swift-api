@@ -58,8 +58,9 @@ and applications retain control of execution.
 Endpoint coverage and deferred namespaces are tracked in
 [Endpoint coverage](docs/reference/endpoint-coverage.md). The prioritized
 [Swift / Zig API parity TODOs](PLAN.md) track the shared API goal and source-review
-baseline. **Next: BYOK management**, followed by guardrails and observability
-destinations; broader pagination helpers are secondary to closing API gaps.
+baseline. BYOK management is implemented; **next: guardrails**, followed by
+observability destinations. Broader pagination helpers are secondary to closing
+API gaps. See the [shared snapshot baseline](docs/reference/sdk-parity.md).
 
 Remaining follow-ups:
 
@@ -71,5 +72,5 @@ Remaining follow-ups:
 - Organization member listing is supported with management keys.
 - Workspace budget list/get/upsert/delete is supported with management keys.
 - Workspace member listing is supported with management keys and optional async pagination.
-- Other organization APIs, guardrails, BYOK, and
+- Other organization APIs, guardrails, and
   other unimplemented namespaces remain deferred; see the tracker for details.
