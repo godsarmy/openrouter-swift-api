@@ -97,6 +97,18 @@ extensible objects. Both request and response configs must be treated as
 sensitive. Endpoint parity does not imply fully typed provider-schema parity or
 verified forwarding behavior.
 
+## October 31 presets milestone
+
+The seven preset routes use the same verified snapshot. The POST descriptions
+explicitly create configuration or new versions, not inference; non-overlapping
+request fields are ignored server-side. Swift preserves the supplied body and
+returns preset/version metadata using ordinary JSON transport.
+
+Swift's tracker now covers **87/146** snapshot operations, with 59 missing and one
+retained legacy operation. Against the Zig baseline, 87 operations are shared and
+63 remain Zig-only; legacy completions remains Swift-only. This is route parity,
+not proof of provider-field parity or live account authorization.
+
 ## Repeat the comparison
 
 Save one official JSON snapshot, retain its digest with the audit, and run:
@@ -117,5 +129,7 @@ This route comparison does not prove request/response field parity, auth-header
 behavior, server overrides, streaming semantics, entitlements, or live availability.
 The usual API base is `https://openrouter.ai/api/v1`; alpha Decisions and Extractions
 override it with `https://openrouter.ai`. BYOK, guardrails, and observability inherit
-the usual base and require management authentication. Preset semantics, audio encoding, Responses fields, and image
-streaming remain separate contract work in the plan.
+the usual base and require management authentication, as do preset management
+operations. Preset POST semantics are resolved; Zig's wording/body rewrite still
+needs alignment. Audio encoding, Responses fields, and image streaming remain
+separate contract work in the plan.

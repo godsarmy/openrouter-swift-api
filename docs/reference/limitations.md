@@ -64,6 +64,12 @@ tags: [limitations, beta, roadmap, sse]
   encoding and extracted configs/filters can expose sensitive values. Listing is
   manually paginated; bounds/configs are server-validated. Deletion is soft deletion
   and does not erase data already forwarded to an external provider.
+- [Preset POSTs](../guides/presets.md) create configuration or new versions, not
+  inference. The server persists only overlapping config fields and ignores
+  non-config inputs; the SDK does not rewrite submitted bodies. Typed writes
+  inherit existing request-model field coverage; direct JSON-object overloads
+  support additional fields. Listing is manually paginated and versions may be
+  null per the schema. Repeating ambiguous writes may create additional versions.
 - The [streaming](../guides/streaming.md) SSE parser supports multiline frames.
   Image streams retain optional event names; SSE IDs/retry metadata do not
   provide automatic reconnection or resumable generation.

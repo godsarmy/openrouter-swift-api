@@ -25,6 +25,8 @@ For management-key policy CRUD and key/member assignments, see
 For external telemetry configuration and forwarding policies, see
 [observability destinations](observability.md).
 
+For saved configuration and version history, see [presets](presets.md).
+
 ## Generation metadata
 
 ```swift

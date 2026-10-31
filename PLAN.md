@@ -34,11 +34,12 @@ No Zig files were changed by this review.
   `scripts/compare_api_coverage.py`; snapshot auth and the known server override
   are recorded in the baseline. This is an explicit review tool, not a CI gate
   or a full auth/server-override validator.
-- [ ] Resolve known contract disagreements before porting behavior: preset POSTs
-  are labeled inference in Zig's coverage but configuration-only in Swift's
-  tracker; Zig transcription serializes JSON `input_audio` (`Zig: src/audio.zig`),
-  whereas Swift constructs a multipart file upload. Check the current official
-  contract, not whichever SDK was implemented first.
+- [x] Resolve preset POST semantics: the verified October 31 specification says
+  configuration writes/new versions, not inference. Zig's coverage wording and
+  chat-body `stream = false` rewrite still need correction.
+- [ ] Resolve audio request encoding: Zig transcription serializes JSON
+  `input_audio` (`Zig: src/audio.zig`), whereas Swift constructs a multipart file
+  upload. Check the current official contract, not whichever SDK was implemented first.
 - [ ] Track common upstream gaps, not just differences: neither SDK implements
   `GET /vault/interns/{internId}/connections`, listed in Swift's dated spec
   inventory and acknowledged as missing in Zig's coverage. Reconfirm its contract
@@ -47,9 +48,8 @@ No Zig files were changed by this review.
 ## P1 — Close coherent Swift management API gaps
 
 These groups are implemented in Zig and absent from Swift at the review baseline.
-BYOK, guardrails, and observability destinations are implemented. **Next:
-presets**, after resolving configuration-versus-inference semantics, ahead of
-expanding pagination convenience APIs.
+BYOK, guardrails, observability destinations, and presets are implemented.
+**Next: external-user management**, ahead of expanding pagination convenience APIs.
 
 - [x] **BYOK (5 operations):** list/create at `/byok`; get/update/delete at
   `/byok/{id}`. Reference: `Zig: src/byok.zig`, `ByokResource` in `src/client.zig`.
@@ -79,9 +79,11 @@ All groups below have Zig implementations; account access and contract stability
 must be checked independently before implementation. Split these into bounded
 milestones rather than one large port.
 
-- [ ] **Presets:** list/get, version list/get, and the three POST configuration
-  routes. Resolve configuration-versus-inference semantics first.
+- [x] **Presets:** list/get, version list/get, and the three POST configuration
+  routes. Configuration-only semantics confirmed from the verified specification.
   Reference: `Zig: src/presets.zig`.
+  Swift offers typed and direct JSON-object write bodies, required-nullable version
+  handling, safe slug/version escaping, and no stream/body rewriting.
 - [ ] **External users:** list/create/get/update/delete under `/external-users`.
   Preserve soft-deactivation and HTTP 204 semantics; do not describe deletion as
   revoking inference access. Reference: `Zig: src/end_users.zig`.
@@ -119,6 +121,10 @@ milestones rather than one large port.
 
 ## P3 — Align behavior on shared endpoints
 
+- [ ] **Zig follow-up: preset semantics.** Correct inference labels for preset
+  configuration writes and stop forcing chat `stream = false`. Preserve the
+  supplied body, server-owned config selection, nullable version references, and
+  required nonnull config objects; review path escaping and version-write retries.
 - [ ] **Zig follow-up: observability policies.** Add regions and all four broadcast
   flags to request/response models, align required response/count fields and safe
   ID escaping, and review sensitive config/filter diagnostics. Preserve explicit

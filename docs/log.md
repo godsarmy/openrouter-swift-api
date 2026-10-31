@@ -2,6 +2,8 @@
 
 ## 2026-10-31
 
+- **Update**: Added preset configuration/version guidance, confirmed that API-shaped POSTs do not run inference, and documented nullable versions, direct JSON-object bodies, and ambiguous-write retry cautions.
+- **Update**: Recorded seven implemented preset operations (87/146 snapshot coverage), split resolved preset semantics from deferred audio encoding, and moved the next milestone to external-user management.
 - **Update**: Added observability destination guidance, config sensitivity and redaction limits, explicit forwarding controls, nullable filter updates, and soft-deletion cautions.
 - **Update**: Recorded five implemented observability operations (80/146 snapshot coverage), moved the next milestone to presets, and retained Zig field-parity follow-ups.
 - **Update**: Added guardrail policy and assignment guidance, nullable updates, content-filter and workspace-enforcement distinctions, mutation cautions, and current-schema parity follow-ups.

@@ -29,8 +29,8 @@ official OpenAPI specification (OpenAPI 3.1.0, `info.version: 1.0.0`).
 | Inventory | Unique method/path operations |
 |---|---:|
 | Listed in the current specification | 146 |
-| Current-spec operations implemented by the SDK | 80 |
-| Current-spec operations not implemented | 66 |
+| Current-spec operations implemented by the SDK | 87 |
+| Current-spec operations not implemented | 59 |
 | Additional SDK legacy operations absent from the specification | 1 |
 
 The October 26 audit corrected 72 earlier omissions; this snapshot adds five
@@ -155,6 +155,13 @@ Status legend:
 | [x] | GET | `/observability/destinations/{id}` | `client.observability.destinations.get`, `client.getObservabilityDestination` | Common typed metadata, extensible sensitive config object. |
 | [x] | PATCH | `/observability/destinations/{id}` | `client.observability.destinations.update`, `client.updateObservabilityDestination` | Partial config and policy updates; nullable key/filter clearing. |
 | [x] | DELETE | `/observability/destinations/{id}` | `client.observability.destinations.delete`, `client.deleteObservabilityDestination` | Explicit soft deletion validates `deleted: true`. |
+| [x] | GET | `/presets` | `client.presets.list`, `client.listPresets` | Manually paginated metadata, most recently updated first; management key required. |
+| [x] | GET | `/presets/{slug}` | `client.presets.get`, `client.getPreset` | Gets metadata with nullable designated version inline. |
+| [x] | GET | `/presets/{slug}/versions` | `client.presets.listVersions`, `client.listPresetVersions` | Manually paginated version list, oldest first. |
+| [x] | GET | `/presets/{slug}/versions/{version}` | `client.presets.getVersion`, `client.getPresetVersion` | Version number string selector; nullable version detail. |
+| [x] | POST | `/presets/{slug}/chat/completions` | `client.presets.createFromChatCompletions`, `client.createPresetsChatCompletions` | Configuration/new-version write, not inference; typed/raw-object body, HTTP 200. |
+| [x] | POST | `/presets/{slug}/messages` | `client.presets.createFromMessages`, `client.createPresetsMessages` | Configuration/new-version write, not inference; no body rewriting. |
+| [x] | POST | `/presets/{slug}/responses` | `client.presets.createFromResponses`, `client.createPresetsResponses` | Configuration/new-version write, not inference; ordinary JSON transport. |
 
 ## Core Inference Endpoints
 
@@ -305,9 +312,14 @@ the existing upload API.
 
 | Status | Method | Path | Operation | Description | SDK notes |
 |---|---|---|---|---|---|
-| [ ] | POST | `/presets/{slug}/chat/completions` | `createPresetsChatCompletions` | Create or update a preset from a chat-completions-shaped body. | Does not execute inference. |
-| [ ] | POST | `/presets/{slug}/messages` | `createPresetsMessages` | Create or update a preset from a Messages-shaped body. | Does not execute inference. |
-| [ ] | POST | `/presets/{slug}/responses` | `createPresetsResponses` | Create or update a preset from a Responses-shaped body. | Does not execute inference. |
+| [x] | POST | `/presets/{slug}/chat/completions` | `createPresetsChatCompletions` | Create a preset or new version from a chat-completions-shaped body. | Alias: `presets.createFromChatCompletions`; does not execute inference. |
+| [x] | POST | `/presets/{slug}/messages` | `createPresetsMessages` | Create a preset or new version from a Messages-shaped body. | Alias: `presets.createFromMessages`; does not execute inference. |
+| [x] | POST | `/presets/{slug}/responses` | `createPresetsResponses` | Create a preset or new version from a Responses-shaped body. | Alias: `presets.createFromResponses`; does not execute inference. |
+
+All preset operations require management credentials. Reads are available through
+`presets.list`, `presets.get`, `presets.listVersions`, and `presets.getVersion`;
+see [preset configuration and versions](../guides/presets.md). Writes preserve the
+submitted body; the server ignores fields that do not overlap saved configuration.
 
 ## Additional spec-listed operations
 
@@ -336,10 +348,10 @@ availability, and server override before implementing it.
 | [ ] | GET | `/external-users/{user}` | `getExternalUser` |
 | [ ] | GET | `/oauth/jwks` | `listOauthJwks` |
 | [ ] | GET | `/organization/settings` | `getOrganizationSettings` |
-| [ ] | GET | `/presets` | `listPresets` |
-| [ ] | GET | `/presets/{slug}` | `getPreset` |
-| [ ] | GET | `/presets/{slug}/versions` | `listPresetVersions` |
-| [ ] | GET | `/presets/{slug}/versions/{version}` | `getPresetVersion` |
+| [x] | GET | `/presets` | `listPresets`; alias: `client.presets.list` |
+| [x] | GET | `/presets/{slug}` | `getPreset`; alias: `client.presets.get` |
+| [x] | GET | `/presets/{slug}/versions` | `listPresetVersions`; alias: `client.presets.listVersions` |
+| [x] | GET | `/presets/{slug}/versions/{version}` | `getPresetVersion`; alias: `client.presets.getVersion` |
 | [ ] | GET | `/private-endpoints` | `listPrivateEndpoints` |
 | [ ] | GET | `/private-endpoints/{id}` | `getPrivateEndpoint` |
 | [ ] | GET | `/scim/group-mappings` | `listScimGroupMappings` |
