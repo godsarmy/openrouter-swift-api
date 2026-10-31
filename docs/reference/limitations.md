@@ -57,6 +57,13 @@ tags: [limitations, beta, roadmap, sse]
   UUIDs, policy bounds, and combinations are server-validated. The SDK transports
   content filters and privacy policies; it does not execute filters locally or
   guarantee application security. Mutation retries require caller care.
+- [Observability destinations](../guides/observability.md) require management keys
+  and can forward data to external systems. Provider configs are extensible objects,
+  not fully typed provider-specific schemas. Response credentials are not guaranteed
+  to be omitted or masked. Debug descriptions are redacted, but explicit JSON
+  encoding and extracted configs/filters can expose sensitive values. Listing is
+  manually paginated; bounds/configs are server-validated. Deletion is soft deletion
+  and does not erase data already forwarded to an external provider.
 - The [streaming](../guides/streaming.md) SSE parser supports multiline frames.
   Image streams retain optional event names; SSE IDs/retry metadata do not
   provide automatic reconnection or resumable generation.

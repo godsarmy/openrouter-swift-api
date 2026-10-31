@@ -11,6 +11,7 @@
 - [Media APIs](media.md) - Discover models, generate or stream images, and use audio/video APIs.
 - [Resource examples](resources.md) - Access generation metadata, discovery, files, workspaces, keys, BYOK, activity, and reranking.
 - [Guardrails](guardrails.md) - Manage policies and explicit key/member assignments with management credentials.
+- [Observability destinations](observability.md) - Configure external telemetry forwarding, filters, and sensitive provider configs.
 
 ## Reference
 

@@ -83,6 +83,20 @@ tracker-only operations and Swift alone retains legacy completions. Zig covers
 137/146 current-snapshot operations, with nine missing and 13 retained outside it.
 These counts still measure endpoint presence, not complete policy-field parity.
 
+## October 31 observability milestone
+
+Observability support uses the verified October 31 snapshot and digest above.
+A later download attempt failed validation and was not used as an audit source.
+With all five destination routes added, Swift's tracker covers **80/146**
+operations, with 66 missing and one retained legacy operation. The trackers now
+share 80 operations; Zig has 70 remaining tracker-only operations, while Swift
+alone retains legacy completions. Zig's snapshot coverage remains 137/146.
+
+Common metadata and structured filters are typed; provider configs remain
+extensible objects. Both request and response configs must be treated as
+sensitive. Endpoint parity does not imply fully typed provider-schema parity or
+verified forwarding behavior.
+
 ## Repeat the comparison
 
 Save one official JSON snapshot, retain its digest with the audit, and run:
@@ -102,6 +116,6 @@ refetching the URL may produce different bytes and is a new baseline.
 This route comparison does not prove request/response field parity, auth-header
 behavior, server overrides, streaming semantics, entitlements, or live availability.
 The usual API base is `https://openrouter.ai/api/v1`; alpha Decisions and Extractions
-override it with `https://openrouter.ai`. BYOK and guardrails inherit the usual base and require management
-authentication. Preset semantics, audio encoding, Responses fields, and image
+override it with `https://openrouter.ai`. BYOK, guardrails, and observability inherit
+the usual base and require management authentication. Preset semantics, audio encoding, Responses fields, and image
 streaming remain separate contract work in the plan.

@@ -47,8 +47,9 @@ No Zig files were changed by this review.
 ## P1 — Close coherent Swift management API gaps
 
 These groups are implemented in Zig and absent from Swift at the review baseline.
-BYOK and guardrails are implemented. **Next implementation: observability
-destinations**, ahead of expanding pagination convenience APIs.
+BYOK, guardrails, and observability destinations are implemented. **Next:
+presets**, after resolving configuration-versus-inference semantics, ahead of
+expanding pagination convenience APIs.
 
 - [x] **BYOK (5 operations):** list/create at `/byok`; get/update/delete at
   `/byok/{id}`. Reference: `Zig: src/byok.zig`, `ByokResource` in `src/client.zig`.
@@ -61,8 +62,11 @@ destinations**, ahead of expanding pagination convenience APIs.
   Reference: `Zig: src/guardrails.zig`, `GuardrailsResource`.
   Swift follows the October 31 schema, with typed filters, nullable PATCH fields,
   and current privacy/region/training policies. See [guardrails](docs/guides/guardrails.md).
-- [ ] **Observability destinations (5 operations):** list/create/get/update/delete.
+- [x] **Observability destinations (5 operations):** list/create/get/update/delete.
   Reference: `Zig: src/observability.zig`, `ObservabilityDestinationsResource`.
+  Swift uses the verified October 31 snapshot, common typed metadata and filters,
+  extensible object configs, and config-redacted diagnostics. Provider-specific
+  config validation remains server-owned; see [observability](docs/guides/observability.md).
 
 For each group, add Swift resource aliases and models, request/response fixtures,
 authentication/query/path tests, omission/null tests where applicable, and error
@@ -115,6 +119,11 @@ milestones rather than one large port.
 
 ## P3 — Align behavior on shared endpoints
 
+- [ ] **Zig follow-up: observability policies.** Add regions and all four broadcast
+  flags to request/response models, align required response/count fields and safe
+  ID escaping, and review sensitive config/filter diagnostics. Preserve explicit
+  clear semantics for API-key hashes and filters; config itself is not top-level
+  nullable in the reviewed schema. Typed filter values must remain string/number.
 - [ ] **Zig follow-up: guardrail policies.** Add the snapshot-backed region, xAI
   ZDR, safety-retention, publication/training, first-party-harness, and BYOK-budget
   fields missing from the reviewed Zig models. Align nullable PATCH clearing,

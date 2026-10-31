@@ -6,6 +6,7 @@ This project follows semantic versioning once public releases are tagged.
 
 ## Unreleased
 
+- Added all five management-key observability destination APIs, common typed metadata and filters, extensible provider config objects, nullable PATCH clearing, soft-deletion confirmation, and config-redacted diagnostics. Snapshot coverage is now 80/146 operations.
 - Added all 13 management-key guardrail operations: policy CRUD, global/scoped key/member assignment listing, and bulk assignment/removal. Models include current privacy, region, budget, training, and typed content-filter settings with explicit nullable PATCH updates.
 - Refreshed endpoint inventory to the October 31 146-operation snapshot; Swift implements 75 operations. Alpha Extractions remains unimplemented.
 - Added management-key BYOK list/create/get/update/delete APIs, typed masked responses, secret-redacted requests, and explicit omit/null/value PATCH settings.

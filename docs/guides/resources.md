@@ -22,6 +22,9 @@ uses inline requests; it is not an uploaded-file workflow.
 For management-key policy CRUD and key/member assignments, see
 [guardrails](guardrails.md).
 
+For external telemetry configuration and forwarding policies, see
+[observability destinations](observability.md).
+
 ## Generation metadata
 
 ```swift

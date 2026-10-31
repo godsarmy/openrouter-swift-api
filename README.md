@@ -58,8 +58,10 @@ and applications retain control of execution.
 Endpoint coverage and deferred namespaces are tracked in
 [Endpoint coverage](docs/reference/endpoint-coverage.md). The prioritized
 [Swift / Zig API parity TODOs](PLAN.md) track the shared API goal and source-review
-baseline. BYOK and [guardrails](docs/guides/guardrails.md) management are implemented;
-**next: observability destinations**. Broader pagination helpers are secondary to closing
+baseline. BYOK, [guardrails](docs/guides/guardrails.md), and
+[observability destinations](docs/guides/observability.md) are implemented;
+**next: presets**, after resolving configuration-versus-inference semantics.
+Broader pagination helpers are secondary to closing
 API gaps. See the [shared snapshot baseline](docs/reference/sdk-parity.md).
 
 Remaining follow-ups:

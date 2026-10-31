@@ -2,6 +2,8 @@
 
 ## 2026-10-31
 
+- **Update**: Added observability destination guidance, config sensitivity and redaction limits, explicit forwarding controls, nullable filter updates, and soft-deletion cautions.
+- **Update**: Recorded five implemented observability operations (80/146 snapshot coverage), moved the next milestone to presets, and retained Zig field-parity follow-ups.
 - **Update**: Added guardrail policy and assignment guidance, nullable updates, content-filter and workspace-enforcement distinctions, mutation cautions, and current-schema parity follow-ups.
 - **Update**: Refreshed the endpoint inventory to the 146-operation October 31 snapshot, recording 75 Swift implementations and deferred alpha Extractions; preserved the historical cross-SDK baseline.
 

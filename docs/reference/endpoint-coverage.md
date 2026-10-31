@@ -29,8 +29,8 @@ official OpenAPI specification (OpenAPI 3.1.0, `info.version: 1.0.0`).
 | Inventory | Unique method/path operations |
 |---|---:|
 | Listed in the current specification | 146 |
-| Current-spec operations implemented by the SDK | 75 |
-| Current-spec operations not implemented | 71 |
+| Current-spec operations implemented by the SDK | 80 |
+| Current-spec operations not implemented | 66 |
 | Additional SDK legacy operations absent from the specification | 1 |
 
 The October 26 audit corrected 72 earlier omissions; this snapshot adds five
@@ -150,6 +150,11 @@ Status legend:
 | [x] | POST | `/guardrails/{id}/assignments/members/remove` | `client.guardrails.bulkUnassignMembersFromGuardrail`, flat alias | Removes member assignments; typed count. |
 | [x] | GET | `/guardrails/assignments/keys` | `client.guardrails.listKeyAssignments`, `client.listKeyAssignments` | Global key assignments; omit scoped `id` argument. |
 | [x] | GET | `/guardrails/assignments/members` | `client.guardrails.listMemberAssignments`, `client.listMemberAssignments` | Global member assignments; omit scoped `id` argument. |
+| [x] | GET | `/observability/destinations` | `client.observability.destinations.list`, `client.listObservabilityDestinations` | Lists stable destinations with offset/limit, workspace filtering, and total count; management key required. |
+| [x] | POST | `/observability/destinations` | `client.observability.destinations.create`, `client.createObservabilityDestination` | Creates a destination with explicit config and forwarding policies; HTTP 201. |
+| [x] | GET | `/observability/destinations/{id}` | `client.observability.destinations.get`, `client.getObservabilityDestination` | Common typed metadata, extensible sensitive config object. |
+| [x] | PATCH | `/observability/destinations/{id}` | `client.observability.destinations.update`, `client.updateObservabilityDestination` | Partial config and policy updates; nullable key/filter clearing. |
+| [x] | DELETE | `/observability/destinations/{id}` | `client.observability.destinations.delete`, `client.deleteObservabilityDestination` | Explicit soft deletion validates `deleted: true`. |
 
 ## Core Inference Endpoints
 
@@ -252,11 +257,14 @@ settings, server-side validation, and enforcement limits.
 
 | Status | Method | Path | Operation | Description | SDK notes |
 |---|---|---|---|---|---|
-| [ ] | GET | `/observability/destinations` | `listObservabilityDestinations` | List observability destinations. |  |
-| [ ] | POST | `/observability/destinations` | `createObservabilityDestination` | Create an observability destination. |  |
-| [ ] | GET | `/observability/destinations/{id}` | `getObservabilityDestination` | Get an observability destination. |  |
-| [ ] | PATCH | `/observability/destinations/{id}` | `updateObservabilityDestination` | Update an observability destination. |  |
-| [ ] | DELETE | `/observability/destinations/{id}` | `deleteObservabilityDestination` | Delete an observability destination. |  |
+| [x] | GET | `/observability/destinations` | `listObservabilityDestinations` | List observability destinations. | Alias: `observability.destinations.list`; optional offset/limit/workspace filter. |
+| [x] | POST | `/observability/destinations` | `createObservabilityDestination` | Create an observability destination. | Alias: `observability.destinations.create`; required type/name/config, optional forwarding controls. |
+| [x] | GET | `/observability/destinations/{id}` | `getObservabilityDestination` | Get an observability destination. | Alias: `observability.destinations.get`; sensitive configs are not assumed credential-free. |
+| [x] | PATCH | `/observability/destinations/{id}` | `updateObservabilityDestination` | Update an observability destination. | Alias: `observability.destinations.update`; no automatic response-config replay. |
+| [x] | DELETE | `/observability/destinations/{id}` | `deleteObservabilityDestination` | Delete an observability destination. | Alias: `observability.destinations.delete`; soft deletion, not external-data erasure. |
+
+See [observability destinations](../guides/observability.md) for configuration,
+filtering, credential sensitivity, and forwarding limits.
 
 ## Image-model Discovery
 
