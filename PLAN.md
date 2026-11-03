@@ -14,7 +14,8 @@ Source review on **2026-10-30**:
   `/home/amyma/proj/openrouter-zig-sdk`.
 - Zig evidence: `src/client.zig`, endpoint modules in `src/`, and
   `docs/api/coverage.md`. Paths prefixed with `Zig:` below refer to that repository.
-- Swift evidence: [client implementation](Sources/OpenRouter/Public/OpenRouterClient.swift)
+- Swift evidence: [client construction](Sources/OpenRouter/Public/OpenRouterClient.swift),
+  [endpoint implementations](Sources/OpenRouter/Public/Client/),
   and [endpoint coverage](docs/reference/endpoint-coverage.md).
 
 This is a source-level planning review, not live-service authorization testing
@@ -22,6 +23,11 @@ or an exhaustive field-by-field audit. Zig is a useful implementation reference,
 not the authority for upstream contracts. Keep the endpoint tracker canonical for
 implemented status; this plan owns cross-language priorities and acceptance work.
 No Zig files were changed by this review.
+
+The client has since been modularized into same-module family extensions without
+changing public API names or endpoint behavior; see
+[client source layout](docs/development/client-layout.md). Continue new APIs in
+their appropriate family files; endpoint coverage targets below are unchanged.
 
 ## P0 — Establish a comparable baseline
 

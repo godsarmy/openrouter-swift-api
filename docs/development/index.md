@@ -1,6 +1,7 @@
 # Development
 
 - [Building and testing](building-and-testing.md) - Build, run offline tests, check formatting, and opt into live tests safely.
+- [Client source layout](client-layout.md) - Extend endpoint families while preserving public names and shared networking behavior.
 - [Documentation maintenance](documentation.md) - Maintain the OKF bundle and run documentation checks.
 - [Versioning](versioning.md) - Understand source compatibility and release policy.
 

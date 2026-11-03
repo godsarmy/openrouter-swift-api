@@ -2,6 +2,7 @@
 
 ## 2026-11-03
 
+- **Update**: Documented client family extensions and shared helper boundaries, updated source references, and recorded public-symbol/token preservation checks for the behavior-preserving client extraction.
 - **Update**: Documented organization settings, the required Boolean PATCH field, dashboard-only catalog semantics, management-key requirements, and preservation of member APIs; retained the verified October 31 baseline.
 - **Update**: Recorded two implemented settings operations (94/146 dated-snapshot coverage) and moved the next milestone to data/discovery APIs, beginning with the server-tool catalog.
 - **Update**: Added external-user registration guidance, caller-supplied ID rules, dot-segment restrictions, HTTP 204 deactivation/reactivation, and the distinction from inference authorization; retained an explicitly dated October 31 contract baseline.

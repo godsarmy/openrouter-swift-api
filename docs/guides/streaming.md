@@ -4,7 +4,9 @@ title: Streaming
 description: Consume chat streams and assemble complete streamed function calls.
 tags: [chat, streaming, sse]
 sources:
-  - resource: ../../Sources/OpenRouter/Public/OpenRouterClient.swift
+  - resource: ../../Sources/OpenRouter/Public/Client/OpenRouterClient+Chat.swift
+    title: Chat streaming APIs
+  - resource: ../../Sources/OpenRouter/Internal/Streaming/IncrementalStream.swift
     title: Streaming client implementation
   - resource: ../../Sources/OpenRouter/Public/ChatToolCallAccumulator.swift
     title: Streamed tool-call assembly

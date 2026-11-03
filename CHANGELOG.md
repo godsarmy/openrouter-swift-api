@@ -6,6 +6,7 @@ This project follows semantic versioning once public releases are tagged.
 
 ## Unreleased
 
+- Split client endpoints/resource facades into same-module family extensions and extracted configuration, options, errors, shared streaming, multipart, and path helpers. Public names, signatures, defaults, and declaration bodies are preserved; no endpoint coverage or behavior changes are intended.
 - Added management-key organization settings GET/PATCH APIs with a required filtered-dashboard-catalog Boolean, explicit false encoding, and unchanged organization member APIs. Dated-snapshot coverage is now 94/146 operations.
 - Added all five management-key external-user registration APIs, explicit inactive filtering, integer totals, safe tracking-ID paths, and HTTP 204 soft deactivation without JSON decoding. Registration state does not enforce inference access. Dated-snapshot coverage is now 92/146 operations.
 - Added all seven preset configuration/version APIs with management authentication, typed or direct JSON-object write bodies, nullable version models, and no inference/SSE or body rewriting. Snapshot coverage is now 87/146 operations.

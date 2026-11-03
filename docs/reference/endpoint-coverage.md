@@ -7,7 +7,9 @@ sources:
   - resource: https://openrouter.ai/openapi.json
     title: OpenRouter OpenAPI specification
   - resource: ../../Sources/OpenRouter/Public/OpenRouterClient.swift
-    title: SDK client implementation
+    title: SDK client construction
+  - resource: ../../Sources/OpenRouter/Public/Client/
+    title: Endpoint implementations and resource facades
 ---
 
 # OpenRouter API Implementation Tracker
@@ -52,7 +54,8 @@ Sources:
 - API reference overview: <https://openrouter.ai/docs/api/reference/overview>
 - OpenAPI spec: <https://openrouter.ai/openapi.json>
 - Audio API announcement: <https://openrouter.ai/blog/announcing-audio-apis>
-- Swift SDK source: `Sources/OpenRouter/Public/OpenRouterClient.swift`
+- Swift SDK source: `Sources/OpenRouter/Public/Client/`; construction remains in
+  `Sources/OpenRouter/Public/OpenRouterClient.swift`. See [client layout](../development/client-layout.md).
 
 Base URL:
 
@@ -425,6 +428,6 @@ availability, and server override before implementing it.
 
 - External-user lifecycle support uses the dated snapshot above, reviewed on November 3; no newly retrieved snapshot was validated. See [external-user registrations](../guides/external-users.md) for ID constraints, inactive filtering, reactivation, and no-content deletion.
 - Update the status checkbox and SDK notes when implementing a new endpoint.
-- Keep public method names and resource aliases in sync with `OpenRouterClient.swift`.
+- Keep public method names and resource aliases in sync with the family extensions in `Sources/OpenRouter/Public/Client/`.
 - OpenRouter-specific request features implemented inside existing endpoints, such as provider routing, reasoning, web search options, response caching, multimodal content parts, and fallback helpers, are not tracked as separate endpoints here.
 - The OpenAPI spec is the best source of truth for endpoint inventory because it includes endpoints beyond chat and model listing.
