@@ -48,9 +48,9 @@ No Zig files were changed by this review.
 ## P1 — Close coherent Swift management API gaps
 
 These groups are implemented in Zig and absent from Swift at the review baseline.
-BYOK, guardrails, observability destinations, presets, and external-user management
-are implemented. **Next: organization settings**, ahead of expanding pagination
-convenience APIs.
+BYOK, guardrails, observability destinations, presets, external-user management,
+and organization settings are implemented. **Next: data/discovery APIs, starting
+with the server-tool catalog**, ahead of expanding pagination convenience APIs.
 
 - [x] **BYOK (5 operations):** list/create at `/byok`; get/update/delete at
   `/byok/{id}`. Reference: `Zig: src/byok.zig`, `ByokResource` in `src/client.zig`.
@@ -92,8 +92,11 @@ milestones rather than one large port.
   integer totals, explicit inactive filters, safe IDs/dot-segment rejection, and
   bodyless deletion through the existing authenticated transport execution path.
   Fresh November 3 snapshot retrieval was not successfully validated.
-- [ ] **Organization settings:** GET/PATCH `/organization/settings`.
+- [x] **Organization settings:** GET/PATCH `/organization/settings`.
   Reference: `Zig: src/organization.zig`.
+  Swift preserves the required filtered-dashboard-catalog Boolean, including false;
+  no null clearing or default omission is invented. Member APIs remain available.
+  Contract source remains the verified October 31 snapshot, not a fresh download.
 - [ ] **Data and discovery:** analytics meta/query, benchmarks, task
   classifications, app rankings, session costs, tool catalog list/get, and
   generation feedback. Reference: `Zig: src/analytics.zig`, `src/benchmarks.zig`,

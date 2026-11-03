@@ -235,7 +235,48 @@ page. For automatic iteration, see [member pagination](#member-pagination). `Org
 `firstName`/`lastName`, `email`, and an extensible `role` string (currently
 `org:admin` or `org:member`). Names that are null or absent decode as nil.
 Authentication and permission failures use normal typed API errors. Organization
-settings and other organization endpoints remain deferred.
+settings are supported separately below.
+
+## Organization settings
+
+Use a management API key associated with the organization:
+
+```swift
+let settings = try await client.organization.getSettings()
+let organizationID = settings.data.id
+let filteredDashboard = settings.data.isFilteredModelCatalogEnabled
+// Changes the organization's dashboard catalog preference; run only after approval:
+// let updated = try await client.organization.updateSettings(
+//   .init(isFilteredModelCatalogEnabled: false)
+// )
+```
+
+Flat aliases are `getOrganizationSettings(options:)` and
+`updateOrganizationSettings(_:options:)`; both resource methods also accept
+per-request options. The API uses the organization associated with the management
+key, with no organization ID, workspace, pagination, or filter parameters.
+Both operations return `OrganizationSettingsResponse` containing required `id`
+and `isFilteredModelCatalogEnabled` fields. Neither field is nullable.
+
+PATCH requires `UpdateOrganizationSettingsRequest(isFilteredModelCatalogEnabled:)`.
+The Boolean is **required**, even though the verb is PATCH: false is transmitted
+explicitly, not omitted. The SDK exposes no empty/default update or null-clearing
+state for this field. No settings default is inferred from a missing response key.
+
+When enabled, the signed-in dashboard lists only models the organization can use.
+This is a catalog visibility preference, **not** a change to inference eligibility
+or routing. API-key requests to `GET /models` already list only models that key
+can use, regardless of this switch; anonymous requests receive the public catalog.
+Do not use this preference as a substitute for guardrails or access controls.
+
+Normal typed errors expose missing credentials, insufficient permissions,
+unavailable organization settings (HTTP 404), and server failures; PATCH also
+documents invalid-input errors. Retries remain opt-in. Existing organization
+member listing and async pagination are unaffected.
+
+Review used the verified October 31 OpenAPI snapshot, not a newly validated
+November 3 download. Offline tests do not establish live account entitlements or
+dashboard behavior; no live organization setting was changed for validation.
 
 ## Member pagination
 

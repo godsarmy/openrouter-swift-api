@@ -6,6 +6,7 @@ This project follows semantic versioning once public releases are tagged.
 
 ## Unreleased
 
+- Added management-key organization settings GET/PATCH APIs with a required filtered-dashboard-catalog Boolean, explicit false encoding, and unchanged organization member APIs. Dated-snapshot coverage is now 94/146 operations.
 - Added all five management-key external-user registration APIs, explicit inactive filtering, integer totals, safe tracking-ID paths, and HTTP 204 soft deactivation without JSON decoding. Registration state does not enforce inference access. Dated-snapshot coverage is now 92/146 operations.
 - Added all seven preset configuration/version APIs with management authentication, typed or direct JSON-object write bodies, nullable version models, and no inference/SSE or body rewriting. Snapshot coverage is now 87/146 operations.
 - Added all five management-key observability destination APIs, common typed metadata and filters, extensible provider config objects, nullable PATCH clearing, soft-deletion confirmation, and config-redacted diagnostics. Snapshot coverage is now 80/146 operations.

@@ -10,16 +10,20 @@ tags: [limitations, beta, roadmap, sse]
 - The [Responses API](../guides/responses.md) remains beta. SSE streaming has
   forward-compatible raw typed events, including text and function argument
   deltas; provider-specific beta fields may still require `rawPayload`.
-- Workspace list/get/create/update/delete and member list/add/remove are implemented;
-  organization APIs other than member listing,
-  other beta namespaces and some analytics
-  capabilities are not yet implemented. Activity and daily-ranking endpoints are implemented; consult
+- Workspace list/get/create/update/delete and member list/add/remove, organization
+  member listing, and organization settings are implemented. Other beta namespaces
+  and some analytics capabilities remain unimplemented. Activity and daily-ranking
+  endpoints are implemented; consult
   [endpoint coverage](endpoint-coverage.md) for the precise inventory.
 - Organization member listing requires a management key and supports manual or async
   offset/limit pagination, without filters. The server validates offset >= 0 and
   limit 1–100; omitted values use defaults 0 and 50. Names are optional and roles
-  remain extensible strings (currently `org:admin` and `org:member`). Organization
-  settings and other organization operations remain deferred.
+  remain extensible strings (currently `org:admin` and `org:member`).
+- [Organization settings](../guides/resources.md#organization-settings) require a
+  management key associated with the organization. The only reviewed writable
+  field is the required, nonnullable filtered-dashboard-catalog Boolean. It does
+  not change inference eligibility or authenticated `/models` filtering; account
+  availability and dashboard effects were not live-verified.
 - Workspace member listing requires a management key and supports manual or async offset/limit
   pagination (defaults 0/50, limit 1–100). Default workspaces return all organization
   members through implicit membership. Responses contain workspace membership IDs,

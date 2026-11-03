@@ -123,6 +123,20 @@ operations are shared and 58 remain Zig-only; legacy completions remains
 Swift-only. The reviewed Zig model uses floating-point totals where the schema
 requires integers. No fresh-spec coverage or live-account verification is implied.
 
+## November 3 organization-settings milestone
+
+GET/PATCH organization settings use the same verified October 31 snapshot; a fresh
+download returned HTTP 403 and was not used as a contract source. The only writable
+field is the required filtered-dashboard-catalog Boolean. Swift transmits false
+explicitly and does not invent nullable/omitted PATCH settings. The preference
+does not change inference eligibility or API-key model-catalog filtering.
+
+Swift's tracker now covers **94/146** operations in the dated snapshot, with 52
+missing and one retained legacy operation. Against the same Zig baseline, 94
+operations are shared and 56 remain Zig-only; legacy completions remains
+Swift-only. Offline validation does not establish organization entitlements or
+live dashboard behavior.
+
 ## Repeat the comparison
 
 Save one official JSON snapshot, retain its digest with the audit, and run:

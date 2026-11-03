@@ -29,8 +29,8 @@ official OpenAPI specification (OpenAPI 3.1.0, `info.version: 1.0.0`).
 | Inventory | Unique method/path operations |
 |---|---:|
 | Listed in the current specification | 146 |
-| Current-spec operations implemented by the SDK | 92 |
-| Current-spec operations not implemented | 54 |
+| Current-spec operations implemented by the SDK | 94 |
+| Current-spec operations not implemented | 52 |
 | Additional SDK legacy operations absent from the specification | 1 |
 
 The October 26 audit corrected 72 earlier omissions; this snapshot adds five
@@ -167,6 +167,8 @@ Status legend:
 | [x] | GET | `/external-users/{user}` | `client.externalUsers.get`, `client.getExternalUser` | Gets active or inactive registration by safely escaped tracking ID. |
 | [x] | PATCH | `/external-users/{user}` | `client.externalUsers.update`, `client.updateExternalUser` | Required active-state boolean; does not enforce inference access. |
 | [x] | DELETE | `/external-users/{user}` | `client.externalUsers.delete`, `client.deleteExternalUser` | Soft deactivation, exact HTTP 204/Void; no fabricated JSON confirmation. |
+| [x] | GET | `/organization/settings` | `client.organization.getSettings`, `client.getOrganizationSettings` | Gets organization ID and required filtered-dashboard-catalog Boolean using a management key. |
+| [x] | PATCH | `/organization/settings` | `client.organization.updateSettings`, `client.updateOrganizationSettings` | Required nonnullable Boolean, including explicit false; dashboard preference, not inference policy. |
 
 ## Core Inference Endpoints
 
@@ -264,6 +266,11 @@ settings, server-side validation, and enforcement limits.
 | [x] | POST | `/workspaces/{id}/members/add` | `bulkAddWorkspaceMembers` | Bulk add members to a workspace. | Implemented as `client.addWorkspaceMembers`; alias: `client.workspaces.addMembers`; 1–100 user IDs; typed memberships/count; management key required. |
 | [x] | POST | `/workspaces/{id}/members/remove` | `bulkRemoveWorkspaceMembers` | Bulk remove members from a workspace. | Implemented as `client.removeWorkspaceMembers`; alias: `client.workspaces.removeMembers`; 1–100 user IDs; typed count; management key required. See [restrictions](limitations.md). |
 | [x] | GET | `/organization/members` | `listOrganizationMembers` | List organization members. | Alias: `client.organization.listMembers`; optional offset/limit, typed members and total count; management key required. |
+| [x] | GET | `/organization/settings` | `getOrganizationSettings` | Get authenticated organization settings. | Alias: `client.organization.getSettings`; no pagination or organization-ID parameter. |
+| [x] | PATCH | `/organization/settings` | `updateOrganizationSettings` | Set the dashboard's filtered catalog preference. | Alias: `client.organization.updateSettings`; required Boolean, no omission/null update state. |
+
+See [organization settings](../guides/resources.md#organization-settings) for
+management-key requirements and the distinction from inference eligibility.
 
 ## Observability
 
@@ -352,7 +359,7 @@ availability, and server override before implementing it.
 | [x] | GET | `/external-users` | `listExternalUsers`; alias: `client.externalUsers.list` |
 | [x] | GET | `/external-users/{user}` | `getExternalUser`; alias: `client.externalUsers.get` |
 | [ ] | GET | `/oauth/jwks` | `listOauthJwks` |
-| [ ] | GET | `/organization/settings` | `getOrganizationSettings` |
+| [x] | GET | `/organization/settings` | `getOrganizationSettings`; alias: `client.organization.getSettings` |
 | [x] | GET | `/presets` | `listPresets`; alias: `client.presets.list` |
 | [x] | GET | `/presets/{slug}` | `getPreset`; alias: `client.presets.get` |
 | [x] | GET | `/presets/{slug}/versions` | `listPresetVersions`; alias: `client.presets.listVersions` |
@@ -373,7 +380,7 @@ availability, and server override before implementing it.
 | [x] | GET | `/workspaces/{workspace_ref}/budgets/{interval}` | `getWorkspaceBudget`; alias: `client.workspaces.getBudget` |
 | [x] | GET | `/workspaces/{id}/members` | `listWorkspaceMembers`; alias: `client.workspaces.listMembers` |
 | [x] | PATCH | `/external-users/{user}` | `updateExternalUser`; alias: `client.externalUsers.update` |
-| [ ] | PATCH | `/organization/settings` | `updateOrganizationSettings` |
+| [x] | PATCH | `/organization/settings` | `updateOrganizationSettings`; alias: `client.organization.updateSettings` |
 | [ ] | PATCH | `/private-endpoints/{id}` | `updatePrivateEndpoint` |
 | [ ] | PATCH | `/scim/group-mappings/{id}` | `updateScimGroupMapping` |
 | [ ] | POST | `/analytics/query` | `queryAnalytics` |

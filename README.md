@@ -62,7 +62,8 @@ baseline. BYOK, [guardrails](docs/guides/guardrails.md),
 [observability destinations](docs/guides/observability.md),
 [preset configuration/version reads](docs/guides/presets.md), and
 [external-user registrations](docs/guides/external-users.md) are implemented.
-**Next: organization settings**.
+[Organization settings](docs/guides/resources.md#organization-settings) are also supported.
+**Next: data/discovery APIs, starting with the server-tool catalog**.
 Broader pagination helpers are secondary to closing
 API gaps. See the [shared snapshot baseline](docs/reference/sdk-parity.md).
 
