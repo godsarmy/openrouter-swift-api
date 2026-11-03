@@ -29,8 +29,8 @@ official OpenAPI specification (OpenAPI 3.1.0, `info.version: 1.0.0`).
 | Inventory | Unique method/path operations |
 |---|---:|
 | Listed in the current specification | 146 |
-| Current-spec operations implemented by the SDK | 87 |
-| Current-spec operations not implemented | 59 |
+| Current-spec operations implemented by the SDK | 92 |
+| Current-spec operations not implemented | 54 |
 | Additional SDK legacy operations absent from the specification | 1 |
 
 The October 26 audit corrected 72 earlier omissions; this snapshot adds five
@@ -162,6 +162,11 @@ Status legend:
 | [x] | POST | `/presets/{slug}/chat/completions` | `client.presets.createFromChatCompletions`, `client.createPresetsChatCompletions` | Configuration/new-version write, not inference; typed/raw-object body, HTTP 200. |
 | [x] | POST | `/presets/{slug}/messages` | `client.presets.createFromMessages`, `client.createPresetsMessages` | Configuration/new-version write, not inference; no body rewriting. |
 | [x] | POST | `/presets/{slug}/responses` | `client.presets.createFromResponses`, `client.createPresetsResponses` | Configuration/new-version write, not inference; ordinary JSON transport. |
+| [x] | GET | `/external-users` | `client.externalUsers.list`, `client.listExternalUsers` | Management-key listing with offset/limit, tracking-ID/inactive filters, and integer total count. |
+| [x] | POST | `/external-users` | `client.externalUsers.create`, `client.createExternalUser` | Registers caller-supplied tracking ID; HTTP 201, no login account or credentials. |
+| [x] | GET | `/external-users/{user}` | `client.externalUsers.get`, `client.getExternalUser` | Gets active or inactive registration by safely escaped tracking ID. |
+| [x] | PATCH | `/external-users/{user}` | `client.externalUsers.update`, `client.updateExternalUser` | Required active-state boolean; does not enforce inference access. |
+| [x] | DELETE | `/external-users/{user}` | `client.externalUsers.delete`, `client.deleteExternalUser` | Soft deactivation, exact HTTP 204/Void; no fabricated JSON confirmation. |
 
 ## Core Inference Endpoints
 
@@ -330,7 +335,7 @@ availability, and server override before implementing it.
 
 | Status | Method | Path | Upstream operation ID |
 |---|---|---|---|
-| [ ] | DELETE | `/external-users/{user}` | `deleteExternalUser` |
+| [x] | DELETE | `/external-users/{user}` | `deleteExternalUser`; alias: `client.externalUsers.delete`; HTTP 204 soft deactivation |
 | [ ] | DELETE | `/private-endpoints/{id}` | `deletePrivateEndpoint` |
 | [ ] | DELETE | `/scim/group-mappings/{id}` | `deleteScimGroupMapping` |
 | [ ] | DELETE | `/vault/interns/{internId}/secrets/{name}` | `deleteInternVaultSecret` |
@@ -344,8 +349,8 @@ availability, and server override before implementing it.
 | [ ] | GET | `/containers/{container_id}/files/{file_id}/content` | `downloadContainerFileContent` |
 | [ ] | GET | `/datasets/app-rankings` | `getAppRankings` |
 | [ ] | GET | `/datasets/session-cost` | `getSessionCost` |
-| [ ] | GET | `/external-users` | `listExternalUsers` |
-| [ ] | GET | `/external-users/{user}` | `getExternalUser` |
+| [x] | GET | `/external-users` | `listExternalUsers`; alias: `client.externalUsers.list` |
+| [x] | GET | `/external-users/{user}` | `getExternalUser`; alias: `client.externalUsers.get` |
 | [ ] | GET | `/oauth/jwks` | `listOauthJwks` |
 | [ ] | GET | `/organization/settings` | `getOrganizationSettings` |
 | [x] | GET | `/presets` | `listPresets`; alias: `client.presets.list` |
@@ -367,7 +372,7 @@ availability, and server override before implementing it.
 | [x] | GET | `/workspaces/{workspace_ref}/budgets` | `listWorkspaceBudgets`; alias: `client.workspaces.listBudgets` |
 | [x] | GET | `/workspaces/{workspace_ref}/budgets/{interval}` | `getWorkspaceBudget`; alias: `client.workspaces.getBudget` |
 | [x] | GET | `/workspaces/{id}/members` | `listWorkspaceMembers`; alias: `client.workspaces.listMembers` |
-| [ ] | PATCH | `/external-users/{user}` | `updateExternalUser` |
+| [x] | PATCH | `/external-users/{user}` | `updateExternalUser`; alias: `client.externalUsers.update` |
 | [ ] | PATCH | `/organization/settings` | `updateOrganizationSettings` |
 | [ ] | PATCH | `/private-endpoints/{id}` | `updatePrivateEndpoint` |
 | [ ] | PATCH | `/scim/group-mappings/{id}` | `updateScimGroupMapping` |
@@ -375,7 +380,7 @@ availability, and server override before implementing it.
 | [ ] | POST | `/api/alpha/decisions` | `createApiAlphaDecisions` |
 | [ ] | POST | `/containers/{container_id}/files/{file_id}/promote` | `promoteContainerFile` |
 | [ ] | POST | `/credits/coinbase` | `createCoinbaseCharge` |
-| [ ] | POST | `/external-users` | `createExternalUser` |
+| [x] | POST | `/external-users` | `createExternalUser`; alias: `client.externalUsers.create` |
 | [ ] | POST | `/generation/feedback` | `submitGenerationFeedback` |
 | [ ] | POST | `/oauth/token` | `createOauthToken` |
 | [ ] | POST | `/private-endpoints` | `createPrivateEndpoint` |
@@ -411,6 +416,7 @@ availability, and server override before implementing it.
 
 ## Notes
 
+- External-user lifecycle support uses the dated snapshot above, reviewed on November 3; no newly retrieved snapshot was validated. See [external-user registrations](../guides/external-users.md) for ID constraints, inactive filtering, reactivation, and no-content deletion.
 - Update the status checkbox and SDK notes when implementing a new endpoint.
 - Keep public method names and resource aliases in sync with `OpenRouterClient.swift`.
 - OpenRouter-specific request features implemented inside existing endpoints, such as provider routing, reasoning, web search options, response caching, multimodal content parts, and fallback helpers, are not tracked as separate endpoints here.

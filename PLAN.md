@@ -48,8 +48,9 @@ No Zig files were changed by this review.
 ## P1 — Close coherent Swift management API gaps
 
 These groups are implemented in Zig and absent from Swift at the review baseline.
-BYOK, guardrails, observability destinations, and presets are implemented.
-**Next: external-user management**, ahead of expanding pagination convenience APIs.
+BYOK, guardrails, observability destinations, presets, and external-user management
+are implemented. **Next: organization settings**, ahead of expanding pagination
+convenience APIs.
 
 - [x] **BYOK (5 operations):** list/create at `/byok`; get/update/delete at
   `/byok/{id}`. Reference: `Zig: src/byok.zig`, `ByokResource` in `src/client.zig`.
@@ -84,9 +85,13 @@ milestones rather than one large port.
   Reference: `Zig: src/presets.zig`.
   Swift offers typed and direct JSON-object write bodies, required-nullable version
   handling, safe slug/version escaping, and no stream/body rewriting.
-- [ ] **External users:** list/create/get/update/delete under `/external-users`.
+- [x] **External users:** list/create/get/update/delete under `/external-users`.
   Preserve soft-deactivation and HTTP 204 semantics; do not describe deletion as
   revoking inference access. Reference: `Zig: src/end_users.zig`.
+  Swift uses the verified October 31 snapshot, required registration fields,
+  integer totals, explicit inactive filters, safe IDs/dot-segment rejection, and
+  bodyless deletion through the existing authenticated transport execution path.
+  Fresh November 3 snapshot retrieval was not successfully validated.
 - [ ] **Organization settings:** GET/PATCH `/organization/settings`.
   Reference: `Zig: src/organization.zig`.
 - [ ] **Data and discovery:** analytics meta/query, benchmarks, task
@@ -121,6 +126,9 @@ milestones rather than one large port.
 
 ## P3 — Align behavior on shared endpoints
 
+- [ ] **Zig follow-up: external-user totals.** The reviewed schema requires an
+  integer `total_count`; Zig currently models it as `f64`. Align integer validation
+  with Swift, without inventing hard-deletion or inference-access semantics.
 - [ ] **Zig follow-up: preset semantics.** Correct inference labels for preset
   configuration writes and stop forcing chat `stream = false`. Preserve the
   supplied body, server-owned config selection, nullable version references, and

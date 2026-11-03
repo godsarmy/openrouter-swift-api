@@ -70,6 +70,12 @@ tags: [limitations, beta, roadmap, sse]
   inherit existing request-model field coverage; direct JSON-object overloads
   support additional fields. Listing is manually paginated and versions may be
   null per the schema. Repeating ambiguous writes may create additional versions.
+- [External users](../guides/external-users.md) are caller-supplied tracking-ID
+  registrations, not login accounts or credentials. DELETE soft-deactivates and
+  returns no content; it does not erase identity or block inference. PATCH can
+  reactivate; create conflicts even for an already-registered inactive ID. IDs
+  `.`/`..` cannot be addressed by path and are rejected locally there; use a list
+  filter for lookup. Other identifier/pagination bounds are server-validated.
 - The [streaming](../guides/streaming.md) SSE parser supports multiline frames.
   Image streams retain optional event names; SSE IDs/retry metadata do not
   provide automatic reconnection or resumable generation.

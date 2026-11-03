@@ -102,6 +102,22 @@ struct HTTPTransport: @unchecked Sendable {
     return try decodeResponse(data: data, response: response, responseType: responseType)
   }
 
+  func deleteNoContent(path: HTTPPath, options: RequestOptions? = nil) async throws {
+    let request = try buildDeleteRequest(path: path, options: options)
+    log(.init(message: "request", method: "DELETE", path: redactedPath(from: request)))
+    let (data, response) = try await execute(request: request, options: options)
+    guard let http = response as? HTTPURLResponse else {
+      throw OpenRouterError.invalidResponse
+    }
+    if (200..<300).contains(http.statusCode) {
+      log(.init(message: "response", statusCode: http.statusCode))
+      guard http.statusCode == 204 else { throw OpenRouterError.invalidResponse }
+      return
+    }
+    log(.init(message: "api_error", statusCode: http.statusCode))
+    throw mapAPIError(statusCode: http.statusCode, data: data)
+  }
+
   func postMultipart<Response: Decodable>(
     path: String,
     body: Data,

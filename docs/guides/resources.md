@@ -27,6 +27,9 @@ For external telemetry configuration and forwarding policies, see
 
 For saved configuration and version history, see [presets](presets.md).
 
+For organization-scoped tracking-ID registrations and deactivation, see
+[external users](external-users.md).
+
 ## Generation metadata
 
 ```swift

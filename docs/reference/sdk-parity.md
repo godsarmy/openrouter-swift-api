@@ -109,6 +109,20 @@ retained legacy operation. Against the Zig baseline, 87 operations are shared an
 63 remain Zig-only; legacy completions remains Swift-only. This is route parity,
 not proof of provider-field parity or live account authorization.
 
+## November 3 external-user milestone
+
+The five external-user routes use the verified October 31 snapshot above; a fresh
+November 3 snapshot was not successfully saved and validated. The contract
+explicitly defines repeatable soft deactivation, reactivation through PATCH,
+and no inference-access enforcement. Swift's bodyless delete operation requires
+HTTP 204 and shares existing auth, header, error, and opt-in retry handling.
+
+Swift's tracker now covers **92/146** operations in that dated snapshot, with 54
+missing and one retained legacy operation. Against the same Zig baseline, 92
+operations are shared and 58 remain Zig-only; legacy completions remains
+Swift-only. The reviewed Zig model uses floating-point totals where the schema
+requires integers. No fresh-spec coverage or live-account verification is implied.
+
 ## Repeat the comparison
 
 Save one official JSON snapshot, retain its digest with the audit, and run:

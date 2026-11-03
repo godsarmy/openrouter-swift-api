@@ -1,5 +1,10 @@
 # Documentation update log
 
+## 2026-11-03
+
+- **Update**: Added external-user registration guidance, caller-supplied ID rules, dot-segment restrictions, HTTP 204 deactivation/reactivation, and the distinction from inference authorization; retained an explicitly dated October 31 contract baseline.
+- **Update**: Recorded five implemented external-user operations (92/146 dated-snapshot coverage) and moved the next milestone to organization settings.
+
 ## 2026-10-31
 
 - **Update**: Added preset configuration/version guidance, confirmed that API-shaped POSTs do not run inference, and documented nullable versions, direct JSON-object bodies, and ambiguous-write retry cautions.
