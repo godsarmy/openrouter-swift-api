@@ -6,6 +6,7 @@ This project follows semantic versioning once public releases are tagged.
 
 ## Unreleased
 
+- Extracted the legacy API model bundle into 18 domain files in the same module, preserving all 142 declarations, public names, defaults, Codable behavior, and private helper access. Existing domain model files remain unchanged.
 - Split client endpoints/resource facades into same-module family extensions and extracted configuration, options, errors, shared streaming, multipart, and path helpers. Public names, signatures, defaults, and declaration bodies are preserved; no endpoint coverage or behavior changes are intended.
 - Added management-key organization settings GET/PATCH APIs with a required filtered-dashboard-catalog Boolean, explicit false encoding, and unchanged organization member APIs. Dated-snapshot coverage is now 94/146 operations.
 - Added all five management-key external-user registration APIs, explicit inactive filtering, integer totals, safe tracking-ID paths, and HTTP 204 soft deactivation without JSON decoding. Registration state does not enforce inference access. Dated-snapshot coverage is now 92/146 operations.

@@ -1,20 +1,22 @@
 ---
 type: Development Guide
-title: Client source layout
-description: Maintain the SDK's resource-oriented client extensions without changing public names or shared networking behavior.
+title: Client and model source layout
+description: Maintain domain-oriented client and model files without changing public names, encoding, or shared networking behavior.
 tags: [development, architecture, client, compatibility]
 sources:
   - resource: ../../Sources/OpenRouter/Public/OpenRouterClient.swift
     title: Client storage and initialization
   - resource: ../../Sources/OpenRouter/Public/Client/
     title: Endpoint methods and resource facades
+  - resource: ../../Sources/OpenRouter/Public/Models/
+    title: Domain models extracted from the legacy bundle
   - resource: ../../Sources/OpenRouter/Internal/Streaming/IncrementalStream.swift
     title: Shared incremental stream runtime
   - resource: https://docs.swift.org/swift-book/documentation/the-swift-programming-language/accesscontrol/
     title: Swift access control
 ---
 
-# Client source layout
+# Client and model source layout
 
 `OpenRouterClient` remains one public, `Sendable` value type in the `OpenRouter`
 module. Its source is split by responsibility, not into new packages or public
@@ -56,12 +58,44 @@ not redesign cancellation, fallback, event handling, or buffering.
 2. Keep the factory property and nested resource type beside their flat methods.
    Preserve both calling styles and nested names such as
    `OpenRouterClient.OrganizationResource`.
-3. Keep request/response models in their existing domain model files. This client
-   refactor does not reorganize the large legacy model bundle.
+3. Keep request/response models in their existing domain model files, including
+   those under `Public/Models/`. Do not introduce duplicate model families merely
+   because existing and extracted models live in different directories.
 4. Use the existing transport and shared helpers; do not duplicate authentication,
    retry, streaming lifecycle, or path-escaping logic in each resource.
 5. Add focused offline tests, update the endpoint tracker and usage guide, and
    follow [building and testing](building-and-testing.md).
+
+## Model files
+
+The former `Public/OpenRouterAPIModels.swift` bundle has been removed. Its 142
+top-level declarations now live in 18 files under `Public/Models/`:
+
+| Domain | Files |
+|---|---|
+| Authorization codes and key management | `AuthenticationModels.swift` |
+| Chat completion requests/responses and stream chunks | `ChatCompletionModels.swift` |
+| Chat messages and multimodal content | `ChatContentModels.swift` |
+| Chat tools and structured response formats | `ChatToolModels.swift` |
+| Chat reasoning, cache, and search settings | `ChatConfigurationModels.swift` |
+| Provider routing and usage details | `ProviderRoutingModels.swift`, `UsageModels.swift` |
+| Embeddings and reranking | `EmbeddingModels.swift`, `RerankModels.swift` |
+| Audio, uploads, and video | `AudioModels.swift`, `FileModels.swift`, `VideoModels.swift` |
+| Responses and Anthropic-compatible Messages | `ResponsesModels.swift`, `MessagesModels.swift` |
+| Legacy text completions | `CompletionModels.swift` |
+| Discovery, generation metadata, credits, activity, and rankings | `DiscoveryModels.swift`, `AccountActivityModels.swift` |
+| Shared JSON values | `JSONValueModels.swift` |
+
+These remain types in the same `OpenRouter` module: callers still write
+`import OpenRouter`, `ChatCompletionRequest`, and `JSONValue`, not a new `Models`
+namespace. Existing domain files outside this directory remain in place; their
+models were not consolidated or redesigned as part of this extraction.
+
+Private codec helpers stay in the same files as their consumers. No model access
+modifiers were widened, no new generic PATCH-field abstraction was introduced,
+and encoding keys, default values, conformances, and nullable/raw-payload behavior
+were preserved. Keep large but cohesive schemas together when splitting would
+require unnecessary access changes or obscure custom Codable behavior.
 
 ## Access-control rules
 
@@ -101,3 +135,10 @@ ignoring trivia and leading nonpublic access modifiers while retaining literal
 token text. These checks complement tests; they are not an ABI guarantee or an
 Apple-platform validation claim. Run the full offline suite, strict formatter,
 and documentation checks after reconciling the move.
+
+The later model extraction from `1fbea55` also preserved all **2,734 public
+symbols** and their relationships. A separate token audit matched all **142
+top-level declarations**, ignoring only imports, comments, and whitespace. It
+included access modifiers, coding-key cases, default arguments, and literal text.
+This is stronger source-move evidence than compilation alone, but does not replace
+the offline serialization tests or establish binary compatibility.

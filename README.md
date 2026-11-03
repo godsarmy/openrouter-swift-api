@@ -47,8 +47,9 @@ swift test
 Normal tests do not require an API key. Live integration tests are opt-in and
 can incur charges; see [building and testing](docs/development/building-and-testing.md).
 
-Client methods and resource facades are grouped by endpoint family; see
-[client source layout](docs/development/client-layout.md) when adding APIs.
+Client methods, resource facades, and the former legacy model bundle are grouped
+by domain; see [client and model source layout](docs/development/client-layout.md)
+when adding APIs.
 
 ## Roadmap
 

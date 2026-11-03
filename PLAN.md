@@ -26,7 +26,9 @@ No Zig files were changed by this review.
 
 The client has since been modularized into same-module family extensions without
 changing public API names or endpoint behavior; see
-[client source layout](docs/development/client-layout.md). Continue new APIs in
+[client and model source layout](docs/development/client-layout.md). The legacy
+model bundle is also extracted into domain files with unchanged declarations.
+Continue new APIs in
 their appropriate family files; endpoint coverage targets below are unchanged.
 
 ## P0 — Establish a comparable baseline

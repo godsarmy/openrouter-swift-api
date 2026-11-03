@@ -2,6 +2,7 @@
 
 ## 2026-11-03
 
+- **Update**: Documented the 18-file legacy model extraction, removed the obsolete bundle assumption, and recorded unchanged public-symbol and whole-declaration token checks without claiming binary or Apple-platform verification.
 - **Update**: Documented client family extensions and shared helper boundaries, updated source references, and recorded public-symbol/token preservation checks for the behavior-preserving client extraction.
 - **Update**: Documented organization settings, the required Boolean PATCH field, dashboard-only catalog semantics, management-key requirements, and preservation of member APIs; retained the verified October 31 baseline.
 - **Update**: Recorded two implemented settings operations (94/146 dated-snapshot coverage) and moved the next milestone to data/discovery APIs, beginning with the server-tool catalog.
