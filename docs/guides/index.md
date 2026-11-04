@@ -15,6 +15,7 @@
 - [Presets](presets.md) - Read versioned presets and write configuration from API-shaped bodies without running inference.
 - [External users](external-users.md) - Register tracking IDs and manage active state without changing inference authorization.
 
+- [Analytics queries](analytics.md) - Discover query vocabulary and analyze usage with dimensions, filters, and classifier tags.
 - [Server-tool catalog](server-tools.md) - Discover tools, engine pricing, schemas, and native model support.
 
 ## Reference

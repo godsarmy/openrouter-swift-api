@@ -1,0 +1,29 @@
+{
+  "data": {
+    "data": [
+      {
+        "date__day": "2025-01-01T00:00:00.000Z",
+        "request_count": 1500,
+        "model": "openai/gpt-4o",
+        "optional_value": null,
+        "future_column": {
+          "nested": [
+            true,
+            3,
+            "value"
+          ]
+        }
+      }
+    ],
+    "metadata": {
+      "query_time_ms": 42,
+      "row_count": 1,
+      "truncated": false
+    },
+    "cachedAt": 1735689600.5,
+    "warnings": [
+      "One filter value could not be resolved"
+    ]
+  },
+  "future_extension": true
+}

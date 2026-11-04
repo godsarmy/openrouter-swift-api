@@ -2,6 +2,8 @@
 
 ## 2026-11-04
 
+- **Update**: Added management-key analytics meta/query guidance, classifier grouping and filtering, dynamic rows, server defaults, and truncation/warning handling. Coverage on the dated inventory is now 98/146; benchmarks are the next data/discovery milestone.
+
 - **Update**: Added server-tool catalog list/get guidance, typed discovery metadata, pagination/filter behavior, required nullable fields, and alias redirect limits, using a focused November 4 contract review. Coverage on the dated inventory is now 96/146; analytics is the next data/discovery milestone.
 
 ## 2026-11-03

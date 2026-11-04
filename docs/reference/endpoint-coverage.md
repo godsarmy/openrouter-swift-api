@@ -31,8 +31,8 @@ official OpenAPI specification (OpenAPI 3.1.0, `info.version: 1.0.0`).
 | Inventory | Unique method/path operations |
 |---|---:|
 | Listed in the current specification | 146 |
-| Current-spec operations implemented by the SDK | 96 |
-| Current-spec operations not implemented | 50 |
+| Current-spec operations implemented by the SDK | 98 |
+| Current-spec operations not implemented | 48 |
 | Additional SDK legacy operations absent from the specification | 1 |
 
 The October 26 audit corrected 72 earlier omissions; this snapshot adds five
@@ -351,7 +351,7 @@ availability, and server override before implementing it.
 | [ ] | DELETE | `/vault/interns/{internId}/secrets/{name}` | `deleteInternVaultSecret` |
 | [ ] | DELETE | `/vault/secrets/{name}` | `deleteVaultSecret` |
 | [x] | DELETE | `/workspaces/{workspace_ref}/budgets/{interval}` | `deleteWorkspaceBudget`; alias: `client.workspaces.deleteBudget` |
-| [ ] | GET | `/analytics/meta` | `getAnalyticsMeta` |
+| [x] | GET | `/analytics/meta` | `getAnalyticsMeta`; alias: `client.analytics.getMeta` |
 | [ ] | GET | `/benchmarks` | `getBenchmarks` |
 | [ ] | GET | `/classifications/task` | `getTaskClassifications` |
 | [ ] | GET | `/containers/{container_id}/files` | `listContainerFiles` |
@@ -386,7 +386,7 @@ availability, and server override before implementing it.
 | [x] | PATCH | `/organization/settings` | `updateOrganizationSettings`; alias: `client.organization.updateSettings` |
 | [ ] | PATCH | `/private-endpoints/{id}` | `updatePrivateEndpoint` |
 | [ ] | PATCH | `/scim/group-mappings/{id}` | `updateScimGroupMapping` |
-| [ ] | POST | `/analytics/query` | `queryAnalytics` |
+| [x] | POST | `/analytics/query` | `queryAnalytics`; alias: `client.analytics.query` |
 | [ ] | POST | `/api/alpha/decisions` | `createApiAlphaDecisions` |
 | [ ] | POST | `/containers/{container_id}/files/{file_id}/promote` | `promoteContainerFile` |
 | [ ] | POST | `/credits/coinbase` | `createCoinbaseCharge` |
@@ -425,6 +425,8 @@ availability, and server override before implementing it.
 | [ ] | POST | `/api/alpha/extractions` | `createApiAlphaExtractions`; alpha server override, not implemented |
 
 ## Notes
+
+- Analytics meta/query use a focused November 4 contract review, including classifier options and unset-bucket filtering; see [analytics queries](../guides/analytics.md). Management-key access was not tested live.
 
 - Server-tool list/get use a focused November 4 contract review, including engine pricing, schemas, API-format filtering, and native models; see [server-tool catalog](../guides/server-tools.md). The full inventory above remains dated October 31.
 
