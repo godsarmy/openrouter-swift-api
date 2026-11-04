@@ -57,8 +57,8 @@ their appropriate family files; endpoint coverage targets below are unchanged.
 
 These groups are implemented in Zig and absent from Swift at the review baseline.
 BYOK, guardrails, observability destinations, presets, external-user management,
-and organization settings are implemented. **Next: data/discovery APIs, starting
-with the server-tool catalog**, ahead of expanding pagination convenience APIs.
+and organization settings are implemented. The server-tool catalog is implemented. **Next: analytics meta/query in the
+data/discovery APIs**, ahead of expanding pagination convenience APIs.
 
 - [x] **BYOK (5 operations):** list/create at `/byok`; get/update/delete at
   `/byok/{id}`. Reference: `Zig: src/byok.zig`, `ByokResource` in `src/client.zig`.
@@ -105,8 +105,12 @@ milestones rather than one large port.
   Swift preserves the required filtered-dashboard-catalog Boolean, including false;
   no null clearing or default omission is invented. Member APIs remain available.
   Contract source remains the verified October 31 snapshot, not a fresh download.
-- [ ] **Data and discovery:** analytics meta/query, benchmarks, task
-  classifications, app rankings, session costs, tool catalog list/get, and
+- [x] **Server-tool catalog:** GET `/tools` and `/tools/{name}`, typed models,
+  optional offset/limit/API-format filters, native model details, safe name escaping,
+  and offline fixtures. Focused November 4 schema review; cross-SDK field parity
+  and live alias-redirect validation remain unverified. See [catalog guide](docs/guides/server-tools.md).
+- [ ] **Remaining data and discovery:** analytics meta/query, benchmarks, task
+  classifications, app rankings, session costs, and
   generation feedback. Reference: `Zig: src/analytics.zig`, `src/benchmarks.zig`,
   `src/classifications.zig`, `src/datasets.zig`, `src/tools.zig`,
   `src/generation.zig`. Retain attribution requirements and feedback retry cautions.

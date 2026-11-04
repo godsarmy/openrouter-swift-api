@@ -1,0 +1,82 @@
+{
+  "data": {
+    "aliases": [
+      {
+        "api_formats": [
+          "future-value"
+        ],
+        "output_names": [
+          {
+            "api_format": "future-value",
+            "name": "web_search",
+            "type": "web_search_call"
+          }
+        ],
+        "type": "web_search_20250305"
+      }
+    ],
+    "default_engine": "native",
+    "docs_url": "future-value",
+    "engines": [
+      {
+        "byok": "none",
+        "data_regions": [
+          "global",
+          "us"
+        ],
+        "default_mode": "auto",
+        "executed_by": "openrouter",
+        "id": "exa",
+        "name": "Exa",
+        "pricing": [
+          {
+            "max_units_per_call": 0,
+            "mode": "auto",
+            "price": "0.000000123456789",
+            "unit": "request"
+          }
+        ],
+        "pricing_doc_url": null,
+        "pricing_source": "openrouter"
+      }
+    ],
+    "fallback_engine": "exa",
+    "id": "openrouter:web_search",
+    "input_schema": {
+      "properties": {},
+      "type": "object"
+    },
+    "name": "Web search",
+    "native_support": {
+      "endpoint_count": 1,
+      "model_count": 1,
+      "models": [
+        {
+          "slug": "provider/model",
+          "providers": [
+            "Provider"
+          ]
+        }
+      ]
+    },
+    "output_schema": null,
+    "parameters_schema": {
+      "type": "object",
+      "properties": {
+        "engine": {
+          "enum": [
+            "auto",
+            "native"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "status": "active",
+    "summary": "future-value",
+    "supported_api_formats": [
+      "future-value"
+    ],
+    "tool_description": "future-value"
+  }
+}

@@ -15,6 +15,8 @@
 - [Presets](presets.md) - Read versioned presets and write configuration from API-shaped bodies without running inference.
 - [External users](external-users.md) - Register tracking IDs and manage active state without changing inference authorization.
 
+- [Server-tool catalog](server-tools.md) - Discover tools, engine pricing, schemas, and native model support.
+
 ## Reference
 
 - [Endpoint coverage](../reference/endpoint-coverage.md) - Check implemented endpoints and deferred work.

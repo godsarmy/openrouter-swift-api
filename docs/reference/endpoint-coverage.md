@@ -31,8 +31,8 @@ official OpenAPI specification (OpenAPI 3.1.0, `info.version: 1.0.0`).
 | Inventory | Unique method/path operations |
 |---|---:|
 | Listed in the current specification | 146 |
-| Current-spec operations implemented by the SDK | 94 |
-| Current-spec operations not implemented | 52 |
+| Current-spec operations implemented by the SDK | 96 |
+| Current-spec operations not implemented | 50 |
 | Additional SDK legacy operations absent from the specification | 1 |
 
 The October 26 audit corrected 72 earlier omissions; this snapshot adds five
@@ -373,8 +373,8 @@ availability, and server override before implementing it.
 | [ ] | GET | `/scim/group-mappings/{id}` | `getScimGroupMapping` |
 | [ ] | GET | `/scim/groups` | `listScimGroups` |
 | [ ] | GET | `/scim/sync-jobs/{id}` | `getScimSyncJob` |
-| [ ] | GET | `/tools` | `listTools` |
-| [ ] | GET | `/tools/{name}` | `getTool` |
+| [x] | GET | `/tools` | `listTools`; alias: `client.tools.list` |
+| [x] | GET | `/tools/{name}` | `getTool`; alias: `client.tools.get` |
 | [ ] | GET | `/vault/interns/{internId}/connections` | `listInternConnections` |
 | [ ] | GET | `/vault/interns/{internId}/effective-secrets` | `listInternEffectiveVaultSecrets` |
 | [ ] | GET | `/vault/interns/{internId}/secrets` | `listInternVaultSecrets` |
@@ -425,6 +425,8 @@ availability, and server override before implementing it.
 | [ ] | POST | `/api/alpha/extractions` | `createApiAlphaExtractions`; alpha server override, not implemented |
 
 ## Notes
+
+- Server-tool list/get use a focused November 4 contract review, including engine pricing, schemas, API-format filtering, and native models; see [server-tool catalog](../guides/server-tools.md). The full inventory above remains dated October 31.
 
 - External-user lifecycle support uses the dated snapshot above, reviewed on November 3; no newly retrieved snapshot was validated. See [external-user registrations](../guides/external-users.md) for ID constraints, inactive filtering, reactivation, and no-content deletion.
 - Update the status checkbox and SDK notes when implementing a new endpoint.

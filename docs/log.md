@@ -1,5 +1,9 @@
 # Documentation update log
 
+## 2026-11-04
+
+- **Update**: Added server-tool catalog list/get guidance, typed discovery metadata, pagination/filter behavior, required nullable fields, and alias redirect limits, using a focused November 4 contract review. Coverage on the dated inventory is now 96/146; analytics is the next data/discovery milestone.
+
 ## 2026-11-03
 
 - **Update**: Documented the 18-file legacy model extraction, removed the obsolete bundle assumption, and recorded unchanged public-symbol and whole-declaration token checks without claiming binary or Apple-platform verification.
